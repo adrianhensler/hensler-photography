@@ -25,3 +25,11 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.log
+
+# Backups
+/opt/backups/
+scripts/*.log
+scripts/*.pid
+
+# Local testing artifacts
+.restic-password

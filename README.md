@@ -10,6 +10,24 @@ All three sites are served from a single Caddy container on standard ports (80/4
 
 ---
 
+## 📚 Documentation
+
+Comprehensive guides for development, deployment, and maintenance:
+
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Web development best practices, tools, and workflows
+- **[WORKFLOW.md](WORKFLOW.md)** - Complete deployment procedures and checklists
+- **[BACKUP.md](BACKUP.md)** - Backup and restore procedures with restic
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
+- **[CLAUDE.md](CLAUDE.md)** - Guide for Claude Code AI assistant (architecture, subagents)
+- **[REVERT.md](REVERT.md)** - Rollback procedures (git, backups, emergency revert)
+- **[TESTING.md](TESTING.md)** - Playwright testing guide
+
+### For Design Work
+- **[sites/adrian/DESIGN_NOTES.md](sites/adrian/DESIGN_NOTES.md)** - Design improvement roadmap for Adrian's site
+- **[.claude/agents/](/.claude/agents/)** - Custom AI subagents for design critique and development
+
+---
+
 ## Local Testing
 
 Test all sites on port 8080 before deploying to production. This setup runs on the same VPS as production (which uses ports 80/443), allowing you to test changes safely without affecting live sites.
@@ -17,7 +35,41 @@ Test all sites on port 8080 before deploying to production. This setup runs on t
 ### Quick Start
 ```bash
 cd /opt/testing/hensler_photography
+
+# Option 1: Using npm scripts (recommended)
+npm run dev
+
+# Option 2: Direct docker compose
 docker compose -f docker-compose.local.yml up -d
+```
+
+### Convenience Commands
+
+New npm scripts for common tasks:
+
+```bash
+# Development
+npm run dev              # Start test server on port 8080
+npm run dev:stop         # Stop test server
+npm run dev:logs         # View test server logs
+
+# Testing
+npm test                 # Run all Playwright tests
+npm run test:ui          # Interactive test UI
+npm run screenshot       # Generate screenshots only
+
+# Production
+npm run prod:start       # Start production (ports 80/443)
+npm run prod:stop        # Stop production
+npm run prod:restart     # Graceful restart (recommended for updates)
+npm run prod:logs        # View production logs
+
+# Health checks
+npm run health           # Check all sites (test + production)
+
+# Backups
+npm run backup           # Run manual backup
+npm run backup:list      # List available backup snapshots
 ```
 
 ### Access Test Sites
@@ -147,13 +199,65 @@ hensler_photography/
 
 ---
 
+## Automated Workflows
+
+### GitHub Actions
+
+**Automated Testing** (`.github/workflows/test.yml`)
+- Runs on every push and pull request
+- Starts test server, runs Playwright tests
+- Uploads screenshots and test reports as artifacts
+- Blocks merging if tests fail
+
+**Automated Releases** (`.github/workflows/release.yml`)
+- Triggers when you push a version tag (e.g., `v1.1.0`)
+- Extracts changelog from CHANGELOG.md
+- Creates GitHub release with notes
+- Makes releases immutable for security
+
+### Version Management
+
+Create releases using semantic versioning:
+
+```bash
+# 1. Update CHANGELOG.md with changes
+
+# 2. Create and push tag
+git tag -a v1.1.0 -m "Add gallery section to Adrian's site"
+git push origin v1.1.0
+
+# 3. GitHub Actions automatically creates release
+
+# View releases
+gh release list
+```
+
+See [CHANGELOG.md](CHANGELOG.md) for versioning guidelines.
+
+---
+
+## Backup System (Future)
+
+Backup infrastructure is documented and ready to implement when needed:
+- **Documentation**: Complete setup guide in [BACKUP.md](BACKUP.md)
+- **Scripts**: Automated backup/restore scripts in `scripts/`
+- **When to implement**: Before adding image ingestion and storefront features
+
+All backup procedures are ready to go - this will become critical when handling user-uploaded images and transaction data.
+
+---
+
 ## Next Steps
-- [ ] Replace Adrian's hero image placeholder
-- [ ] Add Cloudflare proxy (orange cloud) with Full (strict) TLS
-- [ ] Add watchtower for auto-updates: `docker run -d --name watchtower -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower`
-- [ ] Add restic for backups
+
+### Immediate Priority
+- [ ] Design and implement gallery section for Adrian's site (see sites/adrian/DESIGN_NOTES.md)
 - [ ] Design and implement the main landing page at hensler.photography
-- [ ] Reserve `/api/*` in Caddyfile when adding backend features
+
+### Future Plans
+- [ ] Image ingestion system (user uploads/management)
+- [ ] Storefront features (commerce integration)
+- [ ] **Then implement backups** (critical for user data)
+- [ ] Add Cloudflare proxy (optional performance/security enhancement)
 
 ---
 

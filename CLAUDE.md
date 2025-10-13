@@ -155,6 +155,98 @@ To add a fourth domain (e.g., foo.hensler.photography):
    ```
 4. Test locally at `http://localhost:8080/foo` before deploying
 
+## Using Claude CLI Subagents
+
+### What Are Subagents?
+
+Subagents are specialized AI assistants with their own context windows, custom system prompts, and specific tool access. They enable focused, expert-level work on specialized tasks without polluting the main conversation context.
+
+### When to Use Subagents
+
+**Use subagents for:**
+- Complex, specialized tasks requiring domain expertise
+- Tasks that benefit from isolated context (design review, code audit)
+- Reusable workflows (same agent for same task type)
+- Preserving main conversation context for coordination
+
+**Work directly in main agent for:**
+- Simple, quick changes
+- Continuing work already in progress
+- Tasks requiring full project context
+- Coordination across multiple tasks
+
+### Best Practices
+
+1. **Early Delegation**: Use subagents early in conversations to verify details or investigate questions without consuming main context
+2. **Single-Purpose Agents**: Create focused agents for specific tasks, not general-purpose helpers
+3. **Detailed System Prompts**: Write comprehensive instructions in agent configuration
+4. **Tool Limitation**: Only grant necessary tools to each agent type
+5. **Version Control**: Keep project agents in `.claude/agents/` and commit to git
+
+### Custom Agents in This Project
+
+This project includes specialized agents for web development:
+
+**web-design-critic** (`.claude/agents/web-design-critic.md`)
+- Expert in photography portfolio design
+- Analyzes UX, visual hierarchy, modern design trends
+- Provides actionable improvement suggestions
+- Use for: Design reviews, layout critique, inspiration gathering
+
+**modern-css-developer** (`.claude/agents/modern-css-developer.md`)
+- Expert in vanilla HTML/CSS/JavaScript
+- No frameworks, performance-focused approach
+- Accessibility and responsive design specialist
+- Use for: Implementing designs, CSS architecture, animations
+
+### How to Invoke Subagents
+
+**Explicit invocation:**
+```
+Use the web-design-critic subagent to analyze adrian.hensler.photography
+```
+
+**Automatic delegation** (Claude decides):
+```
+Please review the design of adrian.hensler.photography
+```
+
+### Subagent Workflow Example
+
+```
+Main Agent: "I need to improve adrian.hensler.photography"
+  ↓
+Subagent (web-design-critic): Analyzes site, provides critique
+  ↓
+Main Agent: Reviews critique, plans implementation
+  ↓
+Subagent (modern-css-developer): Implements design improvements
+  ↓
+Main Agent: Tests changes, coordinates deployment
+```
+
+## Development Workflow
+
+For detailed development best practices, see **DEVELOPMENT.md**.
+
+Key workflow:
+1. Make changes in `/opt/testing/hensler_photography`
+2. Test locally on port 8080
+3. Run Playwright tests: `npm test`
+4. Follow deployment checklist in **WORKFLOW.md**
+5. Create git tag for version (see **CHANGELOG.md**)
+6. Deploy to production on ports 80/443
+
+## Backup and Recovery
+
+For backup procedures, see **BACKUP.md**.
+
+Automated daily backups via restic:
+- Docker volumes (caddy-data, caddy-config)
+- TLS certificates preserved
+- 7-day retention policy
+- Restore procedures documented
+
 ## Production Marker
 
 `THIS_IS_PRODUCTION.TXT` indicates production code. When copying from `/opt/testing/` to `/opt/` on the VPS, remember this is live infrastructure requiring careful change management and backup considerations.

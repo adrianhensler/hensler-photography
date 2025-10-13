@@ -1,0 +1,62 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get tag name
+        id: tag
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${{ steps.tag.outputs.TAG_NAME }}
+          echo "VERSION=${TAG#v}" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          # Extract the section for this version from CHANGELOG.md
+          VERSION=${{ steps.tag.outputs.TAG_NAME }}
+          awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | head -n -1 > release_notes.md
+
+          # Check if release notes were found
+          if [ -s release_notes.md ]; then
+            echo "Found release notes for $VERSION"
+          else
+            echo "No release notes found in CHANGELOG.md for $VERSION"
+            echo "## $VERSION" > release_notes.md
+            echo "" >> release_notes.md
+            echo "Release $VERSION" >> release_notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.tag.outputs.TAG_NAME }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Failed to create release for ${{ steps.tag.outputs.TAG_NAME }}"
+          echo "Please check the workflow logs for details."
+          exit 1
