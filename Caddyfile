@@ -1,0 +1,49 @@
+# Production Caddyfile - serves all 3 domains on standard ports
+
+hensler.photography {
+  encode zstd gzip
+  root * /srv/sites/main
+  file_server
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  @health path /healthz
+  respond @health "ok" 200
+}
+
+liam.hensler.photography {
+  encode zstd gzip
+  root * /srv/sites/liam
+  file_server
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  @health path /healthz
+  respond @health "ok" 200
+}
+
+adrian.hensler.photography {
+  encode zstd gzip
+  root * /srv/sites/adrian
+  file_server
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  @health path /healthz
+  respond @health "ok" 200
+}

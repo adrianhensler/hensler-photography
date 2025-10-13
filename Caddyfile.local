@@ -1,0 +1,33 @@
+# Local development Caddyfile
+# Serves all sites on localhost with path-based routing
+# Access at:
+#   http://localhost:8080/          (main site)
+#   http://localhost:8080/liam      (Liam's site)
+#   http://localhost:8080/adrian    (Adrian's site)
+
+:8080 {
+  encode zstd gzip
+
+  # Health check endpoint
+  handle /healthz {
+    respond "ok" 200
+  }
+
+  # Liam's site - path /liam/*
+  handle_path /liam* {
+    root * /srv/sites/liam
+    file_server
+  }
+
+  # Adrian's site - path /adrian/*
+  handle_path /adrian* {
+    root * /srv/sites/adrian
+    file_server
+  }
+
+  # Main site - root path (must be last)
+  handle {
+    root * /srv/sites/main
+    file_server
+  }
+}

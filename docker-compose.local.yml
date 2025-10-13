@@ -1,0 +1,24 @@
+# Local Development Docker Compose
+# Serves all sites on localhost:8080 with path-based routing
+# Access sites at:
+#   http://localhost:8080/          (main)
+#   http://localhost:8080/liam      (Liam's site)
+#   http://localhost:8080/adrian    (Adrian's site)
+#
+# Usage: docker compose -f docker-compose.local.yml up
+
+services:
+  web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./sites:/srv/sites:ro
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+      - caddy-data-local:/data
+      - caddy-config-local:/config
+
+volumes:
+  caddy-data-local:
+  caddy-config-local:
