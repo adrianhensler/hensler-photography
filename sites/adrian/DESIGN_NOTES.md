@@ -1,6 +1,29 @@
 # Design Notes: Adrian Hensler Photography
 
-## Current State (v1.0.0)
+## Recent Updates (2025-10-14)
+
+### Phase 0: Typography & Content - COMPLETED ✅
+**Branch**: `feature/design-refresh`
+
+**What Changed**:
+- ✅ Upgraded typography: Playfair Display (serif headings) + Inter (body text)
+- ✅ Increased heading size: 40-64px (was 28-44px) for better visual hierarchy
+- ✅ Implemented 8px baseline grid for consistent spacing
+- ✅ Improved text contrast: #f5f5f5 (was #eee with opacity)
+- ✅ Added contact email: adrianhensler@gmail.com with warm accent color
+- ✅ Added bio: "Based in Halifax, Nova Scotia."
+- ✅ Better button interactions: subtle lift on hover + border brightening
+
+**Impact**: Site now looks more professional and polished. Typography has personality. Contact information is clear.
+
+**Still Needed**:
+- Reduce hero image prominence (currently too dominant)
+- Add gallery section with 4+ photography samples
+- Visual polish (animations, refinements)
+
+---
+
+## Current State (v1.0.0 → v1.1.0 in progress)
 
 ### Overview
 Clean, minimalist dark-themed landing page with single hero image and Flickr link. Functions as a professional redirect rather than a full portfolio showcase.

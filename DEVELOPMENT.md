@@ -18,6 +18,31 @@ This guide documents best practices for developing the Hensler Photography websi
 
 The development practices in this guide apply to both phases, but security, backups, and data handling become paramount when user data is involved.
 
+### Critical: VPS Development Workflow
+
+**⚠️ All development happens on the VPS at `/opt/testing/hensler_photography/`**
+
+**Current Limitation**: Test server (port 8080) and production (ports 80/443) share the same filesystem:
+- Both serve from the same `sites/` directory
+- Changes are immediately visible to both servers (after cache refresh)
+- Git branches help track changes but don't provide runtime isolation
+- This led to "backwards workflow" where changes went to production before proper testing
+
+**Current Workaround**:
+- Work on feature branches in git
+- Be extremely careful with production restarts
+- Test server runs on port 8080: `docker compose -p hensler_test -f docker-compose.local.yml up -d`
+- Production runs on ports 80/443: `docker compose up -d`
+- Both can coexist but see the same files
+
+**Required Before Backend Development**:
+- Implement proper directory isolation (`/opt/prod/` vs `/opt/dev/`)
+- Or use Git worktrees for true branch isolation
+- Backend will have separate dev/test/prod databases
+- Document and enforce proper deployment workflow
+
+**Lesson Learned (2025-10-14)**: Shared filesystem caused production to receive untested changes. This is acceptable for static design work but unacceptable once backend/database are involved.
+
 ---
 
 ## Development Philosophy
