@@ -20,28 +20,47 @@ The development practices in this guide apply to both phases, but security, back
 
 ### Critical: VPS Development Workflow
 
-**⚠️ All development happens on the VPS at `/opt/testing/hensler_photography/`**
+**✅ Proper Isolation Implemented (2025-10-14)**
 
-**Current Limitation**: Test server (port 8080) and production (ports 80/443) share the same filesystem:
-- Both serve from the same `sites/` directory
-- Changes are immediately visible to both servers (after cache refresh)
-- Git branches help track changes but don't provide runtime isolation
-- This led to "backwards workflow" where changes went to production before proper testing
+Development and production are now fully isolated in separate directories:
 
-**Current Workaround**:
-- Work on feature branches in git
-- Be extremely careful with production restarts
-- Test server runs on port 8080: `docker compose -p hensler_test -f docker-compose.local.yml up -d`
-- Production runs on ports 80/443: `docker compose up -d`
-- Both can coexist but see the same files
+```
+/opt/
+├── prod/hensler_photography/    # Production (ports 80/443)
+│   └── Serves live sites via docker-compose.yml
+└── dev/hensler_photography/     # Development (port 8080)
+    └── Test server via docker-compose.local.yml
+```
 
-**Required Before Backend Development**:
-- Implement proper directory isolation (`/opt/prod/` vs `/opt/dev/`)
-- Or use Git worktrees for true branch isolation
-- Backend will have separate dev/test/prod databases
-- Document and enforce proper deployment workflow
+**Benefits**:
+- True filesystem isolation between test and production
+- Changes in `/opt/dev/` do NOT affect `/opt/prod/`
+- Safe testing before deployment
+- Explicit deployment step via git pull
+- Essential for future backend/database development
 
-**Lesson Learned (2025-10-14)**: Shared filesystem caused production to receive untested changes. This is acceptable for static design work but unacceptable once backend/database are involved.
+**Development Workflow**:
+```bash
+# 1. Work in development directory
+cd /opt/dev/hensler_photography
+
+# 2. Make changes and test
+# Test server: http://localhost:8080/
+
+# 3. Commit changes
+git add .
+git commit -m "Description"
+git push origin main
+
+# 4. Deploy to production
+cd /opt/prod/hensler_photography
+git pull origin main
+docker compose restart
+```
+
+**Migration**: See `MIGRATION_GUIDE.md` for setup instructions.
+
+**Lesson Learned**: Shared filesystem caused production to receive untested changes twice before this isolation was implemented. This is now resolved.
 
 ---
 
@@ -279,8 +298,8 @@ Always test changes on port 8080 before production:
 
 ```bash
 # Start test server
-cd /opt/testing/hensler_photography
-docker compose -f docker-compose.local.yml up -d
+cd /opt/dev/hensler_photography
+docker compose -p hensler_test -f docker-compose.local.yml up -d
 
 # Access sites
 # http://localhost:8080/
@@ -288,7 +307,7 @@ docker compose -f docker-compose.local.yml up -d
 # http://localhost:8080/adrian
 
 # Stop when done
-docker compose -f docker-compose.local.yml down
+docker compose -p hensler_test -f docker-compose.local.yml down
 ```
 
 ### Automated Testing

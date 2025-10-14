@@ -36,13 +36,24 @@ This dual-config ensures changes can be tested locally with exact production beh
 
 ## Common Commands
 
+### Directory Structure (Post-Migration)
+Development and production are now properly isolated:
+
+```
+/opt/
+├── prod/hensler_photography/    # Production (ports 80/443)
+└── dev/hensler_photography/     # Development (port 8080)
+```
+
+**See MIGRATION_GUIDE.md for setup instructions.**
+
 ### Testing on VPS (Port 8080)
-The testing environment runs on the same VPS as production. Production uses ports 80/443, testing uses port 8080.
+The testing environment runs in `/opt/dev/hensler_photography` and is fully isolated from production.
 
 ```bash
-# Start test container (runs alongside production)
-cd /opt/testing/hensler_photography
-docker compose -f docker-compose.local.yml up -d
+# Start test container
+cd /opt/dev/hensler_photography
+docker compose -p hensler_test -f docker-compose.local.yml up -d
 
 # Access from VPS or remotely:
 # http://localhost:8080/          (main site)
@@ -52,7 +63,7 @@ docker compose -f docker-compose.local.yml up -d
 # Or: http://VPS-IP:8080/liam, etc.
 
 # Stop test container
-docker compose -f docker-compose.local.yml down
+docker compose -p hensler_test -f docker-compose.local.yml down
 ```
 
 ### Testing
@@ -76,16 +87,17 @@ npx playwright test --debug tests/sites.spec.js
 
 ### Production Deployment
 ```bash
-# Deploy from local to VPS
-scp -r /opt/testing/hensler_photography user@VPS:/opt/
+# All work happens on VPS in /opt/dev/
+cd /opt/dev/hensler_photography
 
-# On VPS: Start production (first time)
-cd /opt/hensler_photography
-docker compose up -d
+# Make changes, test on port 8080, commit to git
+git add .
+git commit -m "Description"
+git push origin main
 
-# Update production sites after changes
-scp -r /opt/testing/hensler_photography/sites user@VPS:/opt/hensler_photography/
-# On VPS:
+# Deploy to production: Pull changes in prod directory
+cd /opt/prod/hensler_photography
+git pull origin main
 docker compose restart
 
 # Check production health
@@ -95,6 +107,10 @@ curl -I https://adrian.hensler.photography/healthz
 
 # View logs
 docker compose logs web
+
+# Start production (first time only)
+cd /opt/prod/hensler_photography
+docker compose up -d
 ```
 
 ## File Locations for Content Updates
@@ -230,12 +246,15 @@ Main Agent: Tests changes, coordinates deployment
 For detailed development best practices, see **DEVELOPMENT.md**.
 
 Key workflow:
-1. Make changes in `/opt/testing/hensler_photography`
+1. Make changes in `/opt/dev/hensler_photography`
 2. Test locally on port 8080
 3. Run Playwright tests: `npm test`
-4. Follow deployment checklist in **WORKFLOW.md**
-5. Create git tag for version (see **CHANGELOG.md**)
-6. Deploy to production on ports 80/443
+4. Commit and push to git
+5. Deploy: `cd /opt/prod/hensler_photography && git pull && docker compose restart`
+6. Verify production health checks
+7. Create git tag for version (see **CHANGELOG.md**)
+
+**Critical**: Production (`/opt/prod/`) and development (`/opt/dev/`) are now fully isolated. Changes in dev do NOT affect production until explicitly deployed.
 
 ## Backup and Recovery
 
@@ -249,4 +268,6 @@ Automated daily backups via restic:
 
 ## Production Marker
 
-`THIS_IS_PRODUCTION.TXT` indicates production code. When copying from `/opt/testing/` to `/opt/` on the VPS, remember this is live infrastructure requiring careful change management and backup considerations.
+Production code lives in `/opt/prod/hensler_photography/`. Development work happens in `/opt/dev/hensler_photography/`. These are fully isolated directories with separate git working trees.
+
+**Never edit files in `/opt/prod/` directly.** Always make changes in `/opt/dev/`, test, commit, and deploy via git pull.
