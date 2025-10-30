@@ -463,12 +463,100 @@ Focus on sites that:
 
 ---
 
+## Site-Specific Documentation
+
+Each site has its own comprehensive maintenance documentation in its directory:
+
+### Adrian's Site
+
+**Location**: `sites/adrian/README.md`
+
+**Complete guide covering**:
+- Quick start: Adding/removing gallery images (most common task)
+- Current architecture: Ghost typography, slideshow, gallery grid
+- Image optimization: WebP, lazy loading, blur-up placeholders
+- Error handling: Console debugging, common issues
+- Security best practices: Headers, CDN dependencies, image serving
+- SEO concepts: Open Graph, Schema.org, sitemaps (future AI implementation)
+- Performance monitoring: Plausible Analytics, Core Web Vitals
+- Backup strategy: Git + restic approach
+- Testing workflow: Pre-deploy checklist, Playwright tests
+- File structure: Complete reference
+
+**Key Technical Details**:
+- Single-file design: All HTML/CSS/JS in `index.html`
+- Dynamic images: `galleryImages` array at line ~418
+- Ghost typography: Playfair Display, 300 weight, 0.45 opacity
+- Slideshow: Auto-cycles 5s, pauses on hover
+- Gallery grid: `object-fit: contain` preserves aspect ratios (critical requirement)
+- GLightbox: CDN-hosted library for full-screen viewing
+- No frameworks: Pure vanilla HTML/CSS/JS
+
+**When to Use**: Any maintenance work on Adrian's site should reference this documentation first. It's designed to be usable even without Claude CLI access.
+
+### Liam's Site
+
+**Location**: `sites/liam/` (documentation TBD)
+
+Currently simpler Instagram link-based portfolio. If significant features are added, create a similar `sites/liam/README.md`.
+
+### Main Landing Page
+
+**Location**: `sites/main/` (currently "Coming Soon" placeholder)
+
+Future design: Split-image layout with left half → Adrian, right half → Liam. See "Main Landing Page Ideas" section in CLAUDE.md.
+
+## Content Management Workflow
+
+### Adding Images to Adrian's Gallery
+
+**Quick Reference** (see `sites/adrian/README.md` for details):
+
+1. Export image: JPEG, 85-90% quality, 1200-1600px long edge
+2. Drop file into `sites/adrian/assets/gallery/`
+3. Edit `sites/adrian/index.html` line ~418
+4. Add filename to `galleryImages` array
+5. Test on port 8080
+6. Commit and deploy
+
+**Why It's This Simple**: Both slideshow and gallery populate from a single JavaScript array. No database, no config files, just add the filename to the array.
+
+### Updating Site Content
+
+**For text/bio changes**:
+- Edit `sites/[sitename]/index.html` directly
+- Find the relevant `<p>` or `<h1>` tag
+- Update text content
+- Test and deploy
+
+**For design changes**:
+- Consider using `web-design-critic` subagent for initial review
+- Use `modern-css-developer` subagent for implementation
+- Follow iterative workflow: build → view → critique → refine
+- Always test on port 8080 before production
+
+### Site-Specific Best Practices
+
+**Adrian's Site**:
+- **Critical**: Preserve aspect ratios in gallery (no cropping)
+- Always check browser console for errors (F12)
+- Test slideshow: Auto-cycle, manual navigation, hover pause
+- Verify GLightbox lightbox functionality
+- Test responsive breakpoints (3→2→1 columns)
+
+**Error Handling Reminder**:
+- Images that fail to load show broken icon (no graceful fallback yet)
+- Check console warnings after adding images
+- Verify all filenames match exactly (case-sensitive)
+- Common issue: Typo in `galleryImages` array
+
 ## Next Steps
 
 1. Review current sites and identify improvements needed
-2. Create design notes in `sites/[sitename]/DESIGN_NOTES.md`
+2. Consult site-specific documentation (`sites/[sitename]/README.md`)
 3. Use subagents for specialized critique/development
 4. Iterate using visual-driven workflow
 5. Test thoroughly on port 8080
-6. Deploy following WORKFLOW.md procedures
+6. Deploy following WORKFLOW.md procedures (or site-specific deployment guide)
 7. Create git tag for version tracking
+8. Update site documentation if workflow changes
