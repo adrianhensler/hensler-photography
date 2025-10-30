@@ -2,13 +2,18 @@
 
 ## Instructions
 
-Add 4 images from your Flickr to this directory:
+Add 9 images from your Flickr to this directory to populate the 3×3 gallery grid:
 
 ### Required Files
 - `photo1.jpg` - Your best landscape/nature photo
 - `photo2.jpg` - Another strong photo (different subject)
 - `photo3.jpg` - Third featured image
 - `photo4.jpg` - Fourth featured image
+- `photo5.jpg` - Fifth featured image
+- `photo6.jpg` - Sixth featured image
+- `photo7.jpg` - Seventh featured image
+- `photo8.jpg` - Eighth featured image
+- `photo9.jpg` - Ninth featured image
 
 ### Image Specifications
 
@@ -20,10 +25,10 @@ Add 4 images from your Flickr to this directory:
 ### How to Get Images from Flickr
 
 1. Go to https://www.flickr.com/photos/adrianhensler/
-2. Find 4 photos you want to feature (NO self-portraits)
+2. Find 9 photos you want to feature (NO self-portraits)
 3. Click each photo → Click "..." → "View all sizes"
 4. Download "Large" or "Original" size
-5. Save as photo1.jpg, photo2.jpg, etc. in this directory
+5. Save as photo1.jpg through photo9.jpg in this directory
 
 ### Tips
 

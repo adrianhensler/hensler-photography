@@ -11,6 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
+  <!-- GLightbox for image lightbox -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+
   <style>
     /* Base & Layout */
     body {
@@ -47,14 +50,272 @@
       color: #f5f5f5;
     }
 
-    /* Hero Image */
-    img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 16px;
+    /* Tagline */
+    .tagline {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: #e8d5b5;
+      margin: -8px 0 24px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.95;
+    }
+
+    /* Bio text */
+    .bio {
+      max-width: 650px;
+      margin: 0 auto 24px;
+      font-size: clamp(17px, 2.2vw, 19px);
+      line-height: 1.7;
+      color: rgba(245, 245, 245, 0.92);
+    }
+
+    /* Profile Image - smaller circular thumbnail */
+    .profile-img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
       display: block;
-      margin: 0 auto 32px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      margin: 0 auto 24px;
+      box-shadow: 0 8px 16px rgba(0,0,0,.3);
+      object-fit: cover;
+    }
+
+    /* Slideshow Carousel */
+    .slideshow {
+      margin: 48px 0;
+      position: relative;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .slideshow-container {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      background: #0f0f0f;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+
+    .slideshow-slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slideshow-slide.active {
+      opacity: 1;
+      z-index: 2;
+    }
+
+    .slideshow-slide img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .slideshow-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(10, 10, 10, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f5f5f5;
+      font-size: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .slideshow-nav:hover {
+      background: rgba(232, 213, 181, 0.2);
+      border-color: rgba(232, 213, 181, 0.4);
+    }
+
+    .slideshow-prev {
+      left: 16px;
+    }
+
+    .slideshow-next {
+      right: 16px;
+    }
+
+    /* Gallery Grid */
+    .gallery {
+      margin: 48px 0;
+    }
+
+    .gallery h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4vw, 36px);
+      font-weight: 600;
+      margin: 0 0 32px;
+      color: #f5f5f5;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .gallery-item {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0f0f0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #222;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      cursor: pointer;
+      min-height: 200px;
+    }
+
+    .gallery-item:hover {
+      border-color: #444;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(0,0,0,.4);
+    }
+
+    .gallery-item.has-image {
+      border-color: #222;
+    }
+
+    .gallery-item.has-image:hover {
+      border-color: rgba(232, 213, 181, 0.3);
+    }
+
+    .gallery-item.has-image:hover img {
+      filter: brightness(1.05);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      border-radius: 0;
+      margin: 0;
+      box-shadow: none;
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .gallery-placeholder {
+      color: #555;
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+      line-height: 1.4;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .profile-img {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    h1 {
+      animation: fadeIn 0.8s ease-out 0.1s both;
+    }
+
+    p {
+      animation: fadeIn 0.8s ease-out 0.2s both;
+    }
+
+    .gallery {
+      animation: fadeIn 1s ease-out 0.4s both;
+    }
+
+    .gallery-item:nth-child(1) {
+      animation: fadeIn 0.6s ease-out 0.5s both;
+    }
+
+    .gallery-item:nth-child(2) {
+      animation: fadeIn 0.6s ease-out 0.6s both;
+    }
+
+    .gallery-item:nth-child(3) {
+      animation: fadeIn 0.6s ease-out 0.7s both;
+    }
+
+    .gallery-item:nth-child(4) {
+      animation: fadeIn 0.6s ease-out 0.8s both;
+    }
+
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .slideshow-container {
+        height: 400px;
+      }
+
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .slideshow-container {
+        height: 300px;
+      }
+
+      .slideshow-nav {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+
+      .gallery-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+
+    /* Reduce motion for accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
 
     /* Contact Email */
@@ -108,19 +369,164 @@
 </head>
 <body>
   <main class="wrap">
-    <img src="/assets/adrian-hero.jpg" alt="Adrian Hensler, photographer">
+    <img src="/assets/adrian-hero.jpg" alt="Adrian Hensler" class="profile-img">
     <h1>Adrian Hensler Photography</h1>
 
-    <p>Based in Halifax, Nova Scotia.</p>
+    <p class="bio">
+      Images from Halifax and surrounding areas. Light, land, and life.
+    </p>
 
     <p class="contact">
       <a href="mailto:adrianhensler@gmail.com">adrianhensler@gmail.com</a>
     </p>
 
-    <p><a class="button" href="https://www.flickr.com/photos/adrianhensler/" rel="me noopener" target="_blank">View on Flickr</a></p>
+    <!-- Slideshow Carousel -->
+    <section class="slideshow">
+      <div class="slideshow-container" id="slideshow">
+        <!-- Slides will be dynamically inserted here -->
+      </div>
+      <div class="slideshow-prev slideshow-nav" onclick="changeSlide(-1)">‹</div>
+      <div class="slideshow-next slideshow-nav" onclick="changeSlide(1)">›</div>
+    </section>
+
+    <!-- Gallery Grid -->
+    <section class="gallery">
+      <h2>Browse Gallery</h2>
+      <div class="gallery-grid" id="gallery-grid">
+        <!-- Gallery items will be dynamically inserted here -->
+      </div>
+    </section>
+
+    <p><a class="button" href="https://www.flickr.com/photos/adrianhensler/" rel="me noopener" target="_blank">View Full Portfolio on Flickr</a></p>
 
     <footer>© <span id="y"></span> Adrian Hensler</footer>
   </main>
+
+  <!-- Initialize year -->
   <script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+
+  <!-- GLightbox -->
+  <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+
+  <script>
+    // ===== IMAGE CONFIGURATION =====
+    // To add more images: Add filename to this array
+    const galleryImages = [
+      '52871221196_95f87f72ce_b.jpg',
+      '53225347053_31cd2f818e_b.jpg',
+      '53470724843_5747fc8ff5_b.jpg',
+      '53615968247_4d4ecff67c_b.jpg',
+      '53617286790_597f1818c5_b.jpg',
+      '53617286790_597f1818c5_b (1).jpg',
+      '53777597401_77cf321b21_b.jpg',
+      '53904082912_fd86ce3ff5_b.jpg',
+      '54097487564_56266abcf2_b.jpg',
+      '54770451360_a3eb449678_b.jpg',
+      '54770451375_d527619b96_b.jpg'
+    ];
+
+    // ===== SLIDESHOW LOGIC =====
+    let currentSlide = 0;
+    let slideshowInterval;
+    let slideshowPaused = false;
+
+    function initSlideshow() {
+      const container = document.getElementById('slideshow');
+
+      galleryImages.forEach((filename, index) => {
+        const slide = document.createElement('div');
+        slide.className = 'slideshow-slide';
+        if (index === 0) slide.classList.add('active');
+
+        const img = document.createElement('img');
+        img.src = `/assets/gallery/${filename}`;
+        img.alt = 'Photography by Adrian Hensler';
+        img.loading = index === 0 ? 'eager' : 'lazy';
+
+        slide.appendChild(img);
+        container.appendChild(slide);
+      });
+
+      // Auto-advance slideshow every 5 seconds
+      startSlideshow();
+
+      // Pause on hover
+      container.addEventListener('mouseenter', () => {
+        slideshowPaused = true;
+        clearInterval(slideshowInterval);
+      });
+
+      container.addEventListener('mouseleave', () => {
+        slideshowPaused = false;
+        startSlideshow();
+      });
+    }
+
+    function startSlideshow() {
+      if (slideshowPaused) return;
+      slideshowInterval = setInterval(() => {
+        changeSlide(1);
+      }, 5000);
+    }
+
+    function changeSlide(direction) {
+      const slides = document.querySelectorAll('.slideshow-slide');
+      slides[currentSlide].classList.remove('active');
+
+      currentSlide = (currentSlide + direction + slides.length) % slides.length;
+
+      slides[currentSlide].classList.add('active');
+
+      // Reset timer on manual navigation
+      if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+        startSlideshow();
+      }
+    }
+
+    // ===== GALLERY GRID LOGIC =====
+    function initGallery() {
+      const grid = document.getElementById('gallery-grid');
+
+      galleryImages.forEach((filename) => {
+        const link = document.createElement('a');
+        link.href = `/assets/gallery/${filename}`;
+        link.className = 'gallery-item glightbox';
+        link.setAttribute('data-gallery', 'portfolio');
+
+        const img = document.createElement('img');
+        img.src = `/assets/gallery/${filename}`;
+        img.alt = 'Photography by Adrian Hensler';
+        img.loading = 'lazy';
+
+        img.onload = () => {
+          link.classList.add('has-image');
+        };
+
+        link.appendChild(img);
+        grid.appendChild(link);
+      });
+
+      // Initialize GLightbox after gallery is populated
+      setTimeout(() => {
+        const lightbox = GLightbox({
+          selector: '.glightbox',
+          touchNavigation: true,
+          loop: true,
+          autoplayVideos: false,
+          zoomable: false,
+          draggable: true,
+          closeButton: true,
+          closeOnOutsideClick: true
+        });
+      }, 100);
+    }
+
+    // ===== INITIALIZE ON PAGE LOAD =====
+    document.addEventListener('DOMContentLoaded', function() {
+      initSlideshow();
+      initGallery();
+    });
+  </script>
 </body>
 </html>
