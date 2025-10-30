@@ -33,14 +33,30 @@
       text-align: center;
     }
 
-    /* Typography - 8px baseline grid */
+    /* Typography - Ghost Effect Header */
+    .site-header {
+      margin: 0 0 48px;
+    }
+
     h1 {
       font-family: 'Playfair Display', Georgia, serif;
-      font-weight: 700;
-      margin: 0 0 16px;
-      font-size: clamp(40px, 6vw, 64px);
-      letter-spacing: -0.02em;
-      line-height: 1.1;
+      font-weight: 300;
+      margin: 0;
+      font-size: clamp(56px, 8vw, 80px);
+      letter-spacing: 0.05em;
+      line-height: 1.0;
+      opacity: 0.45;
+      text-transform: lowercase;
+    }
+
+    .subtitle {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(20px, 3vw, 28px);
+      letter-spacing: 0.08em;
+      margin: 8px 0 0;
+      opacity: 0.4;
+      text-transform: lowercase;
     }
 
     p {
@@ -50,17 +66,6 @@
       color: #f5f5f5;
     }
 
-    /* Tagline */
-    .tagline {
-      font-size: clamp(16px, 2.5vw, 20px);
-      color: #e8d5b5;
-      margin: -8px 0 24px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      opacity: 0.95;
-    }
-
     /* Bio text */
     .bio {
       max-width: 650px;
@@ -68,17 +73,6 @@
       font-size: clamp(17px, 2.2vw, 19px);
       line-height: 1.7;
       color: rgba(245, 245, 245, 0.92);
-    }
-
-    /* Profile Image - smaller circular thumbnail */
-    .profile-img {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      display: block;
-      margin: 0 auto 24px;
-      box-shadow: 0 8px 16px rgba(0,0,0,.3);
-      object-fit: cover;
     }
 
     /* Slideshow Carousel */
@@ -241,20 +235,28 @@
       }
     }
 
-    .profile-img {
-      animation: fadeIn 0.6s ease-out;
+    .site-header {
+      animation: fadeIn 0.8s ease-out both;
     }
 
     h1 {
-      animation: fadeIn 0.8s ease-out 0.1s both;
+      animation: fadeIn 1s ease-out 0.1s both;
+    }
+
+    .subtitle {
+      animation: fadeIn 1s ease-out 0.15s both;
     }
 
     p {
-      animation: fadeIn 0.8s ease-out 0.2s both;
+      animation: fadeIn 0.8s ease-out 0.3s both;
+    }
+
+    .slideshow {
+      animation: fadeIn 1s ease-out 0.5s both;
     }
 
     .gallery {
-      animation: fadeIn 1s ease-out 0.4s both;
+      animation: fadeIn 1s ease-out 0.6s both;
     }
 
     .gallery-item:nth-child(1) {
@@ -369,8 +371,10 @@
 </head>
 <body>
   <main class="wrap">
-    <img src="/assets/adrian-hero.jpg" alt="Adrian Hensler" class="profile-img">
-    <h1>Adrian Hensler Photography</h1>
+    <header class="site-header">
+      <h1>adrian hensler</h1>
+      <p class="subtitle">photography</p>
+    </header>
 
     <p class="bio">
       Images from Halifax and surrounding areas. Light, land, and life.
