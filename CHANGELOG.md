@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- IntersectionObserver-based gallery reveal animation for Adrian's site
+- Performance attributes for gallery images: `decoding="async"` and `fetchpriority="low"`
+- Accessibility support: respects `prefers-reduced-motion` user preference
 - Comprehensive development documentation (DEVELOPMENT.md)
 - Deployment workflow documentation (WORKFLOW.md)
 - Backup system documentation and scripts (BACKUP.md, scripts/backup.sh, scripts/restore.sh)
@@ -19,10 +22,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - npm convenience scripts for development, testing, production, and backup operations
 
 ### Changed
+- Adrian's gallery: replaced hardcoded nth-child animations with scroll-triggered reveals
+- Adrian's gallery: all 10 images now animate on reveal (previously only first 4)
+- Adrian's gallery: reduced animation translateY from 20px to 8px for more subtle effect
+- Adrian's gallery: images reveal 120px before entering viewport for smoother experience
 - Expanded CLAUDE.md with subagent guidance and development workflow
 - Enhanced REVERT.md with git-based rollback procedures
 - Updated README.md with comprehensive documentation links and npm scripts
 - Improved .gitignore for backup files and logs
+
+### Performance
+- Gallery images now load asynchronously without blocking main thread
+- Slideshow images prioritized over gallery images for faster initial paint
+- Modern IntersectionObserver API improves scroll performance
 
 ### Notes
 - Backup system is fully documented but not yet implemented (planned before image ingestion/storefront features)
