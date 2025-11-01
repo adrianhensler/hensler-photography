@@ -1,33 +1,72 @@
-# Local development Caddyfile
-# Serves all sites on localhost with path-based routing
+# Test server Caddyfile with HTTPS and subdomain routing
+# Serves all sites on port 8080 with TLS via Let's Encrypt
 # Access at:
-#   http://localhost:8080/          (main site)
-#   http://localhost:8080/liam      (Liam's site)
-#   http://localhost:8080/adrian    (Adrian's site)
+#   https://hensler.photography:8080          (main site)
+#   https://liam.hensler.photography:8080     (Liam's site)
+#   https://adrian.hensler.photography:8080   (Adrian's site)
 
-:8080 {
+hensler.photography:8080 {
   encode zstd gzip
+  root * /srv/sites/main
+  file_server
 
-  # Health check endpoint
   handle /healthz {
     respond "ok" 200
   }
 
-  # Liam's site - path /liam/*
-  handle_path /liam* {
-    root * /srv/sites/liam
-    file_server
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options "DENY"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+}
+
+liam.hensler.photography:8080 {
+  encode zstd gzip
+  root * /srv/sites/liam
+  file_server
+
+  handle /healthz {
+    respond "ok" 200
   }
 
-  # Adrian's site - path /adrian/*
-  handle_path /adrian* {
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options "DENY"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+}
+
+adrian.hensler.photography:8080 {
+  encode zstd gzip
+
+  # Admin interface (reverse proxy to API service)
+  handle /admin* {
+    reverse_proxy api:8000
+  }
+
+  # API endpoints (reverse proxy to API service)
+  handle /api/* {
+    reverse_proxy api:8000
+  }
+
+  # Health check for API
+  handle /healthz {
+    respond "ok" 200
+  }
+
+  # Static site files
+  handle {
     root * /srv/sites/adrian
     file_server
   }
 
-  # Main site - root path (must be last)
-  handle {
-    root * /srv/sites/main
-    file_server
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options "DENY"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
   }
 }

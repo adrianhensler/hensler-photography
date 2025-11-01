@@ -4,8 +4,10 @@
 #   http://localhost:8080/          (main)
 #   http://localhost:8080/liam      (Liam's site)
 #   http://localhost:8080/adrian    (Adrian's site)
+#   http://localhost:8080/admin     (Admin dashboard)
+#   http://localhost:8080/api       (API endpoints)
 #
-# Usage: docker compose -f docker-compose.local.yml up
+# Usage: docker compose -f docker-compose.local.yml up --build
 
 services:
   web:
@@ -16,9 +18,43 @@ services:
     volumes:
       - ./sites:/srv/sites:ro
       - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
-      - caddy-data-local:/data
-      - caddy-config-local:/config
+      - caddy-data:/data
+      - caddy-config:/config
+      - gallery-images:/srv/assets/gallery:ro
+    networks:
+      - hensler-network
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    restart: unless-stopped
+    environment:
+      - DATABASE_PATH=/data/gallery.db
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./api:/app/api:ro
+      - gallery-data:/data
+      - gallery-images:/app/assets/gallery
+      - ./sites:/srv/sites
+    networks:
+      - hensler-network
+    # Not exposed to host, only accessible through Caddy reverse proxy
 
 volumes:
-  caddy-data-local:
-  caddy-config-local:
+  caddy-data:
+    external: true
+    name: hensler_photography_caddy-data
+  caddy-config:
+    external: true
+    name: hensler_photography_caddy-config
+  gallery-data:
+    # SQLite database and metadata
+  gallery-images:
+    # Uploaded and processed images
+
+networks:
+  hensler-network:
+    driver: bridge
