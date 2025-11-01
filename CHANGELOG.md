@@ -8,9 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Backend API architecture planning (feature/backend-api branch)
+
+---
+
+## [1.1.0] - 2025-11-01
+
+### Added
 - IntersectionObserver-based gallery reveal animation for Adrian's site
 - Performance attributes for gallery images: `decoding="async"` and `fetchpriority="low"`
 - Accessibility support: respects `prefers-reduced-motion` user preference
+- Image preload for first slideshow image
 - Comprehensive development documentation (DEVELOPMENT.md)
 - Deployment workflow documentation (WORKFLOW.md)
 - Backup system documentation and scripts (BACKUP.md, scripts/backup.sh, scripts/restore.sh)
@@ -41,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Notes
 - Backup system is fully documented but not yet implemented (planned before image ingestion/storefront features)
 - Cloudflare integration deferred to future release
+
+---
 
 ## [1.0.0] - 2025-10-13
 
@@ -252,5 +262,6 @@ Examples:
 
 ---
 
-[Unreleased]: https://github.com/adrianhensler/hensler-photography/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/adrianhensler/hensler-photography/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/adrianhensler/hensler-photography/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/adrianhensler/hensler-photography/releases/tag/v1.0.0
