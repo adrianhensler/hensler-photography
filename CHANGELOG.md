@@ -7,8 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Backend API architecture planning (feature/backend-api branch)
+### Added (Sprint 1 - Backend Foundation)
+- FastAPI backend application (`api/main.py`)
+- SQLite database with multi-tenant schema (`api/database.py`)
+- Admin dashboard UI (`/admin` endpoint)
+- API endpoints for gallery data and tracking
+- Docker containerization for API service
+- Caddy reverse proxy integration
+- Database seeded with Adrian and Liam as users
+
+### Infrastructure
+- `api/` directory structure created
+- Docker Compose configuration updated with API service
+- Caddyfile.local updated for API routing
+- Shared volumes for database and image storage
+- Network isolation between web and API containers
+
+### Database Schema
+Multi-tenant architecture supporting multiple photographers:
+- Users table (photographers with subdomains)
+- Images table (metadata, EXIF, tags, categories)
+- Image variants table (WebP/AVIF/sizes - future)
+- Image events table (click tracking and analytics)
+- Products table (e-commerce - future)
+- Orders table (sales transactions - future)
+- Sessions table (multi-user auth - future)
+
+### Development
+- Feature branch workflow established (feature/backend-api)
+- v1.1.0 tagged as stable baseline
+- Test deployment working on port 8080
 
 ---
 
