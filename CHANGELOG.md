@@ -32,9 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved .gitignore for backup files and logs
 
 ### Performance
+- First slideshow image preloaded for faster Largest Contentful Paint (LCP)
 - Gallery images now load asynchronously without blocking main thread
 - Slideshow images prioritized over gallery images for faster initial paint
 - Modern IntersectionObserver API improves scroll performance
+- Font display optimization already in place (display=swap) for immediate text rendering
 
 ### Notes
 - Backup system is fully documented but not yet implemented (planned before image ingestion/storefront features)
