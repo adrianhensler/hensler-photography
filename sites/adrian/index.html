@@ -227,7 +227,7 @@
     @keyframes fadeIn {
       from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(8px);
       }
       to {
         opacity: 1;
@@ -259,20 +259,16 @@
       animation: fadeIn 1s ease-out 0.6s both;
     }
 
-    .gallery-item:nth-child(1) {
-      animation: fadeIn 0.6s ease-out 0.5s both;
+    /* Gallery items - intersection-based reveal */
+    .gallery-item {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
     }
 
-    .gallery-item:nth-child(2) {
-      animation: fadeIn 0.6s ease-out 0.6s both;
-    }
-
-    .gallery-item:nth-child(3) {
-      animation: fadeIn 0.6s ease-out 0.7s both;
-    }
-
-    .gallery-item:nth-child(4) {
-      animation: fadeIn 0.6s ease-out 0.8s both;
+    .gallery-item.is-visible {
+      opacity: 1;
+      transform: none;
     }
 
     /* Smooth scrolling */
@@ -317,6 +313,11 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+      }
+
+      .gallery-item {
+        opacity: 1;
+        transform: none;
       }
     }
 
@@ -501,6 +502,8 @@
         img.src = `/assets/gallery/${filename}`;
         img.alt = 'Photography by Adrian Hensler';
         img.loading = 'lazy';
+        img.setAttribute('decoding', 'async');
+        img.setAttribute('fetchpriority', 'low');
 
         img.onload = () => {
           link.classList.add('has-image');
@@ -523,6 +526,27 @@
           closeOnOutsideClick: true
         });
       }, 100);
+
+      // Staggered reveal as items scroll into view
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!prefersReducedMotion) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              e.target.classList.add('is-visible');
+              io.unobserve(e.target);
+            }
+          });
+        }, { rootMargin: '120px' });
+
+        document.querySelectorAll('.gallery-item').forEach(el => io.observe(el));
+      } else {
+        // Immediately show all items for users who prefer reduced motion
+        document.querySelectorAll('.gallery-item').forEach(el => {
+          el.classList.add('is-visible');
+        });
+      }
     }
 
     // ===== INITIALIZE ON PAGE LOAD =====
