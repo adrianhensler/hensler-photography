@@ -200,6 +200,6 @@ def log_info(
 
 # Initialize logging on import
 _root_logger = setup_logging(
-    log_level=logging.INFO,
+    log_level="INFO",
     json_format=True  # Always use JSON in production for AI readability
 )
