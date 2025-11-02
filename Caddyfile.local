@@ -5,8 +5,8 @@
 #   https://adrian.hensler.photography:8080   (Adrian's site)
 #
 # Port 4100: Admin interface only (separate for security)
-#   https://adrian.hensler.photography:4100/admin     (Admin dashboard)
-#   https://adrian.hensler.photography:4100/api       (API endpoints)
+#   https://hensler.photography:4100/admin     (Admin dashboard)
+#   https://hensler.photography:4100/api       (API endpoints)
 
 hensler.photography:8080 {
   encode zstd gzip
@@ -65,7 +65,7 @@ adrian.hensler.photography:8080 {
 }
 
 # Admin interface on separate port for security
-adrian.hensler.photography:4100 {
+hensler.photography:4100 {
   encode zstd gzip
 
   # Admin dashboard
