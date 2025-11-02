@@ -1,2 +1,0 @@
-THIS FOLDER AND CONTENTS IS PRODUCTION.
-Think about uptime and change management; backup and possibility to revert.

@@ -60,7 +60,7 @@ async def root():
         }
     }
 
-# Admin dashboard (placeholder)
+# Admin dashboard
 @app.get("/admin")
 async def admin_dashboard(request: Request):
     """Admin dashboard UI"""
@@ -68,6 +68,19 @@ async def admin_dashboard(request: Request):
         "admin/dashboard.html",
         {"request": request, "title": "Admin Dashboard"}
     )
+
+# Admin upload page
+@app.get("/admin/upload")
+async def admin_upload(request: Request):
+    """Admin upload interface"""
+    return templates.TemplateResponse(
+        "admin/upload.html",
+        {"request": request, "title": "Upload Photos"}
+    )
+
+# Include API routers
+from api.routes.ingestion import router as ingestion_router
+app.include_router(ingestion_router)
 
 # Track endpoint (public - for frontend JavaScript)
 @app.post("/api/track")

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Photos - Hensler Photography Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 1rem 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        nav {
+            margin-top: 0.5rem;
+        }
+
+        nav a {
+            color: #06c;
+            text-decoration: none;
+            margin-right: 1.5rem;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .upload-area {
+            background: white;
+            border: 2px dashed #d1d1d6;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+
+        .upload-area.dragover {
+            border-color: #06c;
+            background: #f0f7ff;
+        }
+
+        .upload-area:hover {
+            border-color: #06c;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .upload-area h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .upload-area p {
+            color: #86868b;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #06c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background: #0077ed;
+        }
+
+        .btn:disabled {
+            background: #d1d1d6;
+            cursor: not-allowed;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .previews {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .preview-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f5f5f7;
+        }
+
+        .preview-content {
+            padding: 1rem;
+        }
+
+        .preview-filename {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        .preview-size {
+            color: #86868b;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        .status-pending {
+            background: #f0f7ff;
+            color: #06c;
+        }
+
+        .status-processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .ai-metadata {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f5f5f7;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .ai-metadata label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            margin-top: 0.75rem;
+        }
+
+        .ai-metadata label:first-child {
+            margin-top: 0;
+        }
+
+        .ai-metadata input,
+        .ai-metadata textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d1d6;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.85rem;
+        }
+
+        .ai-metadata textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #06c;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .actions button {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #d1d1d6;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .actions button:hover {
+            background: #f5f5f7;
+        }
+
+        .actions button.publish {
+            background: #34c759;
+            color: white;
+            border: none;
+        }
+
+        .actions button.publish:hover {
+            background: #28a745;
+        }
+
+        .actions button.delete {
+            background: #ff3b30;
+            color: white;
+            border: none;
+        }
+
+        .actions button.delete:hover {
+            background: #dc3545;
+        }
+
+        .user-select {
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .user-select label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-select select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Upload Photos</h1>
+        <nav>
+            <a href="/admin">Dashboard</a>
+            <a href="/admin/upload">Upload</a>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="user-select">
+            <label for="photographer">Upload for Photographer:</label>
+            <select id="photographer">
+                <option value="1">Adrian Hensler</option>
+                <option value="2">Liam Hensler</option>
+            </select>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📸</div>
+            <h2>Drag & Drop Photos</h2>
+            <p>or click to browse (JPG, PNG, up to 20MB each)</p>
+            <button class="btn" onclick="document.getElementById('fileInput').click()">
+                Browse Files
+            </button>
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg" multiple>
+        </div>
+
+        <div id="previews" class="previews"></div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewsContainer = document.getElementById('previews');
+        const photographerSelect = document.getElementById('photographer');
+
+        let uploadQueue = [];
+
+        // Drag and drop handlers
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
+            fileInput.value = ''; // Reset input
+        });
+
+        function handleFiles(files) {
+            files.forEach(file => {
+                if (file.size > 20 * 1024 * 1024) {
+                    alert(`${file.name} is too large (max 20MB)`);
+                    return;
+                }
+
+                const fileId = Date.now() + Math.floor(Math.random() * 10000);
+                const fileData = {
+                    id: fileId,
+                    file: file,
+                    status: 'pending',
+                    metadata: {}
+                };
+
+                uploadQueue.push(fileData);
+                createPreviewCard(fileData);
+                uploadFile(fileData);
+            });
+        }
+
+        function createPreviewCard(fileData) {
+            const card = document.createElement('div');
+            card.className = 'preview-card';
+            card.id = `preview-${fileData.id}`;
+
+            const img = document.createElement('img');
+            img.className = 'preview-image';
+
+            // Create thumbnail
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(fileData.file);
+
+            const content = document.createElement('div');
+            content.className = 'preview-content';
+
+            const sizeInMB = (fileData.file.size / 1024 / 1024).toFixed(2);
+
+            content.innerHTML = `
+                <div class="preview-filename">${fileData.file.name}</div>
+                <div class="preview-size">${sizeInMB} MB</div>
+                <div class="preview-status status-pending">Pending upload...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-${fileData.id}"></div>
+                </div>
+                <div id="metadata-${fileData.id}"></div>
+                <div id="actions-${fileData.id}"></div>
+            `;
+
+            card.appendChild(img);
+            card.appendChild(content);
+            previewsContainer.appendChild(card);
+        }
+
+        async function uploadFile(fileData) {
+            const formData = new FormData();
+            formData.append('file', fileData.file);
+            formData.append('user_id', photographerSelect.value);
+
+            updateStatus(fileData.id, 'processing', 'Processing with AI...');
+            updateProgress(fileData.id, 30);
+
+            try {
+                const response = await fetch('/api/images/ingest', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                updateProgress(fileData.id, 70);
+
+                if (!response.ok) {
+                    throw new Error(`Upload failed: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                updateProgress(fileData.id, 100);
+
+                fileData.metadata = result;
+                fileData.imageId = result.image_id;
+
+                updateStatus(fileData.id, 'success', 'AI processing complete ✓');
+                displayMetadata(fileData.id, result);
+                displayActions(fileData.id, result.image_id);
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                updateStatus(fileData.id, 'error', `Error: ${error.message}`);
+                updateProgress(fileData.id, 0);
+            }
+        }
+
+        function updateStatus(fileId, status, text) {
+            const statusEl = document.querySelector(`#preview-${fileId} .preview-status`);
+            if (statusEl) {
+                statusEl.className = `preview-status status-${status}`;
+                statusEl.textContent = text;
+            }
+        }
+
+        function updateProgress(fileId, percent) {
+            const progressEl = document.getElementById(`progress-${fileId}`);
+            if (progressEl) {
+                progressEl.style.width = `${percent}%`;
+            }
+        }
+
+        function displayMetadata(fileId, metadata) {
+            const container = document.getElementById(`metadata-${fileId}`);
+            if (!container) return;
+
+            const html = `
+                <div class="ai-metadata">
+                    <div class="ai-badge">✨ AI Generated</div>
+
+                    <label>Title:</label>
+                    <input type="text" id="title-${fileId}" value="${escapeHtml(metadata.title || '')}" />
+
+                    <label>Caption:</label>
+                    <textarea id="caption-${fileId}">${escapeHtml(metadata.caption || '')}</textarea>
+
+                    <label>Tags:</label>
+                    <input type="text" id="tags-${fileId}" value="${escapeHtml(metadata.tags || '')}" placeholder="landscape, nature, sunset" />
+
+                    <label>Category:</label>
+                    <input type="text" id="category-${fileId}" value="${escapeHtml(metadata.category || '')}" />
+
+                    ${metadata.exif ? `
+                        <label>Camera:</label>
+                        <input type="text" value="${escapeHtml(metadata.exif.camera || 'Unknown')}" disabled />
+
+                        <label>Settings:</label>
+                        <input type="text" value="${escapeHtml(metadata.exif.settings || 'N/A')}" disabled />
+                    ` : ''}
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function displayActions(fileId, imageId) {
+            const container = document.getElementById(`actions-${fileId}`);
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="actions">
+                    <button onclick="saveMetadata(${fileId}, ${imageId})">Save Draft</button>
+                    <button class="publish" onclick="publishImage(${fileId}, ${imageId})">Publish</button>
+                    <button class="delete" onclick="deleteImage(${fileId}, ${imageId})">Delete</button>
+                </div>
+            `;
+        }
+
+        async function saveMetadata(fileId, imageId) {
+            const metadata = {
+                title: document.getElementById(`title-${fileId}`).value,
+                caption: document.getElementById(`caption-${fileId}`).value,
+                tags: document.getElementById(`tags-${fileId}`).value,
+                category: document.getElementById(`category-${fileId}`).value
+            };
+
+            try {
+                const response = await fetch(`/api/images/${imageId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(metadata)
+                });
+
+                if (response.ok) {
+                    alert('Metadata saved!');
+                } else {
+                    alert('Failed to save metadata');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Error saving metadata');
+            }
+        }
+
+        async function publishImage(fileId, imageId) {
+            await saveMetadata(fileId, imageId);
+
+            try {
+                const response = await fetch(`/api/images/${imageId}/publish`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    alert('Image published!');
+                    updateStatus(fileId, 'success', 'Published ✓');
+                } else {
+                    alert('Failed to publish image');
+                }
+            } catch (error) {
+                console.error('Publish error:', error);
+                alert('Error publishing image');
+            }
+        }
+
+        async function deleteImage(fileId, imageId) {
+            if (!confirm('Are you sure you want to delete this image?')) return;
+
+            try {
+                const response = await fetch(`/api/images/${imageId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const card = document.getElementById(`preview-${fileId}`);
+                    if (card) card.remove();
+                } else {
+                    alert('Failed to delete image');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('Error deleting image');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

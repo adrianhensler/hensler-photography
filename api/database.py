@@ -6,8 +6,9 @@ images, analytics, and e-commerce (future).
 """
 
 import sqlite3
+import aiosqlite
 import os
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
 from datetime import datetime
 
 DATABASE_PATH = os.getenv("DATABASE_PATH", "/data/gallery.db")
@@ -185,7 +186,7 @@ VALUES (
 
 @contextmanager
 def get_db():
-    """Context manager for database connections"""
+    """Context manager for database connections (synchronous)"""
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
@@ -196,6 +197,21 @@ def get_db():
         raise
     finally:
         conn.close()
+
+
+@asynccontextmanager
+async def get_db_connection():
+    """Async context manager for database connections"""
+    conn = await aiosqlite.connect(DATABASE_PATH)
+    conn.row_factory = aiosqlite.Row
+    try:
+        yield conn
+        await conn.commit()
+    except Exception:
+        await conn.rollback()
+        raise
+    finally:
+        await conn.close()
 
 
 def init_database():

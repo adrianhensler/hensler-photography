@@ -1,0 +1,408 @@
+"""
+Image ingestion routes with AI-powered metadata generation
+"""
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi.responses import JSONResponse
+import os
+import shutil
+from datetime import datetime
+from pathlib import Path
+import hashlib
+
+# Services will be imported after we create them
+# from api.services.claude_vision import analyze_image
+# from api.services.exif import extract_exif
+# from api.services.image_processor import generate_variants
+
+router = APIRouter(prefix="/api/images", tags=["images"])
+
+
+# ROUTE ORDER MATTERS: Specific literal paths MUST come before generic path parameters
+# Otherwise FastAPI will match /{image_id} before /ingest
+
+
+@router.post("/ingest")
+async def ingest_image(
+    file: UploadFile = File(...),
+    user_id: int = Form(...)
+):
+    """
+    Upload and process an image with AI analysis
+
+    Steps:
+    1. Validate and save original file
+    2. Extract EXIF metadata
+    3. Analyze with Claude Vision for captions/tags
+    4. Generate WebP variants
+    5. Insert into database
+    6. Return metadata for preview
+    """
+
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/jpg', 'image/png']
+    if file.content_type not in allowed_types:
+        raise HTTPException(400, f"Invalid file type: {file.content_type}")
+
+    # Validate file size (20MB max)
+    contents = await file.read()
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(400, "File too large (max 20MB)")
+
+    try:
+        # Generate unique filename using hash
+        file_hash = hashlib.sha256(contents).hexdigest()[:16]
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        ext = Path(file.filename).suffix.lower()
+        original_filename = f"{timestamp}_{file_hash}{ext}"
+
+        # Save original file
+        upload_dir = Path("/app/assets/gallery")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        file_path = upload_dir / original_filename
+
+        with open(file_path, "wb") as f:
+            f.write(contents)
+
+        # Import services dynamically
+        from api.services.exif import extract_exif
+        from api.services.claude_vision import analyze_image
+        from api.services.image_processor import generate_variants
+        from api.database import get_db_connection
+        from slugify import slugify
+
+        # Extract EXIF data
+        exif_data = extract_exif(str(file_path))
+
+        # Analyze image with Claude Vision
+        ai_metadata = await analyze_image(str(file_path))
+
+        # Generate WebP variants
+        variants = generate_variants(str(file_path), original_filename)
+
+        # Generate slug from title or filename
+        slug_base = slugify(ai_metadata.get('title', Path(file.filename).stem))
+
+        # Insert into database
+        async with get_db_connection() as db:
+            # Check if slug exists, make it unique
+            cursor = await db.execute(
+                "SELECT COUNT(*) FROM images WHERE user_id = ? AND slug LIKE ?",
+                (user_id, f"{slug_base}%")
+            )
+            count = (await cursor.fetchone())[0]
+            slug = f"{slug_base}-{count + 1}" if count > 0 else slug_base
+
+            # Insert main image record
+            cursor = await db.execute("""
+                INSERT INTO images (
+                    user_id, filename, slug, original_filename,
+                    title, caption, description, tags, category,
+                    camera_make, camera_model, lens,
+                    focal_length, aperture, shutter_speed, iso,
+                    date_taken, location,
+                    width, height, aspect_ratio, file_size,
+                    published, featured, available_for_sale
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                user_id,
+                original_filename,
+                slug,
+                file.filename,
+                ai_metadata.get('title', ''),
+                ai_metadata.get('caption', ''),
+                ai_metadata.get('description', ''),
+                ','.join(ai_metadata.get('tags', [])) if isinstance(ai_metadata.get('tags'), list) else ai_metadata.get('tags', ''),
+                ai_metadata.get('category', ''),
+                exif_data.get('camera_make', ''),
+                exif_data.get('camera_model', ''),
+                exif_data.get('lens', ''),
+                exif_data.get('focal_length', ''),
+                exif_data.get('aperture', ''),
+                exif_data.get('shutter_speed', ''),
+                exif_data.get('iso'),
+                exif_data.get('date_taken', ''),
+                exif_data.get('location', ''),
+                exif_data.get('width'),
+                exif_data.get('height'),
+                exif_data.get('aspect_ratio'),
+                len(contents),
+                0,  # Not published by default
+                0,  # Not featured
+                0   # Not for sale yet
+            ))
+
+            image_id = cursor.lastrowid
+
+            # Insert variant records
+            for variant in variants:
+                await db.execute("""
+                    INSERT INTO image_variants (
+                        image_id, format, size, filename, width, height, file_size
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    image_id,
+                    variant['format'],
+                    variant['size'],
+                    variant['filename'],
+                    variant['width'],
+                    variant['height'],
+                    variant['file_size']
+                ))
+
+            await db.commit()
+
+        # Format EXIF for display
+        exif_display = {
+            'camera': f"{exif_data.get('camera_make', '')} {exif_data.get('camera_model', '')}".strip() or 'Unknown',
+            'settings': f"{exif_data.get('focal_length', '')} {exif_data.get('aperture', '')} {exif_data.get('shutter_speed', '')} ISO {exif_data.get('iso', '')}".strip() or 'N/A'
+        }
+
+        return JSONResponse({
+            "success": True,
+            "image_id": image_id,
+            "slug": slug,
+            "filename": original_filename,
+            "title": ai_metadata.get('title', ''),
+            "caption": ai_metadata.get('caption', ''),
+            "description": ai_metadata.get('description', ''),
+            "tags": ai_metadata.get('tags', ''),
+            "category": ai_metadata.get('category', ''),
+            "exif": exif_display,
+            "variants_generated": len(variants)
+        })
+
+    except Exception as e:
+        # Clean up file if processing failed
+        if file_path.exists():
+            file_path.unlink()
+
+        raise HTTPException(500, f"Processing failed: {str(e)}")
+
+
+@router.post("/{image_id}/publish")
+async def publish_image(image_id: int):
+    """Mark an image as published"""
+    from api.database import get_db_connection
+
+    async with get_db_connection() as db:
+        await db.execute(
+            "UPDATE images SET published = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (image_id,)
+        )
+        await db.commit()
+
+    return {"success": True, "image_id": image_id, "published": True}
+
+
+# Generic path parameter routes come AFTER specific literal paths
+@router.get("/{image_id}")
+async def get_image(image_id: int):
+    """Get image details"""
+    from api.database import get_db_connection
+
+    async with get_db_connection() as db:
+        cursor = await db.execute("""
+            SELECT id, user_id, filename, slug, title, caption, description,
+                   tags, category, published, featured, available_for_sale,
+                   camera_make, camera_model, lens, focal_length, aperture,
+                   shutter_speed, iso, date_taken, location,
+                   width, height, aspect_ratio, created_at, updated_at
+            FROM images WHERE id = ?
+        """, (image_id,))
+
+        row = await cursor.fetchone()
+
+        if not row:
+            raise HTTPException(404, "Image not found")
+
+        # Get variants
+        cursor = await db.execute("""
+            SELECT format, size, filename, width, height, file_size
+            FROM image_variants WHERE image_id = ?
+        """, (image_id,))
+
+        variants = await cursor.fetchall()
+
+    return {
+        "id": row[0],
+        "user_id": row[1],
+        "filename": row[2],
+        "slug": row[3],
+        "title": row[4],
+        "caption": row[5],
+        "description": row[6],
+        "tags": row[7],
+        "category": row[8],
+        "published": bool(row[9]),
+        "featured": bool(row[10]),
+        "available_for_sale": bool(row[11]),
+        "exif": {
+            "camera_make": row[12],
+            "camera_model": row[13],
+            "lens": row[14],
+            "focal_length": row[15],
+            "aperture": row[16],
+            "shutter_speed": row[17],
+            "iso": row[18],
+            "date_taken": row[19],
+            "location": row[20]
+        },
+        "dimensions": {
+            "width": row[21],
+            "height": row[22],
+            "aspect_ratio": row[23]
+        },
+        "created_at": row[24],
+        "updated_at": row[25],
+        "variants": [
+            {
+                "format": v[0],
+                "size": v[1],
+                "filename": v[2],
+                "width": v[3],
+                "height": v[4],
+                "file_size": v[5]
+            } for v in variants
+        ]
+    }
+
+
+@router.patch("/{image_id}")
+async def update_image_metadata(image_id: int, metadata: dict):
+    """Update image metadata (title, caption, tags, etc.)"""
+    from api.database import get_db_connection
+
+    async with get_db_connection() as db:
+        # Build update query dynamically based on provided fields
+        allowed_fields = ['title', 'caption', 'description', 'tags', 'category']
+        updates = []
+        values = []
+
+        for field in allowed_fields:
+            if field in metadata:
+                updates.append(f"{field} = ?")
+                values.append(metadata[field])
+
+        if not updates:
+            raise HTTPException(400, "No valid fields to update")
+
+        values.append(image_id)
+
+        query = f"UPDATE images SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+        await db.execute(query, tuple(values))
+        await db.commit()
+
+    return {"success": True, "image_id": image_id}
+
+
+@router.delete("/{image_id}")
+async def delete_image(image_id: int):
+    """Delete an image and its variants"""
+    from api.database import get_db_connection
+    from pathlib import Path
+
+    async with get_db_connection() as db:
+        # Get image filename
+        cursor = await db.execute("SELECT filename FROM images WHERE id = ?", (image_id,))
+        row = await cursor.fetchone()
+
+        if not row:
+            raise HTTPException(404, "Image not found")
+
+        filename = row[0]
+
+        # Get variant filenames
+        cursor = await db.execute("SELECT filename FROM image_variants WHERE image_id = ?", (image_id,))
+        variants = await cursor.fetchall()
+
+        # Delete from database (variants will cascade)
+        await db.execute("DELETE FROM images WHERE id = ?", (image_id,))
+        await db.commit()
+
+    # Delete files
+    upload_dir = Path("/app/assets/gallery")
+
+    # Delete original
+    original_path = upload_dir / filename
+    if original_path.exists():
+        original_path.unlink()
+
+    # Delete variants
+    for variant_row in variants:
+        variant_path = upload_dir / variant_row[0]
+        if variant_path.exists():
+            variant_path.unlink()
+
+    return {"success": True, "image_id": image_id, "deleted": True}
+
+
+@router.get("/{image_id}")
+async def get_image(image_id: int):
+    """Get image details"""
+    from api.database import get_db_connection
+
+    async with get_db_connection() as db:
+        cursor = await db.execute("""
+            SELECT id, user_id, filename, slug, title, caption, description,
+                   tags, category, published, featured, available_for_sale,
+                   camera_make, camera_model, lens, focal_length, aperture,
+                   shutter_speed, iso, date_taken, location,
+                   width, height, aspect_ratio, created_at, updated_at
+            FROM images WHERE id = ?
+        """, (image_id,))
+
+        row = await cursor.fetchone()
+
+        if not row:
+            raise HTTPException(404, "Image not found")
+
+        # Get variants
+        cursor = await db.execute("""
+            SELECT format, size, filename, width, height, file_size
+            FROM image_variants WHERE image_id = ?
+        """, (image_id,))
+
+        variants = await cursor.fetchall()
+
+    return {
+        "id": row[0],
+        "user_id": row[1],
+        "filename": row[2],
+        "slug": row[3],
+        "title": row[4],
+        "caption": row[5],
+        "description": row[6],
+        "tags": row[7],
+        "category": row[8],
+        "published": bool(row[9]),
+        "featured": bool(row[10]),
+        "available_for_sale": bool(row[11]),
+        "exif": {
+            "camera_make": row[12],
+            "camera_model": row[13],
+            "lens": row[14],
+            "focal_length": row[15],
+            "aperture": row[16],
+            "shutter_speed": row[17],
+            "iso": row[18],
+            "date_taken": row[19],
+            "location": row[20]
+        },
+        "dimensions": {
+            "width": row[21],
+            "height": row[22],
+            "aspect_ratio": row[23]
+        },
+        "created_at": row[24],
+        "updated_at": row[25],
+        "variants": [
+            {
+                "format": v[0],
+                "size": v[1],
+                "filename": v[2],
+                "width": v[3],
+                "height": v[4],
+                "file_size": v[5]
+            } for v in variants
+        ]
+    }

@@ -1,11 +1,12 @@
 # Local Development Docker Compose
-# Serves all sites on localhost:8080 with path-based routing
-# Access sites at:
-#   http://localhost:8080/          (main)
-#   http://localhost:8080/liam      (Liam's site)
-#   http://localhost:8080/adrian    (Adrian's site)
-#   http://localhost:8080/admin     (Admin dashboard)
-#   http://localhost:8080/api       (API endpoints)
+# Port 8080: Public sites
+#   https://hensler.photography:8080          (main)
+#   https://liam.hensler.photography:8080     (Liam's site)
+#   https://adrian.hensler.photography:8080   (Adrian's site)
+#
+# Port 4100: Admin interface (separate for security)
+#   https://adrian.hensler.photography:4100/admin     (Admin dashboard)
+#   https://adrian.hensler.photography:4100/api       (API endpoints)
 #
 # Usage: docker compose -f docker-compose.local.yml up --build
 
@@ -14,7 +15,8 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8080:8080"  # Public sites
+      - "4100:4100"  # Admin interface (separate for security)
     volumes:
       - ./sites:/srv/sites:ro
       - ./Caddyfile.local:/etc/caddy/Caddyfile:ro

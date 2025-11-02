@@ -7,8 +7,8 @@ jinja2==3.1.2
 # Database
 aiosqlite==0.19.0
 
-# AI integration (for future image ingestion)
-anthropic==0.7.7
+# AI integration (for image ingestion and analysis)
+anthropic>=0.40.0
 
 # Image processing
 Pillow==10.1.0
