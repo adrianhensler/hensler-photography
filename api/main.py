@@ -254,36 +254,85 @@ async def health_check_detailed():
     return health_status
 
 
-# Admin dashboard
+# Login page (public)
+@app.get("/admin/login")
+async def admin_login(request: Request):
+    """Admin login page"""
+    return templates.TemplateResponse(
+        "admin/login.html",
+        {"request": request}
+    )
+
+# Import auth dependency
+from api.routes.auth import get_current_user, User
+from fastapi import Depends
+
+# Admin dashboard (protected)
 @app.get("/admin")
-async def admin_dashboard(request: Request):
-    """Admin dashboard UI"""
+async def admin_dashboard(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Admin dashboard UI (authenticated users only)"""
+    # Check admin role
+    if current_user.role != "admin":
+        raise HTTPException(403, "Admin access required")
+
     return templates.TemplateResponse(
         "admin/dashboard.html",
-        {"request": request, "title": "Admin Dashboard"}
+        {
+            "request": request,
+            "title": "Admin Dashboard",
+            "current_user": current_user
+        }
     )
 
-# Admin upload page
+# Admin upload page (protected)
 @app.get("/admin/upload")
-async def admin_upload(request: Request):
-    """Admin upload interface"""
+async def admin_upload(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Admin upload interface (authenticated users only)"""
+    # Check admin role
+    if current_user.role != "admin":
+        raise HTTPException(403, "Admin access required")
+
     return templates.TemplateResponse(
         "admin/upload.html",
-        {"request": request, "title": "Upload Photos"}
+        {
+            "request": request,
+            "title": "Upload Photos",
+            "current_user": current_user
+        }
     )
 
-# Admin gallery management page
+# Admin gallery management page (protected)
 @app.get("/admin/gallery")
-async def admin_gallery(request: Request):
-    """Admin gallery management interface"""
+async def admin_gallery(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Admin gallery management interface (authenticated users only)"""
+    # Check admin role
+    if current_user.role != "admin":
+        raise HTTPException(403, "Admin access required")
+
     return templates.TemplateResponse(
         "admin/gallery.html",
-        {"request": request, "title": "Manage Gallery"}
+        {
+            "request": request,
+            "title": "Manage Gallery",
+            "current_user": current_user
+        }
     )
 
 # Include API routers
 from api.routes.ingestion import router as ingestion_router
+from api.routes.auth import router as auth_router
+
 app.include_router(ingestion_router)
+app.include_router(auth_router)
 
 # Track endpoint (public - for frontend JavaScript)
 @app.post("/api/track")

@@ -692,6 +692,9 @@ async def list_images(
 - [ ] Migrate to PostgreSQL (if scaling beyond single server)
 - [ ] Add CDN for image delivery (future)
 
+**UI/UX Improvements**:
+- [ ] Remove "Upload" link from upload page navigation (redundant - already on the page)
+
 ---
 
 ## Notes & Decisions
