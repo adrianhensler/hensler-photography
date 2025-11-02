@@ -179,6 +179,115 @@ async def ingest_image(
         raise HTTPException(500, f"Processing failed: {str(e)}")
 
 
+@router.get("/list")
+async def list_images(
+    user_id: int = None,
+    published: bool = None,
+    featured: bool = None,
+    category: str = None,
+    search: str = None,
+    limit: int = 100,
+    offset: int = 0
+):
+    """
+    List all images with optional filters
+
+    Query parameters:
+    - user_id: Filter by photographer
+    - published: Filter by published status (true/false)
+    - featured: Filter by featured status (true/false)
+    - category: Filter by category
+    - search: Search in title, caption, description, tags
+    - limit: Max results to return (default 100)
+    - offset: Pagination offset (default 0)
+    """
+    from api.database import get_db_connection
+
+    async with get_db_connection() as db:
+        # Build query dynamically
+        query = """
+            SELECT id, user_id, filename, slug, title, caption, tags, category,
+                   published, featured, width, height, created_at, updated_at
+            FROM images
+            WHERE 1=1
+        """
+        params = []
+
+        if user_id is not None:
+            query += " AND user_id = ?"
+            params.append(user_id)
+
+        if published is not None:
+            query += " AND published = ?"
+            params.append(1 if published else 0)
+
+        if featured is not None:
+            query += " AND featured = ?"
+            params.append(1 if featured else 0)
+
+        if category:
+            query += " AND category = ?"
+            params.append(category)
+
+        if search:
+            query += " AND (title LIKE ? OR caption LIKE ? OR description LIKE ? OR tags LIKE ?)"
+            search_term = f"%{search}%"
+            params.extend([search_term, search_term, search_term, search_term])
+
+        query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+
+        cursor = await db.execute(query, tuple(params))
+        rows = await cursor.fetchall()
+
+        # Get total count
+        count_query = """
+            SELECT COUNT(*) FROM images WHERE 1=1
+        """
+        count_params = params[:-2]  # Remove limit and offset
+
+        if user_id is not None:
+            count_query += " AND user_id = ?"
+        if published is not None:
+            count_query += " AND published = ?"
+        if featured is not None:
+            count_query += " AND featured = ?"
+        if category:
+            count_query += " AND category = ?"
+        if search:
+            count_query += " AND (title LIKE ? OR caption LIKE ? OR description LIKE ? OR tags LIKE ?)"
+
+        cursor = await db.execute(count_query, tuple(count_params))
+        total = (await cursor.fetchone())[0]
+
+        images = []
+        for row in rows:
+            images.append({
+                "id": row[0],
+                "user_id": row[1],
+                "filename": row[2],
+                "slug": row[3],
+                "title": row[4],
+                "caption": row[5],
+                "tags": row[6],
+                "category": row[7],
+                "published": bool(row[8]),
+                "featured": bool(row[9]),
+                "width": row[10],
+                "height": row[11],
+                "created_at": row[12],
+                "updated_at": row[13],
+                "thumbnail_url": f"/assets/gallery/{Path(row[2]).stem}_thumbnail.webp"
+            })
+
+        return {
+            "images": images,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+
+
 @router.post("/{image_id}/publish")
 async def publish_image(image_id: int):
     """Mark an image as published"""
@@ -192,6 +301,21 @@ async def publish_image(image_id: int):
         await db.commit()
 
     return {"success": True, "image_id": image_id, "published": True}
+
+
+@router.post("/{image_id}/featured")
+async def toggle_featured(image_id: int, featured: bool = True):
+    """Toggle featured status of an image"""
+    from api.database import get_db_connection
+
+    async with get_db_connection() as db:
+        await db.execute(
+            "UPDATE images SET featured = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (1 if featured else 0, image_id)
+        )
+        await db.commit()
+
+    return {"success": True, "image_id": image_id, "featured": featured}
 
 
 # Generic path parameter routes come AFTER specific literal paths

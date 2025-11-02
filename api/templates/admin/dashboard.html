@@ -75,6 +75,15 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.12);
         }
 
+        .card.clickable {
+            cursor: pointer;
+        }
+
+        .card a {
+            text-decoration: none;
+            color: inherit;
+        }
+
         .card h3 {
             font-size: 18px;
             margin-bottom: 12px;
@@ -145,28 +154,28 @@
                 <span class="status">Ready</span>
             </div>
 
-            <div class="card">
-                <h3>⏳ Image Ingestion</h3>
-                <p>AI-powered upload interface coming in Sprint 2</p>
-                <span class="status pending">Pending</span>
+            <div class="card clickable" onclick="window.location.href='/admin/upload'">
+                <h3>✓ Image Upload</h3>
+                <p>AI-powered upload with Claude Vision analysis and EXIF extraction</p>
+                <span class="status">Ready</span>
+            </div>
+
+            <div class="card clickable" onclick="window.location.href='/admin/gallery'">
+                <h3>✓ Gallery Management</h3>
+                <p>View, edit, publish, and manage all uploaded images</p>
+                <span class="status">Ready</span>
             </div>
 
             <div class="card">
                 <h3>⏳ Analytics Dashboard</h3>
-                <p>Click tracking and statistics coming in Sprint 4</p>
-                <span class="status pending">Pending</span>
+                <p>Click tracking and statistics planned for future sprint</p>
+                <span class="status pending">Planned</span>
             </div>
 
             <div class="card">
                 <h3>⏳ Static Generator</h3>
-                <p>Photo detail page generation coming in Sprint 3</p>
-                <span class="status pending">Pending</span>
-            </div>
-
-            <div class="card">
-                <h3>⏳ Storefront</h3>
-                <p>E-commerce features planned for future release</p>
-                <span class="status pending">Future</span>
+                <p>Photo detail page generation planned for Sprint 3</p>
+                <span class="status pending">Planned</span>
             </div>
         </div>
 
@@ -175,7 +184,9 @@
                 API Documentation: <a href="/docs" class="api-link">/docs</a> |
                 Health Check: <a href="/healthz" class="api-link">/healthz</a>
             </p>
-            <p style="margin-top: 10px;">Sprint 1: Foundation Complete ✓</p>
+            <p style="margin-top: 10px;">
+                Sprint 1: Foundation ✓ | Sprint 2: Image Ingestion ✓ | Sprint 2.5: Gallery Management ✓
+            </p>
         </div>
     </div>
 </body>

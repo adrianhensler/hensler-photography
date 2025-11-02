@@ -37,6 +37,7 @@ app.add_middleware(
 
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="api/static"), name="static")
+app.mount("/assets/gallery", StaticFiles(directory="/app/assets/gallery"), name="gallery")
 templates = Jinja2Templates(directory="api/templates")
 
 # Health check endpoint
@@ -76,6 +77,15 @@ async def admin_upload(request: Request):
     return templates.TemplateResponse(
         "admin/upload.html",
         {"request": request, "title": "Upload Photos"}
+    )
+
+# Admin gallery management page
+@app.get("/admin/gallery")
+async def admin_gallery(request: Request):
+    """Admin gallery management interface"""
+    return templates.TemplateResponse(
+        "admin/gallery.html",
+        {"request": request, "title": "Manage Gallery"}
     )
 
 # Include API routers
