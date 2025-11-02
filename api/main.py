@@ -25,6 +25,7 @@ from api.errors import ErrorResponse, internal_error
 from api.logging_config import get_logger
 from api.rate_limit import limiter
 from api.csrf import add_csrf_token_to_context
+from api.models import TrackingEvent
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -422,16 +423,73 @@ app.include_router(auth_router)
 
 # Track endpoint (public - for frontend JavaScript)
 @app.post("/api/track")
-async def track_event(event_type: str, image_id: int = None):
-    """Track image events (views, clicks, etc.)"""
-    # Placeholder - will implement with database
-    return {
-        "status": "ok",
-        "tracked": {
-            "event_type": event_type,
-            "image_id": image_id
+@limiter.limit("100/minute")  # Generous rate limit for analytics
+async def track_event(request: Request, event: TrackingEvent):
+    """
+    Track image engagement events (views, clicks, lightbox opens)
+
+    Privacy-preserving analytics:
+    - IP addresses are hashed (SHA256 + salt)
+    - No cookies or persistent identifiers
+    - Session IDs are client-generated and ephemeral
+    """
+    from api.database import get_db_connection
+    import hashlib
+    import os
+
+    # Get client IP and hash it for privacy
+    client_ip = request.client.host if request.client else None
+    ip_hash = None
+    if client_ip:
+        # Use JWT secret as salt for IP hashing
+        salt = os.getenv("JWT_SECRET_KEY", "INSECURE_DEV_KEY")
+        ip_hash = hashlib.sha256(f"{client_ip}{salt}".encode()).hexdigest()[:16]
+
+    # Get user agent and referrer from headers
+    user_agent = request.headers.get("user-agent")
+    referrer = event.referrer or request.headers.get("referer")
+
+    # Store event in database
+    try:
+        async with get_db_connection() as db:
+            cursor = await db.execute("""
+                INSERT INTO image_events
+                (image_id, event_type, user_agent, referrer, ip_hash, session_id, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """, (
+                event.image_id,
+                event.event_type,
+                user_agent,
+                referrer,
+                ip_hash,
+                event.session_id
+            ))
+            await db.commit()
+            event_id = cursor.lastrowid
+
+            logger.info(
+                f"Tracked event: {event.event_type}",
+                extra={
+                    "context": {
+                        "event_id": event_id,
+                        "event_type": event.event_type,
+                        "image_id": event.image_id,
+                        "session_id": event.session_id
+                    }
+                }
+            )
+
+            return {
+                "success": True,
+                "event_id": event_id
+            }
+    except Exception as e:
+        logger.error(f"Failed to track event: {str(e)}", exc_info=e)
+        # Don't fail the request - analytics shouldn't break user experience
+        return {
+            "success": False,
+            "error": "Failed to track event"
         }
-    }
 
 # Gallery API endpoint (public)
 @app.get("/api/gallery/{username}")

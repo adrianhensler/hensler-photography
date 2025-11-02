@@ -96,6 +96,8 @@ CREATE TABLE IF NOT EXISTS image_variants (
 );
 
 -- Analytics: Click tracking
+-- Note: image_id is a logical identifier (array index or future DB ID)
+-- No foreign key constraint to allow tracking before images are in database
 CREATE TABLE IF NOT EXISTS image_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     image_id INTEGER,
@@ -104,9 +106,7 @@ CREATE TABLE IF NOT EXISTS image_events (
     referrer TEXT,
     ip_hash TEXT,
     session_id TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (image_id) REFERENCES images(id)
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Future: Products (print sizes, pricing)

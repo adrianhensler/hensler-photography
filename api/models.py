@@ -262,3 +262,36 @@ class ErrorResponse(BaseModel):
     """Standard error response"""
     success: bool = False
     error: dict
+
+
+# ============================================================================
+# Analytics Models
+# ============================================================================
+
+class TrackingEvent(BaseModel):
+    """Model for tracking image engagement events"""
+    event_type: Literal["gallery_click", "lightbox_open", "page_view"] = Field(
+        description="Type of event being tracked"
+    )
+    image_id: Optional[int] = Field(
+        None,
+        description="Image ID (optional for page_view events)"
+    )
+    session_id: Optional[str] = Field(
+        None,
+        max_length=100,
+        description="Client-generated session ID for grouping events"
+    )
+    referrer: Optional[str] = Field(
+        None,
+        max_length=500,
+        description="HTTP referrer"
+    )
+
+    @validator('image_id')
+    def validate_image_id_for_type(cls, v, values):
+        """Require image_id for gallery_click and lightbox_open"""
+        event_type = values.get('event_type')
+        if event_type in ['gallery_click', 'lightbox_open'] and v is None:
+            raise ValueError(f'{event_type} events require an image_id')
+        return v

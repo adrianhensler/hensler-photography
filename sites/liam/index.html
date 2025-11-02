@@ -27,6 +27,46 @@
     <p><a class="button" href="https://www.instagram.com/scotiancapture" rel="me noopener" target="_blank">Follow on Instagram</a></p>
     <footer>© <span id="y"></span> Liam Hensler</footer>
   </main>
-  <script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+  <script>
+    document.getElementById('y').textContent=new Date().getFullYear();
+
+    // ===== ANALYTICS TRACKING =====
+    // Session ID management (ephemeral, no PII)
+    function getSessionId() {
+      let sessionId = sessionStorage.getItem('analytics_session');
+      if (!sessionId) {
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem('analytics_session', sessionId);
+      }
+      return sessionId;
+    }
+
+    // Track page view
+    async function trackPageView() {
+      try {
+        const payload = {
+          event_type: 'page_view',
+          session_id: getSessionId()
+        };
+
+        if (document.referrer) {
+          payload.referrer = document.referrer;
+        }
+
+        await fetch('/api/track', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (error) {
+        console.debug('Analytics tracking failed:', error);
+      }
+    }
+
+    // Track on load
+    window.addEventListener('DOMContentLoaded', trackPageView);
+  </script>
 </body>
 </html>

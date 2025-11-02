@@ -10,11 +10,20 @@
 
 hensler.photography:8080 {
   encode zstd gzip
-  root * /srv/sites/main
-  file_server
+
+  # Proxy API requests to backend (for analytics tracking)
+  handle /api/* {
+    reverse_proxy api:8000
+  }
 
   handle /healthz {
     respond "ok" 200
+  }
+
+  # Serve static site files
+  handle {
+    root * /srv/sites/main
+    file_server
   }
 
   header {
@@ -27,11 +36,20 @@ hensler.photography:8080 {
 
 liam.hensler.photography:8080 {
   encode zstd gzip
-  root * /srv/sites/liam
-  file_server
+
+  # Proxy API requests to backend (for analytics tracking)
+  handle /api/* {
+    reverse_proxy api:8000
+  }
 
   handle /healthz {
     respond "ok" 200
+  }
+
+  # Serve static site files
+  handle {
+    root * /srv/sites/liam
+    file_server
   }
 
   header {
@@ -44,6 +62,11 @@ liam.hensler.photography:8080 {
 
 adrian.hensler.photography:8080 {
   encode zstd gzip
+
+  # Proxy API requests to backend (for analytics tracking)
+  handle /api/* {
+    reverse_proxy api:8000
+  }
 
   # Health check
   handle /healthz {

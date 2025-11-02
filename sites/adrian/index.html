@@ -552,10 +552,88 @@
       }
     }
 
+    // ===== ANALYTICS TRACKING =====
+    // Session ID management (ephemeral, no PII)
+    function getSessionId() {
+      let sessionId = sessionStorage.getItem('analytics_session');
+      if (!sessionId) {
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem('analytics_session', sessionId);
+      }
+      return sessionId;
+    }
+
+    // Track events to analytics endpoint
+    async function trackEvent(eventType, imageId = null) {
+      try {
+        const payload = {
+          event_type: eventType,
+          session_id: getSessionId()
+        };
+
+        if (imageId !== null) {
+          payload.image_id = imageId;
+        }
+
+        // Get referrer from document
+        if (document.referrer) {
+          payload.referrer = document.referrer;
+        }
+
+        await fetch('/api/track', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (error) {
+        // Silently fail - don't disrupt user experience
+        console.debug('Analytics tracking failed:', error);
+      }
+    }
+
+    // Track page view on load
+    function trackPageView() {
+      trackEvent('page_view');
+    }
+
+    // Add click tracking to gallery items
+    function addGalleryTracking() {
+      document.querySelectorAll('.gallery-item').forEach((item, index) => {
+        item.addEventListener('click', () => {
+          trackEvent('gallery_click', index);
+        });
+      });
+    }
+
+    // Track lightbox opens using GLightbox events
+    function addLightboxTracking() {
+      // Wait for GLightbox to be initialized
+      setTimeout(() => {
+        const lightboxElements = document.querySelectorAll('.glightbox');
+        lightboxElements.forEach((element, index) => {
+          element.addEventListener('click', () => {
+            // Track when lightbox opens (not the gallery click, which was already tracked)
+            setTimeout(() => {
+              trackEvent('lightbox_open', index);
+            }, 100);
+          });
+        });
+      }, 200);
+    }
+
     // ===== INITIALIZE ON PAGE LOAD =====
     document.addEventListener('DOMContentLoaded', function() {
       initSlideshow();
       initGallery();
+
+      // Initialize analytics tracking
+      trackPageView();
+      setTimeout(() => {
+        addGalleryTracking();
+        addLightboxTracking();
+      }, 500); // Wait for gallery to be fully initialized
     });
   </script>
 </body>
