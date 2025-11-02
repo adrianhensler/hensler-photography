@@ -8,11 +8,22 @@ Multi-tenant photography portfolio management system with:
 - Admin interface
 """
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import os
+import time
+import traceback
+from pathlib import Path
+
+# Import error handling and logging
+from api.errors import ErrorResponse, internal_error
+from api.logging_config import get_logger
+
+# Initialize logger
+logger = get_logger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
@@ -34,6 +45,78 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Global Exception Handlers
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handle FastAPI HTTP exceptions with structured error response"""
+    # Log the error
+    logger.warning(
+        f"HTTP {exc.status_code}: {exc.detail}",
+        extra={
+            "context": {
+                "path": str(request.url.path),
+                "method": request.method,
+                "status_code": exc.status_code
+            }
+        }
+    )
+
+    # Return structured error response
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "error": {
+                "code": f"HTTP_{exc.status_code}",
+                "message": exc.detail,
+                "user_message": exc.detail,
+                "details": {
+                    "severity": "error",
+                    "retry": False
+                }
+            }
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Catch-all handler for unhandled exceptions"""
+    # Get stack trace
+    stack_trace = traceback.format_exc()
+
+    # Log the error with full context
+    logger.error(
+        f"Unhandled exception: {str(exc)}",
+        exc_info=exc,
+        extra={
+            "context": {
+                "path": str(request.url.path),
+                "method": request.method,
+                "exception_type": type(exc).__name__
+            }
+        }
+    )
+
+    # Create structured error response
+    error = internal_error(
+        error_message=str(exc),
+        context={
+            "path": str(request.url.path),
+            "method": request.method,
+            "exception_type": type(exc).__name__
+        },
+        stack_trace=stack_trace
+    )
+
+    return JSONResponse(
+        status_code=error.http_status,
+        content=error.to_dict()
+    )
+
 
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="api/static"), name="static")
@@ -57,9 +140,117 @@ async def root():
         "endpoints": {
             "docs": "/docs",
             "admin": "/admin",
-            "api": "/api"
+            "api": "/api",
+            "health": "/api/health"
         }
     }
+
+
+# Detailed health check endpoint
+@app.get("/api/health")
+async def health_check_detailed():
+    """
+    Comprehensive health check for system diagnostics.
+
+    Checks:
+    - Database connectivity
+    - Claude API configuration
+    - Storage availability
+    - Service status
+
+    Useful for both human admins and AI assistants to diagnose issues.
+    """
+    from api.database import DATABASE_PATH
+    import aiosqlite
+    import shutil
+
+    health_status = {
+        "status": "healthy",
+        "timestamp": time.time(),
+        "services": {},
+        "warnings": [],
+        "errors": []
+    }
+
+    # Check database
+    try:
+        start = time.time()
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute("SELECT 1")
+            latency = (time.time() - start) * 1000
+            health_status["services"]["database"] = {
+                "status": "healthy",
+                "latency_ms": round(latency, 2),
+                "path": str(DATABASE_PATH)
+            }
+    except Exception as e:
+        health_status["status"] = "unhealthy"
+        health_status["services"]["database"] = {
+            "status": "unhealthy",
+            "error": str(e)
+        }
+        health_status["errors"].append(f"Database connection failed: {str(e)}")
+
+    # Check Claude API configuration
+    claude_api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not claude_api_key:
+        health_status["status"] = "degraded"
+        health_status["services"]["claude_api"] = {
+            "status": "unavailable",
+            "error": "API key not configured"
+        }
+        health_status["warnings"].append("ANTHROPIC_API_KEY not set - AI features disabled")
+    else:
+        health_status["services"]["claude_api"] = {
+            "status": "configured",
+            "note": "API key is set (not tested)"
+        }
+
+    # Check storage
+    try:
+        gallery_path = Path("/app/assets/gallery")
+        gallery_path.mkdir(parents=True, exist_ok=True)
+
+        # Get disk space
+        stat = shutil.disk_usage("/app/assets")
+        free_gb = stat.free / (1024**3)
+        total_gb = stat.total / (1024**3)
+        used_percent = ((stat.total - stat.free) / stat.total) * 100
+
+        storage_status = "healthy"
+        if free_gb < 1.0:
+            storage_status = "critical"
+            health_status["status"] = "degraded"
+            health_status["errors"].append(f"Storage critically low: {free_gb:.1f}GB remaining")
+        elif free_gb < 5.0:
+            storage_status = "warning"
+            health_status["warnings"].append(f"Storage running low: {free_gb:.1f}GB remaining")
+
+        health_status["services"]["storage"] = {
+            "status": storage_status,
+            "free_gb": round(free_gb, 2),
+            "total_gb": round(total_gb, 2),
+            "used_percent": round(used_percent, 1),
+            "gallery_path": str(gallery_path)
+        }
+    except Exception as e:
+        health_status["status"] = "unhealthy"
+        health_status["services"]["storage"] = {
+            "status": "unhealthy",
+            "error": str(e)
+        }
+        health_status["errors"].append(f"Storage check failed: {str(e)}")
+
+    # Overall status summary
+    health_status["summary"] = {
+        "total_services": len(health_status["services"]),
+        "healthy_services": sum(1 for s in health_status["services"].values() if s.get("status") in ["healthy", "configured"]),
+        "total_warnings": len(health_status["warnings"]),
+        "total_errors": len(health_status["errors"])
+    }
+
+    return health_status
+
 
 # Admin dashboard
 @app.get("/admin")

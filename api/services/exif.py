@@ -1,11 +1,18 @@
 """
 EXIF metadata extraction from images
+
+Enhanced with structured logging for diagnostics.
 """
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
 import piexif
 from datetime import datetime
 from pathlib import Path
+
+from api.logging_config import get_logger
+
+# Initialize logger
+logger = get_logger(__name__)
 
 
 def extract_exif(image_path: str) -> dict:
@@ -18,6 +25,9 @@ def extract_exif(image_path: str) -> dict:
     - date_taken, location (if GPS available)
     - width, height, aspect_ratio
     """
+    context = {"image_path": image_path, "filename": Path(image_path).name}
+
+    logger.info(f"Extracting EXIF data from {Path(image_path).name}", extra={"context": context})
 
     try:
         img = Image.open(image_path)
@@ -106,7 +116,7 @@ def extract_exif(image_path: str) -> dict:
             except:
                 pass
 
-        return {
+        result = {
             "camera_make": camera_make,
             "camera_model": camera_model,
             "lens": lens,
@@ -121,13 +131,27 @@ def extract_exif(image_path: str) -> dict:
             "aspect_ratio": aspect_ratio
         }
 
+        # Log successful extraction
+        has_camera_data = camera_make or camera_model
+        logger.info(
+            f"EXIF extraction {'successful' if has_camera_data else 'complete (no camera data)'}",
+            extra={"context": {**context, "has_camera_data": has_camera_data, "has_gps": location is not None}}
+        )
+
+        return result
+
     except Exception as e:
-        print(f"EXIF extraction error: {e}")
+        logger.warning(
+            f"EXIF extraction failed: {e}",
+            exc_info=e,
+            extra={"context": context, "error_code": "PROCESSING_EXIF_FAILED"}
+        )
 
         # Fallback: at least return dimensions
         try:
             img = Image.open(image_path)
             width, height = img.size
+            logger.info(f"Returning fallback EXIF (dimensions only)", extra={"context": context})
             return {
                 "camera_make": None,
                 "camera_model": None,
@@ -142,7 +166,8 @@ def extract_exif(image_path: str) -> dict:
                 "height": height,
                 "aspect_ratio": round(width / height, 2)
             }
-        except:
+        except Exception as e:
+            logger.error(f"Failed to extract even basic dimensions: {e}", exc_info=e, extra={"context": context})
             return {
                 "camera_make": None,
                 "camera_model": None,
