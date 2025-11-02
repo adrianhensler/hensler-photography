@@ -11,10 +11,12 @@ from datetime import datetime, timedelta
 import os
 import bcrypt
 import aiosqlite
+import re
 from typing import Optional
 
 from api.database import DATABASE_PATH
 from api.logging_config import get_logger
+from api.rate_limit import limiter, RATE_LIMITS
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -27,6 +29,40 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY", "INSECURE_DEV_KEY_CHANGE_IN_PRODUCTION"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
+# Validate JWT secret key on module load
+def _validate_jwt_secret():
+    """Validate that JWT secret key is properly configured"""
+    environment = os.getenv("ENVIRONMENT", "development")
+
+    if not SECRET_KEY:
+        raise ValueError(
+            "CRITICAL SECURITY ERROR: JWT_SECRET_KEY environment variable is not set. "
+            "Application cannot start without a secure JWT secret."
+        )
+
+    if SECRET_KEY == "INSECURE_DEV_KEY_CHANGE_IN_PRODUCTION":
+        if environment == "production":
+            raise ValueError(
+                "CRITICAL SECURITY ERROR: JWT_SECRET_KEY is using insecure default value. "
+                "You MUST set a secure random secret in production. "
+                "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+            )
+        else:
+            logger.warning(
+                "WARNING: Using insecure default JWT_SECRET_KEY in development. "
+                "This is acceptable for local testing but NEVER use in production."
+            )
+
+    if len(SECRET_KEY) < 32:
+        raise ValueError(
+            f"CRITICAL SECURITY ERROR: JWT_SECRET_KEY is too short ({len(SECRET_KEY)} chars). "
+            "Must be at least 32 characters for security. "
+            "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+        )
+
+# Run validation on module import
+_validate_jwt_secret()
+
 
 # User model (simple dict for now)
 class User:
@@ -38,7 +74,62 @@ class User:
         self.role = role
 
 
-# Password hashing functions
+# Password validation and hashing functions
+def validate_password(password: str) -> None:
+    """
+    Validate password complexity requirements.
+
+    Requirements:
+    - Minimum 12 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    - At least one special character
+
+    Raises HTTPException if validation fails.
+    """
+    if len(password) < 12:
+        raise HTTPException(
+            400,
+            "Password must be at least 12 characters long"
+        )
+
+    if not re.search(r'[A-Z]', password):
+        raise HTTPException(
+            400,
+            "Password must contain at least one uppercase letter"
+        )
+
+    if not re.search(r'[a-z]', password):
+        raise HTTPException(
+            400,
+            "Password must contain at least one lowercase letter"
+        )
+
+    if not re.search(r'\d', password):
+        raise HTTPException(
+            400,
+            "Password must contain at least one number"
+        )
+
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;~`]', password):
+        raise HTTPException(
+            400,
+            "Password must contain at least one special character (!@#$%^&* etc.)"
+        )
+
+    # Check for common weak passwords
+    common_passwords = {
+        'Password123!', 'Welcome123!', 'Admin123!', 'Qwerty123!',
+        'Letmein123!', 'Password1234!', 'Admin1234!', 'Test1234!'
+    }
+    if password in common_passwords:
+        raise HTTPException(
+            400,
+            "This password is too common. Please choose a more unique password."
+        )
+
+
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
     password_bytes = password.encode('utf-8')
@@ -62,6 +153,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 async def get_user_by_username(username: str) -> Optional[User]:
     """Fetch user from database by username"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("PRAGMA foreign_keys = ON")
         cursor = await db.execute(
             """
             SELECT id, username, display_name, email, role, password_hash
@@ -87,6 +179,7 @@ async def get_user_by_username(username: str) -> Optional[User]:
 async def get_user_by_id(user_id: int) -> Optional[User]:
     """Fetch user from database by ID"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("PRAGMA foreign_keys = ON")
         cursor = await db.execute(
             """
             SELECT id, username, display_name, email, role
@@ -183,7 +276,9 @@ async def get_current_user_optional(request: Request) -> Optional[User]:
 # Authentication routes
 
 @router.post("/login")
+@limiter.limit(RATE_LIMITS["auth_login"])
 async def login(
+    request: Request,
     response: Response,
     username: str = Form(...),
     password: str = Form(...)
@@ -192,6 +287,8 @@ async def login(
     Authenticate user with username and password.
 
     Sets httpOnly session cookie on success.
+
+    Rate limit: 5 attempts per minute per IP address to prevent brute force attacks.
     """
     logger.info(f"Login attempt for user: {username}")
 
@@ -291,12 +388,16 @@ async def register(
     if role not in ["admin", "photographer"]:
         raise HTTPException(400, "Invalid role. Must be 'admin' or 'photographer'")
 
+    # Validate password complexity
+    validate_password(password)
+
     # Hash password
     password_hash = hash_password(password)
 
     # Insert into database
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute("PRAGMA foreign_keys = ON")
             await db.execute(
                 """
                 INSERT INTO users (username, email, display_name, role, password_hash)
@@ -347,6 +448,9 @@ async def change_password(
     if new_password != confirm_password:
         raise HTTPException(400, "New passwords do not match")
 
+    # Validate new password complexity
+    validate_password(new_password)
+
     # Fetch current password hash
     result = await get_user_by_username(current_user.username)
     if not result:
@@ -363,6 +467,7 @@ async def change_password(
 
     # Update database
     async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("PRAGMA foreign_keys = ON")
         await db.execute(
             "UPDATE users SET password_hash = ? WHERE id = ?",
             (new_password_hash, current_user.id)

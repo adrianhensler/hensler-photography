@@ -189,6 +189,10 @@ def get_db():
     """Context manager for database connections (synchronous)"""
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
+
+    # Enable foreign key constraints (required for SQLite)
+    conn.execute("PRAGMA foreign_keys = ON")
+
     try:
         yield conn
         conn.commit()
@@ -204,6 +208,10 @@ async def get_db_connection():
     """Async context manager for database connections"""
     conn = await aiosqlite.connect(DATABASE_PATH)
     conn.row_factory = aiosqlite.Row
+
+    # Enable foreign key constraints (required for SQLite)
+    await conn.execute("PRAGMA foreign_keys = ON")
+
     try:
         yield conn
         await conn.commit()

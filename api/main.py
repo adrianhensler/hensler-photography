@@ -13,6 +13,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 import os
 import time
 import traceback
@@ -21,6 +23,7 @@ from pathlib import Path
 # Import error handling and logging
 from api.errors import ErrorResponse, internal_error
 from api.logging_config import get_logger
+from api.rate_limit import limiter
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -31,6 +34,10 @@ app = FastAPI(
     description="Backend API for photography portfolio management",
     version="2.0.0"
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware for frontend requests
 app.add_middleware(
