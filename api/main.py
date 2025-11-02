@@ -54,6 +54,8 @@ app.add_middleware(
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Handle FastAPI HTTP exceptions with structured error response"""
+    from fastapi.responses import RedirectResponse
+
     # Log the error
     logger.warning(
         f"HTTP {exc.status_code}: {exc.detail}",
@@ -66,7 +68,21 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         }
     )
 
-    # Return structured error response
+    # Special handling: Redirect browser requests to login page on 401
+    if exc.status_code == 401:
+        # Check if this is a browser request (looking for HTML)
+        accept = request.headers.get("accept", "")
+        is_browser = "text/html" in accept
+
+        # Check if requesting an admin page (not the login page itself)
+        path = str(request.url.path)
+        is_admin_page = path.startswith("/admin") and path != "/admin/login"
+
+        if is_browser and is_admin_page:
+            logger.info(f"Redirecting unauthenticated browser request to login: {path}")
+            return RedirectResponse(url="/admin/login", status_code=303)
+
+    # Return structured error response for API calls
     return JSONResponse(
         status_code=exc.status_code,
         content={

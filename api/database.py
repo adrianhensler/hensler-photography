@@ -158,14 +158,14 @@ CREATE INDEX IF NOT EXISTS idx_variants_image ON image_variants(image_id);
 
 # Seed data for initial users
 SEED_DATA = """
--- Insert Adrian as first user
+-- Insert Adrian as first user (admin)
 INSERT OR IGNORE INTO users (id, username, email, display_name, role, subdomain, bio)
 VALUES (
     1,
     'adrian',
     'adrianhensler@gmail.com',
     'Adrian Hensler',
-    'photographer',
+    'admin',
     'adrian',
     'Images from Halifax and surrounding areas. Light, land, and life.'
 );
