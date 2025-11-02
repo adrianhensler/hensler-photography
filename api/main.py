@@ -74,11 +74,11 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         accept = request.headers.get("accept", "")
         is_browser = "text/html" in accept
 
-        # Check if requesting an admin page (not the login page itself)
+        # Check if requesting a protected page (not the login page itself)
         path = str(request.url.path)
-        is_admin_page = path.startswith("/admin") and path != "/admin/login"
+        is_protected_page = (path.startswith("/admin") or path.startswith("/manage")) and path != "/admin/login"
 
-        if is_browser and is_admin_page:
+        if is_browser and is_protected_page:
             logger.info(f"Redirecting unauthenticated browser request to login: {path}")
             return RedirectResponse(url="/admin/login", status_code=303)
 
@@ -279,9 +279,57 @@ async def admin_login(request: Request):
         {"request": request}
     )
 
-# Import auth dependency
+# Import auth dependencies
 from api.routes.auth import get_current_user, User
 from fastapi import Depends
+
+# Photographer dashboard (protected - any authenticated user)
+@app.get("/manage")
+async def photographer_dashboard(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Photographer dashboard (authenticated users)"""
+    return templates.TemplateResponse(
+        "photographer/dashboard.html",
+        {
+            "request": request,
+            "title": "Dashboard",
+            "current_user": current_user
+        }
+    )
+
+# Photographer upload page (protected)
+@app.get("/manage/upload")
+async def photographer_upload(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Photographer upload interface (authenticated users)"""
+    return templates.TemplateResponse(
+        "photographer/upload.html",
+        {
+            "request": request,
+            "title": "Upload Photos",
+            "current_user": current_user
+        }
+    )
+
+# Photographer gallery management page (protected)
+@app.get("/manage/gallery")
+async def photographer_gallery(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Photographer gallery management interface (authenticated users)"""
+    return templates.TemplateResponse(
+        "photographer/gallery.html",
+        {
+            "request": request,
+            "title": "My Gallery",
+            "current_user": current_user
+        }
+    )
 
 # Admin dashboard (protected)
 @app.get("/admin")

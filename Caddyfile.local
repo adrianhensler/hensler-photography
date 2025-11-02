@@ -73,6 +73,11 @@ hensler.photography:4100 {
     reverse_proxy api:8000
   }
 
+  # Photographer management dashboard
+  handle /manage* {
+    reverse_proxy api:8000
+  }
+
   # API endpoints
   handle /api/* {
     reverse_proxy api:8000
