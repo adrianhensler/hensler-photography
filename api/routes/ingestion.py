@@ -1,18 +1,29 @@
 """
 Image ingestion routes with AI-powered metadata generation
+
+Enhanced with structured error handling for AI and human users.
 """
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 import os
 import shutil
+import traceback
 from datetime import datetime
 from pathlib import Path
 import hashlib
 
-# Services will be imported after we create them
-# from api.services.claude_vision import analyze_image
-# from api.services.exif import extract_exif
-# from api.services.image_processor import generate_variants
+from api.errors import (
+    ErrorResponse,
+    file_too_large_error,
+    invalid_file_type_error,
+    corrupt_image_error,
+    database_error,
+    not_found_error
+)
+from api.logging_config import get_logger
+
+# Initialize logger
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/images", tags=["images"])
 
@@ -36,17 +47,53 @@ async def ingest_image(
     4. Generate WebP variants
     5. Insert into database
     6. Return metadata for preview
+
+    Returns structured response with success status, data, and any warnings.
     """
+    context = {
+        "original_filename": file.filename,
+        "user_id": user_id,
+        "content_type": file.content_type
+    }
+
+    logger.info(f"Starting image ingestion: {file.filename}", extra={"context": context})
 
     # Validate file type
     allowed_types = ['image/jpeg', 'image/jpg', 'image/png']
     if file.content_type not in allowed_types:
-        raise HTTPException(400, f"Invalid file type: {file.content_type}")
+        logger.warning(f"Invalid file type: {file.content_type}", extra={"context": context})
+        error = invalid_file_type_error(
+            filename=file.filename,
+            file_type=file.content_type,
+            allowed_types=allowed_types,
+            context=context
+        )
+        return JSONResponse(
+            status_code=error.http_status,
+            content=error.to_dict()
+        )
 
     # Validate file size (20MB max)
     contents = await file.read()
-    if len(contents) > 20 * 1024 * 1024:
-        raise HTTPException(400, "File too large (max 20MB)")
+    max_size = 20 * 1024 * 1024
+    if len(contents) > max_size:
+        logger.warning(
+            f"File too large: {len(contents)} bytes",
+            extra={"context": {**context, "file_size": len(contents), "max_size": max_size}}
+        )
+        error = file_too_large_error(
+            file_size=len(contents),
+            max_size=max_size,
+            filename=file.filename,
+            context=context
+        )
+        return JSONResponse(
+            status_code=error.http_status,
+            content=error.to_dict()
+        )
+
+    file_path = None
+    warnings = []  # Collect non-fatal warnings
 
     try:
         # Generate unique filename using hash
@@ -55,10 +102,14 @@ async def ingest_image(
         ext = Path(file.filename).suffix.lower()
         original_filename = f"{timestamp}_{file_hash}{ext}"
 
+        context["generated_filename"] = original_filename
+
         # Save original file
         upload_dir = Path("/app/assets/gallery")
         upload_dir.mkdir(parents=True, exist_ok=True)
         file_path = upload_dir / original_filename
+
+        logger.info(f"Saving file to {file_path}", extra={"context": context})
 
         with open(file_path, "wb") as f:
             f.write(contents)
@@ -70,86 +121,144 @@ async def ingest_image(
         from api.database import get_db_connection
         from slugify import slugify
 
-        # Extract EXIF data
+        # Step 1: Extract EXIF data (never fails, always returns something)
+        logger.info("Extracting EXIF metadata", extra={"context": context})
         exif_data = extract_exif(str(file_path))
 
-        # Analyze image with Claude Vision
-        ai_metadata = await analyze_image(str(file_path))
+        # Step 2: Analyze image with Claude Vision (may fail gracefully)
+        logger.info("Analyzing image with Claude Vision", extra={"context": context})
+        ai_metadata, ai_error = await analyze_image(
+            str(file_path),
+            user_id=user_id,
+            filename=original_filename
+        )
 
-        # Generate WebP variants
-        variants = generate_variants(str(file_path), original_filename)
+        if ai_error:
+            # AI analysis failed, but we continue with fallback
+            warnings.append(ai_error.to_dict()["error"])
+            logger.warning(
+                f"AI analysis failed: {ai_error.message}",
+                extra={"context": context, "error_code": ai_error.code.value}
+            )
+
+        # Step 3: Generate WebP variants (may fail, but we continue)
+        logger.info("Generating WebP variants", extra={"context": context})
+        variants, variant_error = generate_variants(
+            str(file_path),
+            original_filename,
+            context={**context, "user_id": user_id}
+        )
+
+        if variant_error:
+            # Variant generation failed - this is more serious but still salvageable
+            warnings.append(variant_error.to_dict()["error"])
+            logger.error(
+                f"Variant generation failed: {variant_error.message}",
+                extra={"context": context, "error_code": variant_error.code.value}
+            )
+            # Continue without variants
+
+        # Step 4: Insert into database
+        logger.info("Inserting into database", extra={"context": context})
 
         # Generate slug from title or filename
         slug_base = slugify(ai_metadata.get('title', Path(file.filename).stem))
 
-        # Insert into database
-        async with get_db_connection() as db:
-            # Check if slug exists, make it unique
-            cursor = await db.execute(
-                "SELECT COUNT(*) FROM images WHERE user_id = ? AND slug LIKE ?",
-                (user_id, f"{slug_base}%")
+        try:
+                async with get_db_connection() as db:
+                    # Check if slug exists, make it unique
+                    cursor = await db.execute(
+                        "SELECT COUNT(*) FROM images WHERE user_id = ? AND slug LIKE ?",
+                        (user_id, f"{slug_base}%")
+                    )
+                    count = (await cursor.fetchone())[0]
+                    slug = f"{slug_base}-{count + 1}" if count > 0 else slug_base
+
+                    # Insert main image record
+                    cursor = await db.execute("""
+                        INSERT INTO images (
+                            user_id, filename, slug, original_filename,
+                            title, caption, description, tags, category,
+                            camera_make, camera_model, lens,
+                            focal_length, aperture, shutter_speed, iso,
+                            date_taken, location,
+                            width, height, aspect_ratio, file_size,
+                            published, featured, available_for_sale
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        user_id,
+                        original_filename,
+                        slug,
+                        file.filename,
+                        ai_metadata.get('title', ''),
+                        ai_metadata.get('caption', ''),
+                        ai_metadata.get('description', ''),
+                        ','.join(ai_metadata.get('tags', [])) if isinstance(ai_metadata.get('tags'), list) else ai_metadata.get('tags', ''),
+                        ai_metadata.get('category', ''),
+                        exif_data.get('camera_make', ''),
+                        exif_data.get('camera_model', ''),
+                        exif_data.get('lens', ''),
+                        exif_data.get('focal_length', ''),
+                        exif_data.get('aperture', ''),
+                        exif_data.get('shutter_speed', ''),
+                        exif_data.get('iso'),
+                        exif_data.get('date_taken', ''),
+                        exif_data.get('location', ''),
+                        exif_data.get('width'),
+                        exif_data.get('height'),
+                        exif_data.get('aspect_ratio'),
+                        len(contents),
+                        0,  # Not published by default
+                        0,  # Not featured
+                        0   # Not for sale yet
+                    ))
+
+                    image_id = cursor.lastrowid
+
+                    # Insert variant records
+                    for variant in variants:
+                        await db.execute("""
+                            INSERT INTO image_variants (
+                                image_id, format, size, filename, width, height, file_size
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            image_id,
+                            variant['format'],
+                            variant['size'],
+                            variant['filename'],
+                            variant['width'],
+                            variant['height'],
+                            variant['file_size']
+                        ))
+
+                    await db.commit()
+
+                    logger.info(
+                        f"Successfully ingested image ID {image_id}",
+                        extra={"context": {**context, "image_id": image_id, "slug": slug}}
+                    )
+
+        except Exception as db_error:
+            logger.error(
+                f"Database insertion failed: {db_error}",
+                exc_info=db_error,
+                extra={"context": context, "error_code": "DATABASE_CONNECTION_FAILED"}
             )
-            count = (await cursor.fetchone())[0]
-            slug = f"{slug_base}-{count + 1}" if count > 0 else slug_base
 
-            # Insert main image record
-            cursor = await db.execute("""
-                INSERT INTO images (
-                    user_id, filename, slug, original_filename,
-                    title, caption, description, tags, category,
-                    camera_make, camera_model, lens,
-                    focal_length, aperture, shutter_speed, iso,
-                    date_taken, location,
-                    width, height, aspect_ratio, file_size,
-                    published, featured, available_for_sale
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                user_id,
-                original_filename,
-                slug,
-                file.filename,
-                ai_metadata.get('title', ''),
-                ai_metadata.get('caption', ''),
-                ai_metadata.get('description', ''),
-                ','.join(ai_metadata.get('tags', [])) if isinstance(ai_metadata.get('tags'), list) else ai_metadata.get('tags', ''),
-                ai_metadata.get('category', ''),
-                exif_data.get('camera_make', ''),
-                exif_data.get('camera_model', ''),
-                exif_data.get('lens', ''),
-                exif_data.get('focal_length', ''),
-                exif_data.get('aperture', ''),
-                exif_data.get('shutter_speed', ''),
-                exif_data.get('iso'),
-                exif_data.get('date_taken', ''),
-                exif_data.get('location', ''),
-                exif_data.get('width'),
-                exif_data.get('height'),
-                exif_data.get('aspect_ratio'),
-                len(contents),
-                0,  # Not published by default
-                0,  # Not featured
-                0   # Not for sale yet
-            ))
+            # Clean up file on database failure
+            if file_path and file_path.exists():
+                file_path.unlink()
 
-            image_id = cursor.lastrowid
-
-            # Insert variant records
-            for variant in variants:
-                await db.execute("""
-                    INSERT INTO image_variants (
-                        image_id, format, size, filename, width, height, file_size
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    image_id,
-                    variant['format'],
-                    variant['size'],
-                    variant['filename'],
-                    variant['width'],
-                    variant['height'],
-                    variant['file_size']
-                ))
-
-            await db.commit()
+            error = database_error(
+                operation="image_insertion",
+                error_message=str(db_error),
+                context=context,
+                stack_trace=traceback.format_exc()
+            )
+            return JSONResponse(
+                status_code=error.http_status,
+                content=error.to_dict()
+            )
 
         # Format EXIF for display
         exif_display = {
@@ -157,7 +266,8 @@ async def ingest_image(
             'settings': f"{exif_data.get('focal_length', '')} {exif_data.get('aperture', '')} {exif_data.get('shutter_speed', '')} ISO {exif_data.get('iso', '')}".strip() or 'N/A'
         }
 
-        return JSONResponse({
+        # Build successful response with warnings
+        response_data = {
             "success": True,
             "image_id": image_id,
             "slug": slug,
@@ -169,14 +279,40 @@ async def ingest_image(
             "category": ai_metadata.get('category', ''),
             "exif": exif_display,
             "variants_generated": len(variants)
-        })
+        }
+
+        # Include warnings if any occurred
+        if warnings:
+            response_data["warnings"] = warnings
+            logger.info(
+                f"Image ingested with {len(warnings)} warning(s)",
+                extra={"context": {**context, "warning_count": len(warnings)}}
+            )
+
+        return JSONResponse(response_data)
 
     except Exception as e:
+        # Unexpected error during file save or processing
+        logger.error(
+            f"Unexpected error during ingestion: {e}",
+            exc_info=e,
+            extra={"context": context, "error_code": "INTERNAL_ERROR"}
+        )
+
         # Clean up file if processing failed
-        if file_path.exists():
+        if file_path and file_path.exists():
             file_path.unlink()
 
-        raise HTTPException(500, f"Processing failed: {str(e)}")
+        from api.errors import internal_error
+        error = internal_error(
+            error_message=str(e),
+            context=context,
+            stack_trace=traceback.format_exc()
+        )
+        return JSONResponse(
+            status_code=error.http_status,
+            content=error.to_dict()
+        )
 
 
 @router.get("/list")
