@@ -24,6 +24,7 @@ from pathlib import Path
 from api.errors import ErrorResponse, internal_error
 from api.logging_config import get_logger
 from api.rate_limit import limiter
+from api.csrf import add_csrf_token_to_context
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -281,9 +282,11 @@ async def health_check_detailed():
 @app.get("/admin/login")
 async def admin_login(request: Request):
     """Admin login page"""
+    context = {"request": request}
+    context = add_csrf_token_to_context(request, context)
     return templates.TemplateResponse(
         "admin/login.html",
-        {"request": request}
+        context
     )
 
 # Import auth dependencies
@@ -297,13 +300,15 @@ async def photographer_dashboard(
     current_user: User = Depends(get_current_user)
 ):
     """Photographer dashboard (authenticated users)"""
+    context = {
+        "request": request,
+        "title": "Dashboard",
+        "current_user": current_user
+    }
+    context = add_csrf_token_to_context(request, context)
     return templates.TemplateResponse(
         "photographer/dashboard.html",
-        {
-            "request": request,
-            "title": "Dashboard",
-            "current_user": current_user
-        }
+        context
     )
 
 # Photographer upload page (protected)
@@ -313,13 +318,15 @@ async def photographer_upload(
     current_user: User = Depends(get_current_user)
 ):
     """Photographer upload interface (authenticated users)"""
+    context = {
+        "request": request,
+        "title": "Upload Photos",
+        "current_user": current_user
+    }
+    context = add_csrf_token_to_context(request, context)
     return templates.TemplateResponse(
         "photographer/upload.html",
-        {
-            "request": request,
-            "title": "Upload Photos",
-            "current_user": current_user
-        }
+        context
     )
 
 # Photographer gallery management page (protected)
@@ -329,13 +336,15 @@ async def photographer_gallery(
     current_user: User = Depends(get_current_user)
 ):
     """Photographer gallery management interface (authenticated users)"""
+    context = {
+        "request": request,
+        "title": "My Gallery",
+        "current_user": current_user
+    }
+    context = add_csrf_token_to_context(request, context)
     return templates.TemplateResponse(
         "photographer/gallery.html",
-        {
-            "request": request,
-            "title": "My Gallery",
-            "current_user": current_user
-        }
+        context
     )
 
 # Admin dashboard (protected)
@@ -349,13 +358,15 @@ async def admin_dashboard(
     if current_user.role != "admin":
         raise HTTPException(403, "Admin access required")
 
+    context = {
+        "request": request,
+        "title": "Admin Dashboard",
+        "current_user": current_user
+    }
+    context = add_csrf_token_to_context(request, context)
     return templates.TemplateResponse(
         "admin/dashboard.html",
-        {
-            "request": request,
-            "title": "Admin Dashboard",
-            "current_user": current_user
-        }
+        context
     )
 
 # Admin upload page (protected)
@@ -369,13 +380,15 @@ async def admin_upload(
     if current_user.role != "admin":
         raise HTTPException(403, "Admin access required")
 
+    context = {
+        "request": request,
+        "title": "Upload Photos",
+        "current_user": current_user
+    }
+    context = add_csrf_token_to_context(request, context)
     return templates.TemplateResponse(
         "admin/upload.html",
-        {
-            "request": request,
-            "title": "Upload Photos",
-            "current_user": current_user
-        }
+        context
     )
 
 # Admin gallery management page (protected)
@@ -389,13 +402,15 @@ async def admin_gallery(
     if current_user.role != "admin":
         raise HTTPException(403, "Admin access required")
 
+    context = {
+        "request": request,
+        "title": "Manage Gallery",
+        "current_user": current_user
+    }
+    context = add_csrf_token_to_context(request, context)
     return templates.TemplateResponse(
         "admin/gallery.html",
-        {
-            "request": request,
-            "title": "Manage Gallery",
-            "current_user": current_user
-        }
+        context
     )
 
 # Include API routers

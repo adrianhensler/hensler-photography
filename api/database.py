@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
+    password_hash TEXT,
     display_name TEXT,
     role TEXT DEFAULT 'photographer',
     subdomain TEXT,
@@ -147,6 +148,22 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Audit log for security and compliance
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    resource_type TEXT,
+    resource_id INTEGER,
+    old_value TEXT,
+    new_value TEXT,
+    ip_address TEXT,
+    user_agent TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_images_user ON images(user_id);
 CREATE INDEX IF NOT EXISTS idx_images_published ON images(published);
@@ -154,6 +171,9 @@ CREATE INDEX IF NOT EXISTS idx_images_slug ON images(user_id, slug);
 CREATE INDEX IF NOT EXISTS idx_events_image ON image_events(image_id);
 CREATE INDEX IF NOT EXISTS idx_events_timestamp ON image_events(timestamp);
 CREATE INDEX IF NOT EXISTS idx_variants_image ON image_variants(image_id);
+CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log(action);
 """
 
 # Seed data for initial users

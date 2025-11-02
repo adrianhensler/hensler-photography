@@ -21,6 +21,7 @@ from api.errors import (
     not_found_error
 )
 from api.logging_config import get_logger
+from api.models import ImageMetadataUpdate
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -528,23 +529,28 @@ async def get_image(image_id: int):
 
 
 @router.patch("/{image_id}")
-async def update_image_metadata(image_id: int, metadata: dict):
-    """Update image metadata (title, caption, tags, etc.)"""
+async def update_image_metadata(image_id: int, metadata: ImageMetadataUpdate):
+    """
+    Update image metadata (title, caption, tags, etc.)
+
+    Uses Pydantic ImageMetadataUpdate model for validation.
+    """
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
         # Build update query dynamically based on provided fields
-        allowed_fields = ['title', 'caption', 'description', 'tags', 'category']
+        # Convert Pydantic model to dict, excluding None values
+        metadata_dict = metadata.dict(exclude_none=True)
+
+        if not metadata_dict:
+            raise HTTPException(400, "No valid fields to update")
+
         updates = []
         values = []
 
-        for field in allowed_fields:
-            if field in metadata:
-                updates.append(f"{field} = ?")
-                values.append(metadata[field])
-
-        if not updates:
-            raise HTTPException(400, "No valid fields to update")
+        for field, value in metadata_dict.items():
+            updates.append(f"{field} = ?")
+            values.append(value)
 
         values.append(image_id)
 
@@ -552,7 +558,12 @@ async def update_image_metadata(image_id: int, metadata: dict):
         await db.execute(query, tuple(values))
         await db.commit()
 
-    return {"success": True, "image_id": image_id}
+    logger.info(
+        f"Image metadata updated: {image_id}",
+        extra={"context": {"image_id": image_id, "updated_fields": list(metadata_dict.keys())}}
+    )
+
+    return {"success": True, "image_id": image_id, "updated_fields": list(metadata_dict.keys())}
 
 
 @router.delete("/{image_id}")

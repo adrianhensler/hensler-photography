@@ -17,6 +17,8 @@ from typing import Optional
 from api.database import DATABASE_PATH
 from api.logging_config import get_logger
 from api.rate_limit import limiter, RATE_LIMITS
+from api.models import UserCreate, UserLogin, PasswordChange, UserResponse
+from api.audit import audit_login, audit_logout, audit_password_change, audit_user_create
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -330,6 +332,9 @@ async def login(
         }
     )
 
+    # Audit log: successful login
+    await audit_login(user.id, username, request)
+
     return {
         "success": True,
         "user": {
@@ -343,13 +348,20 @@ async def login(
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(
+    request: Request,
+    response: Response,
+    current_user: User = Depends(get_current_user)
+):
     """
     Log out the current user by clearing the session cookie.
     """
     response.delete_cookie(key="session_token")
 
-    logger.info("User logged out")
+    logger.info(f"User logged out: {current_user.username}")
+
+    # Audit log: logout
+    await audit_logout(current_user.id, current_user.username, request)
 
     return {"success": True, "message": "Logged out successfully"}
 
@@ -368,64 +380,70 @@ async def get_me(current_user: User = Depends(get_current_user)):
     }
 
 
-@router.post("/register")
+@router.post("/register", response_model=dict)
 async def register(
-    current_user: User = Depends(get_current_user),
-    username: str = Form(...),
-    email: str = Form(...),
-    display_name: str = Form(...),
-    password: str = Form(...),
-    role: str = Form("photographer")
+    request: Request,
+    user_data: UserCreate,
+    current_user: User = Depends(get_current_user)
 ):
     """
     Create a new user account (admin only).
+
+    Validates all inputs using Pydantic UserCreate model.
     """
     # Only admins can create users
     if current_user.role != "admin":
         raise HTTPException(403, "Only administrators can create new users")
 
-    # Validate role
-    if role not in ["admin", "photographer"]:
-        raise HTTPException(400, "Invalid role. Must be 'admin' or 'photographer'")
-
-    # Validate password complexity
-    validate_password(password)
+    # Validate password complexity (Pydantic handles basic validation)
+    validate_password(user_data.password)
 
     # Hash password
-    password_hash = hash_password(password)
+    password_hash = hash_password(user_data.password)
 
     # Insert into database
+    new_user_id = None
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db:
             await db.execute("PRAGMA foreign_keys = ON")
-            await db.execute(
+            cursor = await db.execute(
                 """
                 INSERT INTO users (username, email, display_name, role, password_hash)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (username, email, display_name, role, password_hash)
+                (user_data.username, user_data.email, user_data.display_name, user_data.role, password_hash)
             )
             await db.commit()
+            new_user_id = cursor.lastrowid
 
         logger.info(
-            f"User created: {username} (role={role})",
+            f"User created: {user_data.username} (role={user_data.role})",
             extra={
                 "context": {
                     "created_by": current_user.username,
-                    "new_user": username,
-                    "role": role
+                    "new_user": user_data.username,
+                    "role": user_data.role
                 }
             }
         )
 
+        # Audit log: user creation
+        await audit_user_create(
+            current_user.id,
+            new_user_id,
+            user_data.username,
+            user_data.role,
+            request
+        )
+
         return {
             "success": True,
-            "message": f"User '{username}' created successfully",
+            "message": f"User '{user_data.username}' created successfully",
             "user": {
-                "username": username,
-                "email": email,
-                "display_name": display_name,
-                "role": role
+                "username": user_data.username,
+                "email": user_data.email,
+                "display_name": user_data.display_name,
+                "role": user_data.role
             }
         }
 
@@ -436,20 +454,19 @@ async def register(
 
 @router.post("/change-password")
 async def change_password(
-    current_user: User = Depends(get_current_user),
-    current_password: str = Form(...),
-    new_password: str = Form(...),
-    confirm_password: str = Form(...)
+    request: Request,
+    password_data: PasswordChange,
+    current_user: User = Depends(get_current_user)
 ):
     """
     Change the current user's password.
+
+    Validates all inputs using Pydantic PasswordChange model.
     """
-    # Verify passwords match
-    if new_password != confirm_password:
-        raise HTTPException(400, "New passwords do not match")
+    # Pydantic model already validated that new_password == confirm_password
 
     # Validate new password complexity
-    validate_password(new_password)
+    validate_password(password_data.new_password)
 
     # Fetch current password hash
     result = await get_user_by_username(current_user.username)
@@ -459,11 +476,11 @@ async def change_password(
     user, password_hash = result
 
     # Verify current password
-    if not password_hash or not verify_password(current_password, password_hash):
+    if not password_hash or not verify_password(password_data.current_password, password_hash):
         raise HTTPException(401, "Current password is incorrect")
 
     # Hash new password
-    new_password_hash = hash_password(new_password)
+    new_password_hash = hash_password(password_data.new_password)
 
     # Update database
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -478,6 +495,9 @@ async def change_password(
         f"Password changed for user: {current_user.username}",
         extra={"context": {"user_id": current_user.id}}
     )
+
+    # Audit log: password change
+    await audit_password_change(current_user.id, current_user.username, request)
 
     return {
         "success": True,
