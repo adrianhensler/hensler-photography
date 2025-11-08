@@ -145,7 +145,44 @@ class ImageMetadataUpdate(BaseModel):
         description="Location where photo was taken"
     )
 
-    @validator('title', 'caption', 'description', 'category', 'location')
+    # Technical metadata (editable for manual correction)
+    camera: Optional[str] = Field(
+        None,
+        max_length=200,
+        description="Camera body (e.g., 'Canon EOS R5')"
+    )
+    lens: Optional[str] = Field(
+        None,
+        max_length=200,
+        description="Lens used (e.g., 'RF 24-70mm f/2.8')"
+    )
+    focal_length: Optional[str] = Field(
+        None,
+        max_length=50,
+        description="Focal length (e.g., '50mm')"
+    )
+    aperture: Optional[str] = Field(
+        None,
+        max_length=50,
+        description="Aperture (e.g., 'f/2.8')"
+    )
+    shutter_speed: Optional[str] = Field(
+        None,
+        max_length=50,
+        description="Shutter speed (e.g., '1/250s')"
+    )
+    iso: Optional[str] = Field(
+        None,
+        max_length=50,
+        description="ISO value (e.g., '400')"
+    )
+    date_taken: Optional[str] = Field(
+        None,
+        max_length=100,
+        description="Date/time photo was taken (editable for timezone correction)"
+    )
+
+    @validator('title', 'caption', 'description', 'category', 'location', 'camera', 'lens')
     def strip_whitespace(cls, v):
         if v is not None:
             v = v.strip()

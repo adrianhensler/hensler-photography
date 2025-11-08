@@ -212,6 +212,101 @@
             min-height: 60px;
         }
 
+        /* Technical Metadata Display */
+        .tech-metadata {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .meta-section {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .meta-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #86868b;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid #f5f5f7;
+        }
+
+        .meta-row:last-child {
+            border-bottom: none;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            color: #86868b;
+        }
+
+        .meta-value {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1d1d1f;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .exposure-triangle {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .exposure-item {
+            text-align: center;
+            padding: 0.5rem;
+            background: linear-gradient(135deg, #f5f5f7 0%, #ffffff 100%);
+            border-radius: 6px;
+        }
+
+        .exposure-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: #86868b;
+            margin-bottom: 0.25rem;
+        }
+
+        .exposure-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1d1d1f;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .print-sizes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .print-size {
+            padding: 0.25rem 0.5rem;
+            background: #e0f2fe;
+            color: #0369a1;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
         .ai-badge {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -235,7 +330,106 @@
             height: 100%;
             background: #06c;
             width: 0%;
-            transition: width 0.3s ease;
+            transition: width 0.3s ease, background 0.3s ease;
+        }
+
+        .progress-fill.uploading {
+            background: #06c;
+        }
+
+        .progress-fill.processing {
+            background: #ff9500;
+        }
+
+        .progress-fill.complete {
+            background: #34c759;
+        }
+
+        .progress-stage {
+            font-size: 0.75rem;
+            color: #86868b;
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
+
+        .preview-checkbox {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .preview-card {
+            position: relative;
+        }
+
+        .batch-controls {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .batch-controls.visible {
+            display: flex;
+        }
+
+        .batch-controls label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-right: auto;
+        }
+
+        .batch-controls button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d1d6;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .batch-controls button:hover {
+            background: #f5f5f7;
+        }
+
+        .batch-controls button.primary {
+            background: #06c;
+            color: white;
+            border: none;
+        }
+
+        .batch-controls button.primary:hover {
+            background: #0077ed;
+        }
+
+        .batch-controls button.success {
+            background: #34c759;
+            color: white;
+            border: none;
+        }
+
+        .batch-controls button.success:hover {
+            background: #28a745;
+        }
+
+        .batch-controls button.danger {
+            background: #ff3b30;
+            color: white;
+            border: none;
+        }
+
+        .batch-controls button.danger:hover {
+            background: #dc3545;
         }
 
         .actions {
@@ -434,6 +628,15 @@
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg" multiple>
         </div>
 
+        <div id="batchControls" class="batch-controls">
+            <label><span id="selectedCount">0</span> images selected</label>
+            <button onclick="selectAll()">Select All</button>
+            <button onclick="deselectAll()">Deselect All</button>
+            <button class="primary" onclick="batchSaveDraft()">Save Selected</button>
+            <button class="success" onclick="batchPublish()">Publish Selected</button>
+            <button class="danger" onclick="batchDelete()">Delete Selected</button>
+        </div>
+
         <div id="previews" class="previews"></div>
     </div>
 
@@ -446,6 +649,8 @@
         const previewsContainer = document.getElementById('previews');
 
         let uploadQueue = [];
+        let activeUploads = 0;
+        const MAX_CONCURRENT_UPLOADS = 3;
 
         // Toast Notification System
         function showToast(type, title, message, error = null) {
@@ -560,20 +765,52 @@
                 const fileData = {
                     id: fileId,
                     file: file,
-                    status: 'pending',
+                    status: 'queued',
                     metadata: {}
                 };
 
                 uploadQueue.push(fileData);
                 createPreviewCard(fileData);
-                uploadFile(fileData);
             });
+
+            // Start processing queue
+            processUploadQueue();
+        }
+
+        function processUploadQueue() {
+            // Process uploads concurrently up to MAX_CONCURRENT_UPLOADS
+            while (activeUploads < MAX_CONCURRENT_UPLOADS && uploadQueue.length > 0) {
+                const queuedItems = uploadQueue.filter(item => item.status === 'queued');
+                if (queuedItems.length === 0) break;
+
+                const fileData = queuedItems[0];
+                fileData.status = 'uploading';
+                activeUploads++;
+
+                uploadFile(fileData)
+                    .then(() => {
+                        activeUploads--;
+                        processUploadQueue(); // Process next item
+                    })
+                    .catch(() => {
+                        activeUploads--;
+                        processUploadQueue(); // Process next item even on error
+                    });
+            }
         }
 
         function createPreviewCard(fileData) {
             const card = document.createElement('div');
             card.className = 'preview-card';
             card.id = `preview-${fileData.id}`;
+
+            // Add checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'preview-checkbox';
+            checkbox.id = `checkbox-${fileData.id}`;
+            checkbox.dataset.fileId = fileData.id;
+            checkbox.addEventListener('change', updateBatchControls);
 
             const img = document.createElement('img');
             img.className = 'preview-image';
@@ -592,83 +829,132 @@
             content.innerHTML = `
                 <div class="preview-filename">${fileData.file.name}</div>
                 <div class="preview-size">${sizeInMB} MB</div>
-                <div class="preview-status status-pending">Pending upload...</div>
+                <div class="preview-status status-pending">Queued...</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" id="progress-${fileData.id}"></div>
+                    <div class="progress-fill uploading" id="progress-${fileData.id}"></div>
                 </div>
+                <div class="progress-stage" id="stage-${fileData.id}">Waiting in queue...</div>
                 <div id="metadata-${fileData.id}"></div>
                 <div id="actions-${fileData.id}"></div>
             `;
 
+            card.appendChild(checkbox);
             card.appendChild(img);
             card.appendChild(content);
             previewsContainer.appendChild(card);
         }
 
-        async function uploadFile(fileData) {
-            const formData = new FormData();
-            formData.append('file', fileData.file);
-            formData.append('user_id', CURRENT_USER_ID);
+        function uploadFile(fileData) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', fileData.file);
+                formData.append('user_id', CURRENT_USER_ID);
 
-            updateStatus(fileData.id, 'processing', 'Processing with AI...');
-            updateProgress(fileData.id, 30);
+                const xhr = new XMLHttpRequest();
 
-            try {
-                const response = await fetch('/api/images/ingest', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
+                // Track upload progress (file transfer)
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        // Upload is 0-50% of total progress
+                        const uploadPercent = Math.round((e.loaded / e.total) * 50);
+                        updateProgress(fileData.id, uploadPercent);
+                        updateStage(fileData.id, 'uploading', 'Uploading...');
+                        updateStatus(fileData.id, 'processing', `Uploading... ${uploadPercent}%`);
+                    }
                 });
 
-                updateProgress(fileData.id, 70);
+                // Upload completed, now server is processing
+                xhr.upload.addEventListener('load', () => {
+                    updateProgress(fileData.id, 50);
+                    updateStage(fileData.id, 'processing', 'AI analyzing image...');
+                    updateStatus(fileData.id, 'processing', 'AI analyzing image...');
+                });
 
-                const result = await response.json();
+                // Handle response
+                xhr.addEventListener('load', () => {
+                    try {
+                        const result = JSON.parse(xhr.responseText);
 
-                if (!response.ok || result.success === false) {
-                    if (result.error) {
-                        const error = result.error;
-                        showToast(
-                            'error',
-                            error.code || 'Upload Failed',
-                            error.user_message || error.message || 'An error occurred during upload',
-                            error
-                        );
-                        updateStatus(fileData.id, 'error', error.user_message || 'Upload failed');
+                        if (xhr.status !== 200 || result.success === false) {
+                            if (result.error) {
+                                const error = result.error;
+                                showToast(
+                                    'error',
+                                    error.code || 'Upload Failed',
+                                    error.user_message || error.message || 'An error occurred during upload',
+                                    error
+                                );
+                                updateStatus(fileData.id, 'error', error.user_message || 'Upload failed');
+                                updateProgress(fileData.id, 0);
+                                updateStage(fileData.id, 'error', 'Failed');
+                                reject(new Error(error.message));
+                                return;
+                            } else {
+                                throw new Error(`Upload failed: ${xhr.statusText}`);
+                            }
+                        }
+
+                        // Complete
+                        updateProgress(fileData.id, 100);
+                        updateStage(fileData.id, 'complete', 'Complete ✓');
+
+                        fileData.metadata = result;
+                        fileData.imageId = result.image_id;
+
+                        if (result.warnings && result.warnings.length > 0) {
+                            result.warnings.forEach(warning => {
+                                showToast(
+                                    'warning',
+                                    warning.code || 'Warning',
+                                    warning.user_message || warning.message || 'A warning occurred',
+                                    warning
+                                );
+                            });
+                        }
+
+                        showToast('success', 'Upload Complete', `${fileData.file.name} was processed successfully`);
+
+                        updateStatus(fileData.id, 'success', 'Processing complete ✓');
+                        displayMetadata(fileData.id, result);
+                        displayActions(fileData.id, result.image_id);
+
+                        resolve(result);
+
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        showToast('error', 'Upload Failed', `${fileData.file.name}: ${error.message}`, {error: error.toString()});
+                        updateStatus(fileData.id, 'error', `Error: ${error.message}`);
                         updateProgress(fileData.id, 0);
-                        return;
-                    } else {
-                        throw new Error(`Upload failed: ${response.statusText}`);
+                        updateStage(fileData.id, 'error', 'Failed');
+                        reject(error);
                     }
-                }
+                });
 
-                updateProgress(fileData.id, 100);
+                // Handle network errors
+                xhr.addEventListener('error', () => {
+                    const error = new Error('Network error during upload');
+                    console.error('Upload error:', error);
+                    showToast('error', 'Upload Failed', `${fileData.file.name}: Network error`, {error: error.toString()});
+                    updateStatus(fileData.id, 'error', 'Network error');
+                    updateProgress(fileData.id, 0);
+                    updateStage(fileData.id, 'error', 'Failed');
+                    reject(error);
+                });
 
-                fileData.metadata = result;
-                fileData.imageId = result.image_id;
+                // Handle abort
+                xhr.addEventListener('abort', () => {
+                    const error = new Error('Upload cancelled');
+                    updateStatus(fileData.id, 'error', 'Cancelled');
+                    updateProgress(fileData.id, 0);
+                    updateStage(fileData.id, 'error', 'Cancelled');
+                    reject(error);
+                });
 
-                if (result.warnings && result.warnings.length > 0) {
-                    result.warnings.forEach(warning => {
-                        showToast(
-                            'warning',
-                            warning.code || 'Warning',
-                            warning.user_message || warning.message || 'A warning occurred',
-                            warning
-                        );
-                    });
-                }
-
-                showToast('success', 'Upload Complete', `${fileData.file.name} was processed successfully`);
-
-                updateStatus(fileData.id, 'success', 'Processing complete ✓');
-                displayMetadata(fileData.id, result);
-                displayActions(fileData.id, result.image_id);
-
-            } catch (error) {
-                console.error('Upload error:', error);
-                showToast('error', 'Upload Failed', `${fileData.file.name}: ${error.message}`, {error: error.toString()});
-                updateStatus(fileData.id, 'error', `Error: ${error.message}`);
-                updateProgress(fileData.id, 0);
-            }
+                // Start upload
+                xhr.open('POST', '/api/images/ingest');
+                xhr.withCredentials = true;
+                xhr.send(formData);
+            });
         }
 
         function updateStatus(fileId, status, text) {
@@ -686,11 +972,170 @@
             }
         }
 
+        function updateStage(fileId, stage, text) {
+            const progressEl = document.getElementById(`progress-${fileId}`);
+            const stageEl = document.getElementById(`stage-${fileId}`);
+
+            if (progressEl) {
+                // Update progress bar color
+                progressEl.className = `progress-fill ${stage}`;
+            }
+
+            if (stageEl) {
+                stageEl.textContent = text;
+            }
+        }
+
         function displayMetadata(fileId, metadata) {
             const container = document.getElementById(`metadata-${fileId}`);
             if (!container) return;
 
+            // Calculate print sizes based on resolution
+            const printSizes = calculatePrintSizes(metadata.width, metadata.height);
+
+            // Build technical metadata sections
+            let techMetadataHtml = '';
+
+            if (metadata.exif) {
+                const exif = metadata.exif;
+
+                // Exposure Triangle Section (now editable)
+                techMetadataHtml += `
+                    <div class="meta-section">
+                        <div class="meta-section-title">📷 Exposure (editable)</div>
+                        <div class="exposure-triangle">
+                            <div class="exposure-item">
+                                <div class="exposure-label">Aperture</div>
+                                <input type="text" class="exposure-value" id="aperture-${fileId}"
+                                       value="${escapeHtml(exif.aperture || '')}"
+                                       placeholder="f/2.8"
+                                       style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; text-align:center; width:100%; font-family:'SF Mono',Monaco,monospace;">
+                            </div>
+                            <div class="exposure-item">
+                                <div class="exposure-label">Shutter</div>
+                                <input type="text" class="exposure-value" id="shutter_speed-${fileId}"
+                                       value="${escapeHtml(exif.shutter_speed || '')}"
+                                       placeholder="1/250s"
+                                       style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; text-align:center; width:100%; font-family:'SF Mono',Monaco,monospace;">
+                            </div>
+                            <div class="exposure-item">
+                                <div class="exposure-label">ISO</div>
+                                <input type="text" class="exposure-value" id="iso-${fileId}"
+                                       value="${escapeHtml(exif.iso || '')}"
+                                       placeholder="400"
+                                       style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; text-align:center; width:100%; font-family:'SF Mono',Monaco,monospace;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Camera & Lens Section (now editable)
+                techMetadataHtml += `
+                    <div class="meta-section">
+                        <div class="meta-section-title">📸 Equipment (editable)</div>
+                        <div class="meta-row">
+                            <span class="meta-label">Camera</span>
+                            <input type="text" class="meta-value" id="camera-${fileId}"
+                                   value="${escapeHtml(exif.camera || '')}"
+                                   placeholder="Canon EOS R5"
+                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Lens</span>
+                            <input type="text" class="meta-value" id="lens-${fileId}"
+                                   value="${escapeHtml(exif.lens || '')}"
+                                   placeholder="RF 24-70mm f/2.8"
+                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Focal Length</span>
+                            <input type="text" class="meta-value" id="focal_length-${fileId}"
+                                   value="${escapeHtml(exif.focal_length || '')}"
+                                   placeholder="50mm"
+                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                        </div>
+                    </div>
+                `;
+
+                // GPS Location Section (editable, can clear for privacy)
+                techMetadataHtml += `
+                    <div class="meta-section">
+                        <div class="meta-section-title">📍 Location (editable)</div>
+                        <div class="meta-row">
+                            <span class="meta-label">GPS</span>
+                            <input type="text" class="meta-value" id="location-${fileId}"
+                                   value="${escapeHtml(exif.location || '')}"
+                                   placeholder="37.7749° N, 122.4194° W or leave blank"
+                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                        </div>
+                    </div>
+                `;
+
+                // Date Taken (editable for timezone corrections)
+                techMetadataHtml += `
+                    <div class="meta-section">
+                        <div class="meta-section-title">📅 Date (editable)</div>
+                        <div class="meta-row">
+                            <span class="meta-label">Captured</span>
+                            <input type="text" class="meta-value" id="date_taken-${fileId}"
+                                   value="${escapeHtml(exif.date_taken || '')}"
+                                   placeholder="2024-01-15 14:30:00"
+                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Image Specifications Section (always show)
+            const megapixels = ((metadata.width * metadata.height) / 1000000).toFixed(1);
+            techMetadataHtml += `
+                <div class="meta-section">
+                    <div class="meta-section-title">🖼️ Specifications</div>
+                    <div class="meta-row">
+                        <span class="meta-label">Resolution</span>
+                        <span class="meta-value">${metadata.width} × ${metadata.height}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Megapixels</span>
+                        <span class="meta-value">${megapixels} MP</span>
+                    </div>
+                    ${metadata.exif && metadata.exif.aspect_ratio ? `
+                        <div class="meta-row">
+                            <span class="meta-label">Aspect Ratio</span>
+                            <span class="meta-value">${metadata.exif.aspect_ratio}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            // Print Sizes Section
+            if (printSizes.length > 0) {
+                techMetadataHtml += `
+                    <div class="meta-section" style="grid-column: 1 / -1;">
+                        <div class="meta-section-title">🖨️ Recommended Print Sizes (300 DPI)</div>
+                        <div class="print-sizes">
+                            ${printSizes.map(size => `<span class="print-size">${size}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
             const html = `
+                <div class="tech-metadata">
+                    ${techMetadataHtml}
+                </div>
+
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button onclick="reextractEXIF(${fileId}, ${metadata.image_id})"
+                            style="padding: 0.5rem 1rem; border: 1px solid #06c; background: white; color: #06c; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                        🔄 Re-Extract EXIF
+                    </button>
+                    <button onclick="regenerateAI(${fileId}, ${metadata.image_id})"
+                            style="padding: 0.5rem 1rem; border: 1px solid #764ba2; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                        ✨ Regenerate AI Metadata (~$0.02)
+                    </button>
+                </div>
+
                 <div class="ai-metadata">
                     <div class="ai-badge">✨ AI Generated</div>
 
@@ -705,18 +1150,58 @@
 
                     <label>Category:</label>
                     <input type="text" id="category-${fileId}" value="${escapeHtml(metadata.category || '')}" />
-
-                    ${metadata.exif ? `
-                        <label>Camera:</label>
-                        <input type="text" value="${escapeHtml(metadata.exif.camera || 'Unknown')}" disabled />
-
-                        <label>Settings:</label>
-                        <input type="text" value="${escapeHtml(metadata.exif.settings || 'N/A')}" disabled />
-                    ` : ''}
                 </div>
             `;
 
             container.innerHTML = html;
+        }
+
+        function calculatePrintSizes(width, height) {
+            if (!width || !height) return [];
+
+            const DPI_HIGH = 300;  // High quality prints
+            const DPI_STANDARD = 200; // Standard quality
+
+            // Calculate max dimensions at different DPIs
+            const inchesHighW = width / DPI_HIGH;
+            const inchesHighH = height / DPI_HIGH;
+            const inchesStdW = width / DPI_STANDARD;
+            const inchesStdH = height / DPI_STANDARD;
+
+            // Common print sizes (width x height in inches)
+            const standardSizes = [
+                { w: 4, h: 6, name: '4×6"' },
+                { w: 5, h: 7, name: '5×7"' },
+                { w: 8, h: 10, name: '8×10"' },
+                { w: 11, h: 14, name: '11×14"' },
+                { w: 16, h: 20, name: '16×20"' },
+                { w: 20, h: 24, name: '20×24"' },
+                { w: 24, h: 36, name: '24×36"' },
+                { w: 30, h: 40, name: '30×40"' }
+            ];
+
+            const recommended = [];
+            const aspectRatio = width / height;
+
+            for (const size of standardSizes) {
+                const sizeRatio = size.w / size.h;
+                const ratioMatch = Math.abs(sizeRatio - aspectRatio) < 0.15; // Within 15% aspect ratio match
+
+                if (ratioMatch) {
+                    if (size.w <= inchesHighW && size.h <= inchesHighH) {
+                        recommended.push(`${size.name} Excellent`);
+                    } else if (size.w <= inchesStdW && size.h <= inchesStdH) {
+                        recommended.push(`${size.name} Good`);
+                    }
+                }
+            }
+
+            // If no standard sizes fit, show maximum at 300 DPI
+            if (recommended.length === 0) {
+                recommended.push(`Up to ${Math.floor(inchesHighW)}×${Math.floor(inchesHighH)}" at 300 DPI`);
+            }
+
+            return recommended.slice(0, 6); // Limit to 6 sizes
         }
 
         function displayActions(fileId, imageId) {
@@ -737,7 +1222,16 @@
                 title: document.getElementById(`title-${fileId}`).value,
                 caption: document.getElementById(`caption-${fileId}`).value,
                 tags: document.getElementById(`tags-${fileId}`).value,
-                category: document.getElementById(`category-${fileId}`).value
+                category: document.getElementById(`category-${fileId}`).value,
+                // Technical metadata (now editable)
+                aperture: document.getElementById(`aperture-${fileId}`)?.value || null,
+                shutter_speed: document.getElementById(`shutter_speed-${fileId}`)?.value || null,
+                iso: document.getElementById(`iso-${fileId}`)?.value || null,
+                camera: document.getElementById(`camera-${fileId}`)?.value || null,
+                lens: document.getElementById(`lens-${fileId}`)?.value || null,
+                focal_length: document.getElementById(`focal_length-${fileId}`)?.value || null,
+                location: document.getElementById(`location-${fileId}`)?.value || null,
+                date_taken: document.getElementById(`date_taken-${fileId}`)?.value || null
             };
 
             try {
@@ -806,6 +1300,204 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Batch operation functions
+        function updateBatchControls() {
+            const checkboxes = document.querySelectorAll('.preview-checkbox');
+            const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+            const count = checkedBoxes.length;
+
+            document.getElementById('selectedCount').textContent = count;
+            const batchControls = document.getElementById('batchControls');
+
+            if (count > 0) {
+                batchControls.classList.add('visible');
+            } else {
+                batchControls.classList.remove('visible');
+            }
+        }
+
+        function selectAll() {
+            document.querySelectorAll('.preview-checkbox').forEach(cb => {
+                cb.checked = true;
+            });
+            updateBatchControls();
+        }
+
+        function deselectAll() {
+            document.querySelectorAll('.preview-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+            updateBatchControls();
+        }
+
+        function getSelectedImageIds() {
+            const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
+            return Array.from(checkboxes).map(cb => {
+                const fileId = parseInt(cb.dataset.fileId);
+                const fileData = uploadQueue.find(f => f.id === fileId);
+                return fileData ? fileData.imageId : null;
+            }).filter(id => id != null);
+        }
+
+        async function batchSaveDraft() {
+            const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
+            const fileIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.fileId));
+
+            if (fileIds.length === 0) {
+                showToast('warning', 'No Selection', 'Please select images to save');
+                return;
+            }
+
+            let success = 0;
+            let failed = 0;
+
+            for (const fileId of fileIds) {
+                const fileData = uploadQueue.find(f => f.id === fileId);
+                if (fileData && fileData.imageId) {
+                    try {
+                        await saveMetadata(fileId, fileData.imageId);
+                        success++;
+                    } catch (e) {
+                        failed++;
+                    }
+                }
+            }
+
+            showToast('success', 'Batch Save Complete', `${success} images saved, ${failed} failed`);
+        }
+
+        async function batchPublish() {
+            const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
+            const fileIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.fileId));
+
+            if (fileIds.length === 0) {
+                showToast('warning', 'No Selection', 'Please select images to publish');
+                return;
+            }
+
+            let success = 0;
+            let failed = 0;
+
+            for (const fileId of fileIds) {
+                const fileData = uploadQueue.find(f => f.id === fileId);
+                if (fileData && fileData.imageId) {
+                    try {
+                        await publishImage(fileId, fileData.imageId);
+                        success++;
+                    } catch (e) {
+                        failed++;
+                    }
+                }
+            }
+
+            showToast('success', 'Batch Publish Complete', `${success} images published, ${failed} failed`);
+        }
+
+        async function batchDelete() {
+            const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
+            const fileIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.fileId));
+
+            if (fileIds.length === 0) {
+                showToast('warning', 'No Selection', 'Please select images to delete');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${fileIds.length} images?`)) {
+                return;
+            }
+
+            let success = 0;
+            let failed = 0;
+
+            for (const fileId of fileIds) {
+                const fileData = uploadQueue.find(f => f.id === fileId);
+                if (fileData && fileData.imageId) {
+                    try {
+                        await deleteImage(fileId, fileData.imageId);
+                        success++;
+                    } catch (e) {
+                        failed++;
+                    }
+                }
+            }
+
+            showToast('success', 'Batch Delete Complete', `${success} images deleted, ${failed} failed`);
+            updateBatchControls();
+        }
+
+        // Re-Extract EXIF from original file
+        async function reextractEXIF(fileId, imageId) {
+            if (!confirm('Re-extract EXIF data from the original file? This will overwrite current EXIF fields.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/images/${imageId}/reextract-exif`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('success', 'EXIF Re-Extracted', 'EXIF data refreshed from original file');
+
+                    // Update UI fields with new EXIF data
+                    if (result.exif) {
+                        const exif = result.exif;
+                        if (exif.aperture) document.getElementById(`aperture-${fileId}`).value = exif.aperture;
+                        if (exif.shutter_speed) document.getElementById(`shutter_speed-${fileId}`).value = exif.shutter_speed;
+                        if (exif.iso) document.getElementById(`iso-${fileId}`).value = exif.iso;
+                        if (exif.camera) document.getElementById(`camera-${fileId}`).value = exif.camera;
+                        if (exif.lens) document.getElementById(`lens-${fileId}`).value = exif.lens;
+                        if (exif.focal_length) document.getElementById(`focal_length-${fileId}`).value = exif.focal_length;
+                        if (exif.location) document.getElementById(`location-${fileId}`).value = exif.location;
+                        if (exif.date_taken) document.getElementById(`date_taken-${fileId}`).value = exif.date_taken;
+                    }
+                } else {
+                    showToast('error', 'EXIF Extraction Failed', result.error?.user_message || 'Failed to extract EXIF');
+                }
+            } catch (error) {
+                console.error('EXIF extraction error:', error);
+                showToast('error', 'EXIF Extraction Failed', 'Network error');
+            }
+        }
+
+        // Regenerate AI metadata (costs ~$0.02)
+        async function regenerateAI(fileId, imageId) {
+            if (!confirm('Regenerate AI metadata for this image? This will cost ~$0.02 and overwrite Title, Caption, Tags, Category.')) {
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('user_id', CURRENT_USER_ID);
+
+                const response = await fetch(`/api/images/${imageId}/regenerate-ai`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('success', 'AI Metadata Regenerated', 'New AI-generated metadata created');
+
+                    // Update UI fields with new AI metadata
+                    if (result.title) document.getElementById(`title-${fileId}`).value = result.title;
+                    if (result.caption) document.getElementById(`caption-${fileId}`).value = result.caption;
+                    if (result.tags) document.getElementById(`tags-${fileId}`).value = result.tags;
+                    if (result.category) document.getElementById(`category-${fileId}`).value = result.category;
+                } else {
+                    showToast('error', 'AI Regeneration Failed', result.error?.user_message || 'Failed to regenerate AI metadata');
+                }
+            } catch (error) {
+                console.error('AI regeneration error:', error);
+                showToast('error', 'AI Regeneration Failed', 'Network error');
+            }
         }
     </script>
 </body>

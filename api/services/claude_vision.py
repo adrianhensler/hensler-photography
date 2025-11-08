@@ -24,9 +24,15 @@ from api.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-async def analyze_image(image_path: str, user_id: int = None, filename: str = None) -> Tuple[Dict[str, Any], ErrorResponse | None]:
+async def analyze_image(image_path: str, user_id: int = None, filename: str = None, media_type: str = None) -> Tuple[Dict[str, Any], ErrorResponse | None]:
     """
     Analyze an image using Claude Vision API.
+
+    Args:
+        image_path: Path to the image file
+        user_id: User ID for context
+        filename: Filename for context
+        media_type: MIME type of image (e.g., 'image/jpeg', 'image/png'). If not provided, will guess from extension.
 
     Returns:
         Tuple of (metadata_dict, error_response)
@@ -59,15 +65,16 @@ async def analyze_image(image_path: str, user_id: int = None, filename: str = No
         with open(image_path, "rb") as img_file:
             image_data = base64.standard_b64encode(img_file.read()).decode("utf-8")
 
-        # Determine media type
-        ext = Path(image_path).suffix.lower()
-        media_type_map = {
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.webp': 'image/webp'
-        }
-        media_type = media_type_map.get(ext, 'image/jpeg')
+        # Determine media type (use provided, or guess from extension)
+        if not media_type:
+            ext = Path(image_path).suffix.lower()
+            media_type_map = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.webp': 'image/webp'
+            }
+            media_type = media_type_map.get(ext, 'image/jpeg')
 
         logger.info(
             f"Analyzing image with Claude Vision API",
@@ -100,8 +107,9 @@ Guidelines:
 Return ONLY valid JSON, no other text."""
 
         # Call Claude Vision API
+        model_name = "claude-3-opus-20240229"
         message = client.messages.create(
-            model="claude-3-opus-20240229",  # Using Claude 3 Opus
+            model=model_name,
             max_tokens=1024,
             messages=[
                 {
@@ -123,6 +131,37 @@ Return ONLY valid JSON, no other text."""
                 }
             ],
         )
+
+        # Calculate API cost
+        input_tokens = message.usage.input_tokens
+        output_tokens = message.usage.output_tokens
+
+        # Claude 3 Opus pricing (as of 2024)
+        input_cost_per_mtok = 15.00  # $15 per 1M input tokens
+        output_cost_per_mtok = 75.00  # $75 per 1M output tokens
+
+        cost_usd = (
+            (input_tokens / 1_000_000) * input_cost_per_mtok +
+            (output_tokens / 1_000_000) * output_cost_per_mtok
+        )
+
+        logger.info(
+            f"Claude API call completed: {input_tokens} input tokens, {output_tokens} output tokens, ${cost_usd:.4f}",
+            extra={"context": {**context, "input_tokens": input_tokens, "output_tokens": output_tokens, "cost_usd": cost_usd}}
+        )
+
+        # Log cost to database (async, don't block on failure)
+        try:
+            from api.database import get_db_connection
+            async with get_db_connection() as db:
+                await db.execute("""
+                    INSERT INTO ai_costs (
+                        user_id, operation, model, input_tokens, output_tokens, cost_usd, image_path
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (user_id, "analyze_image", model_name, input_tokens, output_tokens, cost_usd, image_path))
+                await db.commit()
+        except Exception as e:
+            logger.warning(f"Failed to log AI cost: {e}", extra={"context": context})
 
         # Parse response
         response_text = message.content[0].text.strip()

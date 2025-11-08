@@ -88,15 +88,100 @@ adrian.hensler.photography:8080 {
 }
 
 # Admin interface on separate port for security
-hensler.photography:4100 {
+# Each photographer can access admin at their subdomain:4100
+# Authentication is enforced by FastAPI (see api/routes/auth.py)
+
+adrian.hensler.photography:4100 {
   encode zstd gzip
 
-  # Admin dashboard
+  # Admin login
   handle /admin* {
     reverse_proxy api:8000
   }
 
   # Photographer management dashboard
+  handle /manage* {
+    reverse_proxy api:8000
+  }
+
+  # API endpoints
+  handle /api/* {
+    reverse_proxy api:8000
+  }
+
+  # Gallery assets (uploaded images)
+  handle /assets/gallery/* {
+    reverse_proxy api:8000
+  }
+
+  # Health check
+  handle /healthz {
+    reverse_proxy api:8000
+  }
+
+  # Root redirects to admin
+  handle / {
+    reverse_proxy api:8000
+  }
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options "DENY"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+}
+
+liam.hensler.photography:4100 {
+  encode zstd gzip
+
+  # Admin login
+  handle /admin* {
+    reverse_proxy api:8000
+  }
+
+  # Photographer management dashboard
+  handle /manage* {
+    reverse_proxy api:8000
+  }
+
+  # API endpoints
+  handle /api/* {
+    reverse_proxy api:8000
+  }
+
+  # Gallery assets (uploaded images)
+  handle /assets/gallery/* {
+    reverse_proxy api:8000
+  }
+
+  # Health check
+  handle /healthz {
+    reverse_proxy api:8000
+  }
+
+  # Root redirects to admin
+  handle / {
+    reverse_proxy api:8000
+  }
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options "DENY"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+}
+
+hensler.photography:4100 {
+  encode zstd gzip
+
+  # System admin dashboard (global settings, user management)
+  handle /admin* {
+    reverse_proxy api:8000
+  }
+
+  # Photographer management (if accessed via main domain)
   handle /manage* {
     reverse_proxy api:8000
   }

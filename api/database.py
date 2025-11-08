@@ -164,6 +164,21 @@ CREATE TABLE IF NOT EXISTS audit_log (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- AI API cost tracking
+CREATE TABLE IF NOT EXISTS ai_costs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    operation TEXT NOT NULL,
+    model TEXT NOT NULL,
+    input_tokens INTEGER NOT NULL,
+    output_tokens INTEGER NOT NULL,
+    cost_usd REAL NOT NULL,
+    image_path TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_images_user ON images(user_id);
 CREATE INDEX IF NOT EXISTS idx_images_published ON images(published);
@@ -174,6 +189,8 @@ CREATE INDEX IF NOT EXISTS idx_variants_image ON image_variants(image_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp);
 CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log(action);
+CREATE INDEX IF NOT EXISTS idx_ai_costs_user ON ai_costs(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_costs_timestamp ON ai_costs(timestamp);
 """
 
 # Seed data for initial users
