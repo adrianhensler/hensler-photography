@@ -116,9 +116,14 @@ def extract_exif(image_path: str) -> dict:
             except:
                 pass
 
+        # Build combined camera string
+        camera_parts = [camera_make, camera_model]
+        camera = ' '.join(filter(None, camera_parts)) if any(camera_parts) else None
+
         result = {
             "camera_make": camera_make,
             "camera_model": camera_model,
+            "camera": camera,
             "lens": lens,
             "focal_length": focal_length,
             "aperture": aperture,
@@ -155,6 +160,7 @@ def extract_exif(image_path: str) -> dict:
             return {
                 "camera_make": None,
                 "camera_model": None,
+                "camera": None,
                 "lens": None,
                 "focal_length": None,
                 "aperture": None,
@@ -171,6 +177,7 @@ def extract_exif(image_path: str) -> dict:
             return {
                 "camera_make": None,
                 "camera_model": None,
+                "camera": None,
                 "lens": None,
                 "focal_length": None,
                 "aperture": None,

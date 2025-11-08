@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS images (
     -- EXIF data
     camera_make TEXT,
     camera_model TEXT,
+    camera TEXT,
     lens TEXT,
     focal_length TEXT,
     aperture TEXT,
