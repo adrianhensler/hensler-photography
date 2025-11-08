@@ -427,15 +427,15 @@
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
                     <div class="form-group">
                         <label style="font-size: 0.85rem;">Aperture</label>
-                        <input type="text" id="editAperture" placeholder="f/2.8" style="font-size: 0.85rem;">
+                        <input type="text" id="editAperture" placeholder="f/2.8" pattern="f/\d+(\.\d+)?" title="Format: f/2.8 or f/1.4" style="font-size: 0.85rem;">
                     </div>
                     <div class="form-group">
                         <label style="font-size: 0.85rem;">Shutter Speed</label>
-                        <input type="text" id="editShutterSpeed" placeholder="1/250s" style="font-size: 0.85rem;">
+                        <input type="text" id="editShutterSpeed" placeholder="1/250s" pattern="(\d+/\d+s?)|(\d+(\.\d+)?&quot;)|(\d+(\.\d+)?s)" title="Format: 1/250s, 1/1000, or 1&quot;" style="font-size: 0.85rem;">
                     </div>
                     <div class="form-group">
                         <label style="font-size: 0.85rem;">ISO</label>
-                        <input type="text" id="editIso" placeholder="400" style="font-size: 0.85rem;">
+                        <input type="text" id="editIso" placeholder="400" pattern="\d+" title="Numeric value only (e.g., 100, 400, 3200)" style="font-size: 0.85rem;">
                     </div>
                 </div>
 
@@ -453,7 +453,7 @@
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
                     <div class="form-group">
                         <label style="font-size: 0.85rem;">Focal Length</label>
-                        <input type="text" id="editFocalLength" placeholder="50mm" style="font-size: 0.85rem;">
+                        <input type="text" id="editFocalLength" placeholder="50mm" pattern="\d+(-\d+)?mm" title="Format: 50mm or 24-70mm" style="font-size: 0.85rem;">
                     </div>
                     <div class="form-group">
                         <label style="font-size: 0.85rem;">Location</label>
@@ -461,7 +461,7 @@
                     </div>
                     <div class="form-group">
                         <label style="font-size: 0.85rem;">Date Taken</label>
-                        <input type="text" id="editDateTaken" placeholder="2024-01-15 14:30" style="font-size: 0.85rem;">
+                        <input type="text" id="editDateTaken" placeholder="2024-01-15 14:30" title="Format: YYYY-MM-DD HH:MM:SS or YYYY-MM-DD" style="font-size: 0.85rem;">
                     </div>
                 </div>
 
@@ -738,7 +738,26 @@
                 alert('Changes saved successfully!');
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to save changes');
+
+                // Try to extract validation error message
+                if (response && !response.ok) {
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.detail && Array.isArray(errorData.detail)) {
+                            // Pydantic validation errors
+                            const errors = errorData.detail.map(e => `${e.loc[1]}: ${e.msg}`).join('\n');
+                            alert(`Validation failed:\n${errors}`);
+                        } else if (errorData.detail) {
+                            alert(`Error: ${errorData.detail}`);
+                        } else {
+                            alert('Failed to save changes');
+                        }
+                    } catch {
+                        alert('Failed to save changes');
+                    }
+                } else {
+                    alert('Failed to save changes');
+                }
             }
         });
 

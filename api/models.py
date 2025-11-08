@@ -190,6 +190,101 @@ class ImageMetadataUpdate(BaseModel):
                 return None
         return v
 
+    @validator('iso')
+    def validate_iso(cls, v):
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+
+            # ISO should be numeric (allow just digits)
+            if not re.match(r'^\d+$', v):
+                raise ValueError('ISO must be a number (e.g., 100, 400, 3200)')
+
+            # Validate reasonable ISO range (25 to 10,000,000 for modern cameras)
+            iso_int = int(v)
+            if iso_int < 25 or iso_int > 10000000:
+                raise ValueError('ISO must be between 25 and 10,000,000')
+
+        return v
+
+    @validator('aperture')
+    def validate_aperture(cls, v):
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+
+            # Aperture should match f/N.N or f/N format
+            if not re.match(r'^f/\d+(\.\d+)?$', v, re.IGNORECASE):
+                raise ValueError('Aperture must be in format f/2.8 or f/1.4')
+
+        return v
+
+    @validator('shutter_speed')
+    def validate_shutter_speed(cls, v):
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+
+            # Allow formats: 1/250s, 1/1000, 1", 30", 2.5s, etc.
+            valid_patterns = [
+                r'^\d+/\d+s?$',      # 1/250s or 1/250
+                r'^\d+(\.\d+)?"$',   # 1" or 2.5"
+                r'^\d+(\.\d+)?s$',   # 1s or 2.5s
+            ]
+
+            if not any(re.match(pattern, v) for pattern in valid_patterns):
+                raise ValueError('Shutter speed must be in format 1/250s, 1/1000, 1", or 2.5s')
+
+        return v
+
+    @validator('focal_length')
+    def validate_focal_length(cls, v):
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+
+            # Allow formats: 50mm, 24-70mm, 100-400mm
+            if not re.match(r'^\d+(-\d+)?mm$', v, re.IGNORECASE):
+                raise ValueError('Focal length must be in format 50mm or 24-70mm')
+
+        return v
+
+    @validator('date_taken')
+    def validate_date_taken(cls, v):
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+
+            # Try to parse common date formats
+            from datetime import datetime
+            valid_formats = [
+                '%Y-%m-%d %H:%M:%S',
+                '%Y-%m-%d %H:%M',
+                '%Y-%m-%d',
+                '%Y/%m/%d %H:%M:%S',
+                '%Y/%m/%d %H:%M',
+                '%Y/%m/%d',
+            ]
+
+            parsed = False
+            for fmt in valid_formats:
+                try:
+                    datetime.strptime(v, fmt)
+                    parsed = True
+                    break
+                except ValueError:
+                    continue
+
+            if not parsed:
+                raise ValueError('Date must be in format YYYY-MM-DD HH:MM:SS or YYYY-MM-DD')
+
+        return v
+
     @validator('tags')
     def validate_tags(cls, v):
         if v is not None:

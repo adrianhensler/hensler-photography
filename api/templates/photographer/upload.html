@@ -1009,6 +1009,8 @@
                                 <input type="text" class="exposure-value" id="aperture-${fileId}"
                                        value="${escapeHtml(exif.aperture || '')}"
                                        placeholder="f/2.8"
+                                       pattern="f/\\d+(\\.\\d+)?"
+                                       title="Format: f/2.8 or f/1.4"
                                        style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; text-align:center; width:100%; font-family:'SF Mono',Monaco,monospace;">
                             </div>
                             <div class="exposure-item">
@@ -1016,6 +1018,8 @@
                                 <input type="text" class="exposure-value" id="shutter_speed-${fileId}"
                                        value="${escapeHtml(exif.shutter_speed || '')}"
                                        placeholder="1/250s"
+                                       pattern="(\\d+/\\d+s?)|(\\d+(\\.\\d+)?&quot;)|(\\d+(\\.\\d+)?s)"
+                                       title="Format: 1/250s, 1/1000, or 1&quot;"
                                        style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; text-align:center; width:100%; font-family:'SF Mono',Monaco,monospace;">
                             </div>
                             <div class="exposure-item">
@@ -1023,6 +1027,8 @@
                                 <input type="text" class="exposure-value" id="iso-${fileId}"
                                        value="${escapeHtml(exif.iso || '')}"
                                        placeholder="400"
+                                       pattern="\\d+"
+                                       title="Numeric value only (e.g., 100, 400, 3200)"
                                        style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; text-align:center; width:100%; font-family:'SF Mono',Monaco,monospace;">
                             </div>
                         </div>
@@ -1052,6 +1058,8 @@
                             <input type="text" class="meta-value" id="focal_length-${fileId}"
                                    value="${escapeHtml(exif.focal_length || '')}"
                                    placeholder="50mm"
+                                   pattern="\\d+(-\\d+)?mm"
+                                   title="Format: 50mm or 24-70mm"
                                    style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
                         </div>
                     </div>
