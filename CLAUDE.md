@@ -11,6 +11,297 @@ Multi-site static photography portfolio deployment using a **single Caddy contai
 
 The architecture supports future expansion where the main site will showcase both photographers with links to their individual portfolios.
 
+## Backend API System (NEW - November 2025)
+
+**IMPORTANT**: The project now includes a Python/FastAPI backend for image management, in addition to the static portfolio sites.
+
+### Architecture Overview
+
+**Two-Tier System**:
+1. **Public Portfolio Sites** (Port 80/443 production, 8080 test) - Static HTML/CSS/JS
+2. **Admin Management System** (Port 4100) - FastAPI backend with authentication
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Public Sites (Port 80/443)                                 │
+│  - adrian.hensler.photography                               │
+│  - liam.hensler.photography                                 │
+│  - Static HTML serving                                      │
+│  - Currently shows hardcoded Flickr images                  │
+└─────────────────────────────────────────────────────────────┘
+                         ↕ (NOT YET CONNECTED)
+┌─────────────────────────────────────────────────────────────┐
+│  Admin System (Port 4100) - Python/FastAPI                 │
+│  - adrian.hensler.photography:4100/admin                    │
+│  - liam.hensler.photography:4100/admin                      │
+│  - JWT authentication with httpOnly cookies                 │
+│  - Image upload with drag-and-drop                          │
+│  - AI-powered metadata (Claude Vision API)                  │
+│  - EXIF extraction and editing                              │
+│  - SQLite database with multi-tenant support                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Port Architecture
+
+- **Port 8080**: Public portfolios (development/testing)
+- **Port 4100**: Admin interfaces (development/testing)
+- **Port 80/443**: Public portfolios (production)
+- **Port 4100**: Admin interfaces (production) - *TODO: Add firewall rules*
+
+### Backend Stack
+
+**Language/Framework**:
+- Python 3.11+ with FastAPI
+- Async/await throughout (aiosqlite, asyncio)
+- Uvicorn ASGI server
+
+**Database**:
+- SQLite at `/data/gallery.db`
+- Multi-tenant: users, images, image_variants, analytics, ai_costs
+- Full EXIF metadata storage
+- Audit logging for security
+
+**AI Integration**:
+- Claude Vision API (Anthropic) for metadata generation
+- Cost: ~$0.015-0.03 per image
+- Tracks token usage in database
+- Features: title, caption, tags, category generation
+
+**Authentication**:
+- JWT tokens in httpOnly cookies
+- bcrypt password hashing (12 rounds)
+- Role-based access (admin, photographer)
+- Session management
+
+**Image Processing**:
+- PIL/Pillow for EXIF extraction
+- Format detection (JPEG, PNG, GIF, WebP)
+- Thumbnail generation (future)
+- Image variants table for WebP/AVIF (future)
+
+### Admin Interface Features
+
+**Upload System** (`/manage/upload`):
+- Drag-and-drop or file picker
+- Real-time progress tracking (XMLHttpRequest)
+- Batch upload (max 3 concurrent)
+- Automatic AI metadata generation
+- Full EXIF extraction with photographer-focused display
+- Exposure triangle (aperture, shutter, ISO)
+- Print size recommendations based on resolution
+- Editable technical fields with validation
+
+**Gallery Management** (`/manage/gallery`):
+- View all uploaded images
+- Filter by status (published/draft)
+- Filter by featured
+- Search by title/caption/tags
+- Edit metadata (all fields)
+- Re-extract EXIF from original file (free)
+- Regenerate AI metadata (~$0.02 per image)
+- Publish/unpublish images
+- Mark as featured
+- Delete images
+
+**Dashboard** (`/manage`):
+- Overview of images, stats
+- Quick actions
+
+### Database Schema
+
+```sql
+-- Users (photographers)
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT,
+    display_name TEXT,
+    role TEXT DEFAULT 'photographer',
+    subdomain TEXT,
+    bio TEXT
+);
+
+-- Images with full metadata
+CREATE TABLE images (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,                -- YYYYMMDD_HHMMSS_hash.jpg
+    slug TEXT NOT NULL,
+
+    -- AI-generated metadata
+    title TEXT,
+    caption TEXT,
+    description TEXT,
+    tags TEXT,                             -- Comma-separated
+    category TEXT,
+
+    -- EXIF technical data
+    camera_make TEXT,
+    camera_model TEXT,
+    camera TEXT,                           -- Combined make + model
+    lens TEXT,
+    focal_length TEXT,
+    aperture TEXT,
+    shutter_speed TEXT,
+    iso TEXT,
+    date_taken DATETIME,
+    location TEXT,
+
+    -- Image properties
+    width INTEGER,
+    height INTEGER,
+    aspect_ratio REAL,
+    file_size INTEGER,
+
+    -- Publishing control
+    published BOOLEAN DEFAULT 0,          -- Visible on public site
+    featured BOOLEAN DEFAULT 0,           -- Hero/featured image
+    available_for_sale BOOLEAN DEFAULT 0,
+    sort_order INTEGER DEFAULT 0,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- AI cost tracking
+CREATE TABLE ai_costs (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER,
+    operation TEXT NOT NULL,
+    model TEXT NOT NULL,
+    input_tokens INTEGER NOT NULL,
+    output_tokens INTEGER NOT NULL,
+    cost_usd REAL NOT NULL,
+    image_path TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### API Endpoints
+
+**Authentication**:
+- `POST /api/auth/login` - Login (returns JWT cookie)
+- `POST /api/auth/logout` - Logout
+- `GET /api/auth/me` - Get current user
+
+**Image Management**:
+- `POST /api/images/upload` - Upload image(s) with AI analysis
+- `GET /api/images/list?user_id=1&limit=1000` - List images
+- `GET /api/images/{image_id}` - Get image details with EXIF
+- `PATCH /api/images/{image_id}` - Update metadata (validated)
+- `DELETE /api/images/{image_id}` - Delete image
+- `POST /api/images/{image_id}/publish` - Toggle publish status
+- `POST /api/images/{image_id}/featured?featured=true` - Toggle featured
+- `POST /api/images/{image_id}/reextract-exif` - Re-extract EXIF
+- `POST /api/images/{image_id}/regenerate-ai` - Regenerate AI metadata (~$0.02)
+
+**Public Gallery** (TODO - Not Yet Implemented):
+- `GET /api/gallery/published?user_id=1` - Get published images for public display
+
+### Validation Rules
+
+**Technical Metadata** (Pydantic models with regex validation):
+- **ISO**: Must be numeric, range 25-10,000,000
+- **Aperture**: Format `f/2.8` or `f/1.4`
+- **Shutter Speed**: Formats `1/250s`, `1/1000`, `1"`, `2.5s`
+- **Focal Length**: Format `50mm` or `24-70mm`
+- **Date Taken**: Format `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD`
+
+### File Storage
+
+**Admin Uploaded Images** (API container):
+- Path: `/app/assets/gallery/`
+- Format: `YYYYMMDD_HHMMSS_hash.jpg`
+- Served via: `https://adrian.hensler.photography:4100/assets/gallery/filename.jpg`
+- In database with full metadata
+
+**Static Site Images** (web container):
+- Path: `/srv/sites/adrian/assets/gallery/`
+- Format: Flickr filenames (e.g., `52871221196_95f87f72ce_b.jpg`)
+- Hardcoded in JavaScript `galleryImages` array (line ~422 of index.html)
+- **NOT connected to database yet**
+
+### Current Status & Next Steps
+
+**✅ Complete**:
+- Full admin upload system with AI metadata
+- Gallery management with publish/unpublish
+- Authentication and authorization
+- Database schema and migrations
+- EXIF extraction and editing
+- Technical field validation
+- AI cost tracking
+
+**⚠️ Pending Integration**:
+- Public gallery does NOT yet display uploaded images
+- Static site still shows hardcoded Flickr images
+- Need to create `/api/gallery/published` endpoint
+- Need to update static site to fetch from API
+
+**See `INTEGRATION_BREAKPOINT.md`** for detailed integration plan and options.
+
+### Testing URLs
+
+**Admin System** (requires authentication):
+- Login: `https://adrian.hensler.photography:4100/admin/login`
+- Upload: `https://adrian.hensler.photography:4100/manage/upload`
+- Gallery: `https://adrian.hensler.photography:4100/manage/gallery`
+
+**Credentials** (development):
+- Username: `adrian`
+- Password: `AdrianTest123!`
+
+**Public Site** (open):
+- Homepage: `https://adrian.hensler.photography:8080/`
+- Currently shows Flickr images (static)
+
+### Backend Commands
+
+```bash
+# Initialize database (creates schema + seed data)
+cd /opt/dev/hensler_photography
+docker compose -p hensler_test exec api python -m api.database
+
+# Check database contents
+docker compose -p hensler_test exec api python -c "
+from api.database import get_db
+conn = get_db().__enter__()
+cursor = conn.execute('SELECT * FROM images WHERE user_id = 1')
+for row in cursor.fetchall(): print(dict(row))
+"
+
+# View uploaded images
+ls api/assets/gallery/
+
+# Check API logs
+docker compose -p hensler_test logs api --tail 50
+
+# Restart API only
+docker compose -p hensler_test restart api
+```
+
+### Environment Variables
+
+Required in `docker-compose.local.yml`:
+```yaml
+environment:
+  DATABASE_PATH: /data/gallery.db
+  ANTHROPIC_API_KEY: sk-ant-...     # For AI features
+  JWT_SECRET_KEY: dev-secret-...    # Auto-generated
+```
+
+### Cost Tracking
+
+All Claude Vision API calls are logged:
+- Model: claude-3-opus-20240229
+- Pricing: $15/1M input tokens, $75/1M output tokens
+- Typical cost: ~$0.015-0.03 per image
+- Query costs: `SELECT * FROM ai_costs WHERE user_id = 1`
+
 ## Critical Architecture Decisions
 
 ### Single Container, Multiple Domains
