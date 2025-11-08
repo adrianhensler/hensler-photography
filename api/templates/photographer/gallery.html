@@ -397,7 +397,7 @@
 
     <!-- Edit Modal -->
     <div id="editModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 800px;">
             <h2>Edit Image</h2>
             <form id="editForm">
                 <input type="hidden" id="editImageId">
@@ -420,6 +420,60 @@
                 <div class="form-group">
                     <label>Category</label>
                     <input type="text" id="editCategory">
+                </div>
+
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.1rem;">Technical Metadata</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">Aperture</label>
+                        <input type="text" id="editAperture" placeholder="f/2.8" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">Shutter Speed</label>
+                        <input type="text" id="editShutterSpeed" placeholder="1/250s" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">ISO</label>
+                        <input type="text" id="editIso" placeholder="400" style="font-size: 0.85rem;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">Camera</label>
+                        <input type="text" id="editCamera" placeholder="Canon EOS R5" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">Lens</label>
+                        <input type="text" id="editLens" placeholder="RF 24-70mm f/2.8" style="font-size: 0.85rem;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">Focal Length</label>
+                        <input type="text" id="editFocalLength" placeholder="50mm" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">Location</label>
+                        <input type="text" id="editLocation" placeholder="Halifax, NS" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">Date Taken</label>
+                        <input type="text" id="editDateTaken" placeholder="2024-01-15 14:30" style="font-size: 0.85rem;">
+                    </div>
+                </div>
+
+                <div style="margin: 1.5rem 0; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button type="button" onclick="reextractEXIF()" style="flex: 1; min-width: 200px; padding: 0.75rem; background: white; border: 1px solid #06c; color: #06c; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                            🔄 Re-Extract EXIF
+                        </button>
+                        <button type="button" onclick="regenerateAI()" style="flex: 1; min-width: 200px; padding: 0.75rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                            ✨ Regenerate AI Metadata (~$0.02)
+                        </button>
+                    </div>
                 </div>
 
                 <div class="modal-actions">
@@ -594,17 +648,49 @@
             }
         }
 
-        function editImage(imageId) {
+        async function editImage(imageId) {
             const image = allImages.find(img => img.id === imageId);
             if (!image) return;
 
-            document.getElementById('editImageId').value = imageId;
-            document.getElementById('editTitle').value = image.title || '';
-            document.getElementById('editCaption').value = image.caption || '';
-            document.getElementById('editTags').value = image.tags || '';
-            document.getElementById('editCategory').value = image.category || '';
+            // Fetch full image details with EXIF data
+            try {
+                const response = await fetch(`/api/images/${imageId}`, {
+                    credentials: 'include'
+                });
+                const fullImage = response.ok ? await response.json() : image;
 
-            document.getElementById('editModal').classList.add('show');
+                document.getElementById('editImageId').value = imageId;
+                document.getElementById('editTitle').value = fullImage.title || '';
+                document.getElementById('editCaption').value = fullImage.caption || '';
+                document.getElementById('editTags').value = fullImage.tags || '';
+                document.getElementById('editCategory').value = fullImage.category || '';
+
+                // Technical metadata (from nested exif object)
+                const exif = fullImage.exif || {};
+                document.getElementById('editAperture').value = exif.aperture || '';
+                document.getElementById('editShutterSpeed').value = exif.shutter_speed || '';
+                document.getElementById('editIso').value = exif.iso || '';
+
+                // Build camera from make and model
+                const camera = [exif.camera_make, exif.camera_model].filter(Boolean).join(' ') || '';
+                document.getElementById('editCamera').value = camera;
+
+                document.getElementById('editLens').value = exif.lens || '';
+                document.getElementById('editFocalLength').value = exif.focal_length || '';
+                document.getElementById('editLocation').value = exif.location || '';
+                document.getElementById('editDateTaken').value = exif.date_taken || '';
+
+                document.getElementById('editModal').classList.add('show');
+            } catch (error) {
+                console.error('Error loading image details:', error);
+                // Fall back to basic image data
+                document.getElementById('editImageId').value = imageId;
+                document.getElementById('editTitle').value = image.title || '';
+                document.getElementById('editCaption').value = image.caption || '';
+                document.getElementById('editTags').value = image.tags || '';
+                document.getElementById('editCategory').value = image.category || '';
+                document.getElementById('editModal').classList.add('show');
+            }
         }
 
         function closeEditModal() {
@@ -619,7 +705,16 @@
                 title: document.getElementById('editTitle').value,
                 caption: document.getElementById('editCaption').value,
                 tags: document.getElementById('editTags').value,
-                category: document.getElementById('editCategory').value
+                category: document.getElementById('editCategory').value,
+                // Technical metadata
+                aperture: document.getElementById('editAperture').value || null,
+                shutter_speed: document.getElementById('editShutterSpeed').value || null,
+                iso: document.getElementById('editIso').value || null,
+                camera: document.getElementById('editCamera').value || null,
+                lens: document.getElementById('editLens').value || null,
+                focal_length: document.getElementById('editFocalLength').value || null,
+                location: document.getElementById('editLocation').value || null,
+                date_taken: document.getElementById('editDateTaken').value || null
             };
 
             try {
@@ -640,6 +735,7 @@
 
                 closeEditModal();
                 applyFilters();
+                alert('Changes saved successfully!');
             } catch (error) {
                 console.error('Error:', error);
                 alert('Failed to save changes');
@@ -666,6 +762,85 @@
             } catch (error) {
                 console.error('Error:', error);
                 alert('Failed to delete image');
+            }
+        }
+
+        // Re-Extract EXIF from original file
+        async function reextractEXIF() {
+            const imageId = document.getElementById('editImageId').value;
+            if (!imageId) return;
+
+            if (!confirm('Re-extract EXIF data from the original file? This will overwrite current EXIF fields.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/images/${imageId}/reextract-exif`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    alert('EXIF data refreshed from original file!');
+
+                    // Update UI fields with new EXIF data
+                    if (result.exif) {
+                        const exif = result.exif;
+                        if (exif.aperture) document.getElementById('editAperture').value = exif.aperture;
+                        if (exif.shutter_speed) document.getElementById('editShutterSpeed').value = exif.shutter_speed;
+                        if (exif.iso) document.getElementById('editIso').value = exif.iso;
+                        if (exif.camera) document.getElementById('editCamera').value = exif.camera;
+                        if (exif.lens) document.getElementById('editLens').value = exif.lens;
+                        if (exif.focal_length) document.getElementById('editFocalLength').value = exif.focal_length;
+                        if (exif.location) document.getElementById('editLocation').value = exif.location;
+                        if (exif.date_taken) document.getElementById('editDateTaken').value = exif.date_taken;
+                    }
+                } else {
+                    alert(result.error?.user_message || 'Failed to extract EXIF');
+                }
+            } catch (error) {
+                console.error('EXIF extraction error:', error);
+                alert('Network error while extracting EXIF');
+            }
+        }
+
+        // Regenerate AI metadata (costs ~$0.02)
+        async function regenerateAI() {
+            const imageId = document.getElementById('editImageId').value;
+            if (!imageId) return;
+
+            if (!confirm('Regenerate AI metadata for this image? This will cost ~$0.02 and overwrite Title, Caption, Tags, Category.')) {
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('user_id', CURRENT_USER_ID);
+
+                const response = await fetch(`/api/images/${imageId}/regenerate-ai`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    alert('AI metadata regenerated successfully!');
+
+                    // Update UI fields with new AI metadata
+                    if (result.title) document.getElementById('editTitle').value = result.title;
+                    if (result.caption) document.getElementById('editCaption').value = result.caption;
+                    if (result.tags) document.getElementById('editTags').value = result.tags;
+                    if (result.category) document.getElementById('editCategory').value = result.category;
+                } else {
+                    alert(result.error?.user_message || 'Failed to regenerate AI metadata');
+                }
+            } catch (error) {
+                console.error('AI regeneration error:', error);
+                alert('Network error while regenerating AI metadata');
             }
         }
 
