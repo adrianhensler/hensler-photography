@@ -398,10 +398,12 @@ async def admin_upload(
 from api.routes.ingestion import router as ingestion_router
 from api.routes.auth import router as auth_router
 from api.routes.gallery import router as gallery_router
+from api.routes.photographer import router as photographer_router
 
 app.include_router(ingestion_router)
 app.include_router(auth_router)
 app.include_router(gallery_router)
+app.include_router(photographer_router)
 
 # Track endpoint (public - for frontend JavaScript)
 @app.post("/api/track")

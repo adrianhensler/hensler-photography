@@ -33,3 +33,7 @@ httpx==0.25.2
 
 # Utilities
 python-slugify==8.0.1
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
