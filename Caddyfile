@@ -92,3 +92,31 @@ adrian.hensler.photography {
     Referrer-Policy "strict-origin-when-cross-origin"
   }
 }
+
+gptresearcher.hensler.photography:4001 {
+  encode zstd gzip
+
+  # Serve outputs (PDFs, reports) as static files
+  @outputs path /outputs/*
+  handle @outputs {
+    root * /srv/gptresearcher
+    file_server browse
+  }
+
+  # Route API and WebSocket requests to backend
+  @backend path /api/* /ws /report/* /files/* /upload/* /chat /docs /openapi.json
+  reverse_proxy @backend gpt-researcher-gpt-researcher-1:8000
+
+  # Route everything else to frontend
+  reverse_proxy gpt-researcher-gptr-nextjs-1:3000
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  @health path /healthz
+  respond @health "ok" 200
+}
