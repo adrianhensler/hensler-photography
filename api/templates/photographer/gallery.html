@@ -89,6 +89,63 @@
             font-family: inherit;
         }
 
+        /* Active tag filter bar */
+        .active-tags {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .active-tags-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #6e6e73;
+        }
+
+        #activeTagDisplay {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        #activeTagDisplay .tag-pill {
+            background: #06c;
+            color: white;
+            border: none;
+            padding-right: 2rem;
+            position: relative;
+        }
+
+        #activeTagDisplay .tag-pill::after {
+            content: '×';
+            position: absolute;
+            right: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .clear-filter {
+            padding: 0.5rem 0.75rem;
+            background: #f5f5f7;
+            color: #6e6e73;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .clear-filter:hover {
+            background: #e8e8ed;
+            color: #1d1d1f;
+        }
+
         .stats {
             background: white;
             padding: 1rem 1.5rem;
@@ -141,7 +198,9 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
         }
 
         .image-card:hover {
@@ -149,11 +208,47 @@
             box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         }
 
-        .image-thumbnail {
+        /* Public card indicator */
+        .image-card.is-public {
+            border-color: #34c759;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08),
+                        0 0 0 0px rgba(52, 199, 89, 0.15);
+        }
+
+        .image-card.is-public:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12),
+                        0 0 0 4px rgba(52, 199, 89, 0.15);
+        }
+
+        .image-thumbnail-wrapper {
+            position: relative;
             width: 100%;
             height: 200px;
+        }
+
+        .image-thumbnail {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             background: #f5f5f7;
+        }
+
+        /* Public overlay badge */
+        .public-overlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            padding: 0.375rem 0.75rem;
+            background: rgba(52, 199, 89, 0.92);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            backdrop-filter: blur(8px);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
         .image-content {
@@ -180,6 +275,47 @@
             -webkit-box-orient: vertical;
         }
 
+        /* Tag pills */
+        .image-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .tag-pill {
+            padding: 0.3rem 0.75rem;
+            background: #f5f5f7;
+            color: #6e6e73;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .tag-pill:hover {
+            background: #e8e8ed;
+            border-color: #06c;
+            color: #06c;
+            transform: translateY(-1px);
+        }
+
+        .tag-pill.active {
+            background: #06c;
+            color: white;
+            border-color: #06c;
+        }
+
+        .tag-more {
+            padding: 0.3rem 0.5rem;
+            font-size: 0.75rem;
+            color: #86868b;
+            font-weight: 500;
+        }
+
         .image-meta {
             display: flex;
             gap: 0.5rem;
@@ -204,11 +340,6 @@
             color: #856404;
         }
 
-        .badge-featured {
-            background: #cce5ff;
-            color: #004085;
-        }
-
         .badge-category {
             background: #f5f5f7;
             color: #6e6e73;
@@ -216,42 +347,129 @@
 
         .image-actions {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr auto auto 1fr;
             gap: 0.5rem;
+            align-items: stretch;
         }
 
         .image-actions button {
-            padding: 0.5rem;
-            border: 1px solid #d1d1d6;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e0e0e0;
             background: white;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.85rem;
-            transition: background 0.2s;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            white-space: nowrap;
         }
 
         .image-actions button:hover {
             background: #f5f5f7;
+            border-color: #d1d1d6;
         }
 
-        .image-actions .action-primary {
-            background: #06c;
+        /* Visibility toggle button */
+        .visibility-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.875rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        /* Private state - neutral gray */
+        .visibility-toggle.is-private {
+            background: #f5f5f7;
+            color: #6e6e73;
+            border: 1px solid #e0e0e0;
+        }
+
+        .visibility-toggle.is-private:hover {
+            background: #e8e8ed;
+            color: #1d1d1f;
+            border-color: #d1d1d6;
+        }
+
+        /* Public state - vibrant green */
+        .visibility-toggle.is-public {
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.25);
             border: none;
         }
 
-        .image-actions .action-primary:hover {
-            background: #0077ed;
+        .visibility-toggle.is-public:hover {
+            background: linear-gradient(135deg, #30d158 0%, #32d760 100%);
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .toggle-icon {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .toggle-label {
+            font-weight: 500;
+        }
+
+        /* Animated transition between states */
+        .visibility-toggle.changing {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* EXIF toggle button */
+        .exif-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 42px;
+        }
+
+        .exif-toggle.is-private {
+            background: #f5f5f7;
+            color: #6e6e73;
+        }
+
+        .exif-toggle.is-private:hover {
+            background: #e8e8ed;
+            transform: scale(1.05);
+        }
+
+        .exif-toggle.is-shared {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34c759;
+        }
+
+        .exif-toggle.is-shared:hover {
+            background: rgba(52, 199, 89, 0.25);
+            transform: scale(1.05);
         }
 
         .image-actions .action-danger {
-            background: #ff3b30;
-            color: white;
-            border: none;
+            background: white;
+            color: #ff3b30;
+            border-color: #ff3b30;
         }
 
         .image-actions .action-danger:hover {
-            background: #dc3545;
+            background: #ff3b30;
+            color: white;
         }
 
         .empty-state {
@@ -344,6 +562,63 @@
         .modal-actions button {
             flex: 1;
         }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 1rem;
+            }
+
+            .image-actions {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .image-actions button,
+            .visibility-toggle {
+                min-height: 44px;
+                font-size: 0.9rem;
+                padding: 0.625rem 0.875rem;
+            }
+
+            .tag-pill {
+                min-height: 32px;
+                padding: 0.375rem 0.75rem;
+            }
+
+            .active-tags {
+                padding: 0.75rem 1rem;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        /* Tablet responsive */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            }
+        }
     </style>
 </head>
 <body>
@@ -362,17 +637,8 @@
                 <label>Status</label>
                 <select id="filterStatus">
                     <option value="">All Status</option>
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label>Featured</label>
-                <select id="filterFeatured">
-                    <option value="">All Images</option>
-                    <option value="true">Featured Only</option>
-                    <option value="false">Not Featured</option>
+                    <option value="published">Public</option>
+                    <option value="draft">Private</option>
                 </select>
             </div>
 
@@ -380,6 +646,13 @@
                 <label>Search</label>
                 <input type="text" id="filterSearch" placeholder="Search title, caption, tags...">
             </div>
+        </div>
+
+        <!-- Active tag filter bar -->
+        <div id="activeTagBar" class="active-tags" style="display: none;">
+            <span class="active-tags-label">Album:</span>
+            <div id="activeTagDisplay"></div>
+            <button class="clear-filter" onclick="clearTagFilter()" type="button">Show All</button>
         </div>
 
         <div class="stats">
@@ -465,6 +738,18 @@
                     </div>
                 </div>
 
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.1rem;">Privacy Settings</h3>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                        <input type="checkbox" id="editShareEXIF" style="width: auto;">
+                        <span>Share EXIF data publicly (camera, lens, exposure settings, location)</span>
+                    </label>
+                    <small style="color: #6e6e73; display: block; margin-top: 0.5rem; margin-left: 1.75rem;">
+                        When disabled, technical metadata remains private. Only you can see it in the management interface.
+                    </small>
+                </div>
+
                 <div style="margin: 1.5rem 0; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
                     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                         <button type="button" onclick="reextractEXIF()" style="flex: 1; min-width: 200px; padding: 0.75rem; background: white; border: 1px solid #06c; color: #06c; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
@@ -496,7 +781,6 @@
 
         // Set up filter listeners
         document.getElementById('filterStatus').addEventListener('change', applyFilters);
-        document.getElementById('filterFeatured').addEventListener('change', applyFilters);
         document.getElementById('filterSearch').addEventListener('input', debounce(applyFilters, 500));
 
         async function loadImages() {
@@ -533,11 +817,12 @@
                 filtered = filtered.filter(img => !img.published);
             }
 
-            const featured = document.getElementById('filterFeatured').value;
-            if (featured === 'true') {
-                filtered = filtered.filter(img => img.featured);
-            } else if (featured === 'false') {
-                filtered = filtered.filter(img => !img.featured);
+            // Tag filtering (replace mode - show only images with this tag)
+            if (activeTag) {
+                filtered = filtered.filter(img => {
+                    const imageTags = (img.tags || '').split(',').map(t => t.trim());
+                    return imageTags.includes(activeTag);
+                });
             }
 
             const search = document.getElementById('filterSearch').value.toLowerCase();
@@ -568,27 +853,45 @@
             }
 
             gallery.innerHTML = images.map(img => `
-                <div class="image-card">
-                    <img src="${img.thumbnail_url}" alt="${img.title || 'Untitled'}" class="image-thumbnail">
+                <div class="image-card ${img.published ? 'is-public' : ''}">
+                    <div class="image-thumbnail-wrapper">
+                        <img src="${img.thumbnail_url}" alt="${img.title || 'Untitled'}" class="image-thumbnail">
+                        ${img.published ? '<div class="public-overlay">Public</div>' : ''}
+                    </div>
                     <div class="image-content">
                         <div class="image-title">${img.title || 'Untitled'}</div>
                         <div class="image-caption">${img.caption || 'No caption'}</div>
 
+                        ${(img.tags || '').trim() ? `
+                        <div class="image-tags">
+                            ${(img.tags || '').split(',').filter(t => t.trim()).slice(0, 3).map(tag => `
+                                <button class="tag-pill" onclick="filterByTag('${tag.trim()}')" type="button">
+                                    ${tag.trim()}
+                                </button>
+                            `).join('')}
+                            ${((img.tags || '').split(',').filter(t => t.trim()).length > 3) ?
+                                `<span class="tag-more">+${(img.tags.split(',').filter(t => t.trim()).length - 3)}</span>` : ''}
+                        </div>
+                        ` : ''}
+
                         <div class="image-meta">
-                            <span class="badge ${img.published ? 'badge-published' : 'badge-draft'}">
-                                ${img.published ? 'Published' : 'Draft'}
-                            </span>
-                            ${img.featured ? '<span class="badge badge-featured">Featured</span>' : ''}
                             ${img.category ? `<span class="badge badge-category">${img.category}</span>` : ''}
                         </div>
 
                         <div class="image-actions">
                             <button onclick="editImage(${img.id})">Edit</button>
-                            <button onclick="togglePublish(${img.id}, ${!img.published})" class="action-primary">
-                                ${img.published ? 'Unpublish' : 'Publish'}
+                            <button class="visibility-toggle ${img.published ? 'is-public' : 'is-private'}"
+                                    onclick="toggleVisibility(${img.id}, ${img.published})"
+                                    aria-label="Toggle visibility: currently ${img.published ? 'public' : 'private'}"
+                                    aria-pressed="${img.published}">
+                                <span class="toggle-icon">${img.published ? '●' : '○'}</span>
+                                <span class="toggle-label">${img.published ? 'Public' : 'Private'}</span>
                             </button>
-                            <button onclick="toggleFeatured(${img.id}, ${!img.featured})">
-                                ${img.featured ? 'Unfeature' : 'Feature'}
+                            <button class="exif-toggle ${img.share_exif ? 'is-shared' : 'is-private'}"
+                                    onclick="toggleEXIF(${img.id}, ${img.share_exif})"
+                                    title="Toggle EXIF data sharing"
+                                    aria-label="Toggle EXIF sharing: currently ${img.share_exif ? 'shared' : 'private'}">
+                                ${img.share_exif ? '📷' : '🔒'}
                             </button>
                             <button onclick="deleteImage(${img.id})" class="action-danger">Delete</button>
                         </div>
@@ -608,43 +911,103 @@
             }
         }
 
-        async function togglePublish(imageId, publish) {
+        async function toggleVisibility(imageId, currentlyPublic) {
+            const newState = !currentlyPublic;
+
             try {
-                const response = await fetch(`/api/images/${imageId}/publish`, {
+                const response = await fetch(`/api/images/${imageId}/publish?published=${newState}`, {
                     method: 'POST',
                     credentials: 'include'
                 });
 
-                if (!response.ok) throw new Error('Failed to update');
+                if (!response.ok) throw new Error('Failed to update visibility');
 
                 // Update local data
                 const image = allImages.find(img => img.id === imageId);
-                if (image) image.published = publish;
+                if (image) image.published = newState;
 
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to update publish status');
+                alert('Failed to update visibility status');
             }
         }
 
-        async function toggleFeatured(imageId, featured) {
+        async function toggleEXIF(imageId, currentlyShared) {
+            const newState = !currentlyShared;
+
             try {
-                const response = await fetch(`/api/images/${imageId}/featured?featured=${featured}`, {
+                const response = await fetch(`/api/images/${imageId}/exif-sharing?share=${newState}`, {
                     method: 'POST',
                     credentials: 'include'
                 });
 
-                if (!response.ok) throw new Error('Failed to update');
+                if (!response.ok) throw new Error('Failed to update EXIF sharing');
 
                 // Update local data
                 const image = allImages.find(img => img.id === imageId);
-                if (image) image.featured = featured;
+                if (image) image.share_exif = newState;
 
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to update featured status');
+                alert('Failed to update EXIF sharing status');
+            }
+        }
+
+        // Tag filtering (replace mode - show only this tag)
+        let activeTag = null;
+
+        function filterByTag(tag) {
+            const trimmedTag = tag.trim();
+
+            // If clicking the same tag, clear the filter
+            if (activeTag === trimmedTag) {
+                clearTagFilter();
+                return;
+            }
+
+            // Set new active tag
+            activeTag = trimmedTag;
+
+            // Update UI
+            updateActiveTagDisplay();
+
+            // Update tag pills on cards to show active state
+            document.querySelectorAll('.tag-pill').forEach(pill => {
+                if (pill.textContent.trim() === trimmedTag) {
+                    pill.classList.add('active');
+                } else {
+                    pill.classList.remove('active');
+                }
+            });
+
+            applyFilters();
+        }
+
+        function clearTagFilter() {
+            activeTag = null;
+
+            // Hide the active tag bar
+            document.getElementById('activeTagBar').style.display = 'none';
+
+            // Remove active class from all tag pills
+            document.querySelectorAll('.tag-pill').forEach(pill => {
+                pill.classList.remove('active');
+            });
+
+            applyFilters();
+        }
+
+        function updateActiveTagDisplay() {
+            const tagBar = document.getElementById('activeTagBar');
+            const tagDisplay = document.getElementById('activeTagDisplay');
+
+            if (activeTag) {
+                tagDisplay.innerHTML = `<button class="tag-pill" onclick="clearTagFilter()" type="button">${activeTag}</button>`;
+                tagBar.style.display = 'flex';
+            } else {
+                tagBar.style.display = 'none';
             }
         }
 
@@ -679,6 +1042,9 @@
                 document.getElementById('editFocalLength').value = exif.focal_length || '';
                 document.getElementById('editLocation').value = exif.location || '';
                 document.getElementById('editDateTaken').value = exif.date_taken || '';
+
+                // Privacy settings
+                document.getElementById('editShareEXIF').checked = fullImage.share_exif || false;
 
                 document.getElementById('editModal').classList.add('show');
             } catch (error) {
@@ -718,6 +1084,7 @@
             };
 
             try {
+                // Save metadata
                 const response = await fetch(`/api/images/${imageId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -725,12 +1092,22 @@
                     body: JSON.stringify(metadata)
                 });
 
-                if (!response.ok) throw new Error('Failed to save');
+                if (!response.ok) throw new Error('Failed to save metadata');
+
+                // Save EXIF sharing setting
+                const shareEXIF = document.getElementById('editShareEXIF').checked;
+                const exifResponse = await fetch(`/api/images/${imageId}/exif-sharing?share=${shareEXIF}`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                if (!exifResponse.ok) throw new Error('Failed to save EXIF sharing setting');
 
                 // Update local data
                 const image = allImages.find(img => img.id == imageId);
                 if (image) {
                     Object.assign(image, metadata);
+                    image.share_exif = shareEXIF;
                 }
 
                 closeEditModal();

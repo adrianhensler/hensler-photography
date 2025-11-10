@@ -4,9 +4,9 @@ set -euo pipefail
 ################################################################################
 # Hensler Photography - Backup Script
 #
-# This script backs up Docker volumes containing TLS certificates and Caddy
-# configuration using restic. It stops the production container during backup
-# to ensure data consistency, then restarts it.
+# This script backs up Docker volumes containing TLS certificates, Caddy
+# configuration, database, and uploaded images using restic. It stops the
+# production container during backup to ensure data consistency, then restarts it.
 #
 # Usage:
 #   sudo ./scripts/backup.sh
@@ -97,6 +97,8 @@ fi
 # Get volume mount points
 CADDY_DATA_VOLUME=$(docker volume inspect hensler_photography_caddy-data --format '{{ .Mountpoint }}' 2>/dev/null || echo "")
 CADDY_CONFIG_VOLUME=$(docker volume inspect hensler_photography_caddy-config --format '{{ .Mountpoint }}' 2>/dev/null || echo "")
+GALLERY_DB_VOLUME=$(docker volume inspect hensler_photography_gallery-db --format '{{ .Mountpoint }}' 2>/dev/null || echo "")
+GALLERY_IMAGES_VOLUME=$(docker volume inspect hensler_photography_gallery-images --format '{{ .Mountpoint }}' 2>/dev/null || echo "")
 
 if [ -z "$CADDY_DATA_VOLUME" ] || [ -z "$CADDY_CONFIG_VOLUME" ]; then
     log_error "Could not find Docker volumes. They may not exist yet."
@@ -122,6 +124,39 @@ if [ $BACKUP_EXIT_CODE -eq 0 ]; then
     log "Docker volumes backed up successfully"
 else
     log_error "Backup failed with exit code $BACKUP_EXIT_CODE"
+fi
+
+# Backup database and gallery images (if API is deployed)
+DATABASE_BACKUP_EXIT_CODE=0
+if [ -n "$GALLERY_DB_VOLUME" ] || [ -n "$GALLERY_IMAGES_VOLUME" ]; then
+    log "Backing up API data..."
+
+    BACKUP_PATHS=()
+    if [ -n "$GALLERY_DB_VOLUME" ]; then
+        log "  - gallery-db: $GALLERY_DB_VOLUME"
+        BACKUP_PATHS+=("$GALLERY_DB_VOLUME")
+    fi
+    if [ -n "$GALLERY_IMAGES_VOLUME" ]; then
+        log "  - gallery-images: $GALLERY_IMAGES_VOLUME"
+        BACKUP_PATHS+=("$GALLERY_IMAGES_VOLUME")
+    fi
+
+    restic -r "$BACKUP_REPO" backup \
+        "${BACKUP_PATHS[@]}" \
+        --tag database \
+        --tag api-data \
+        --tag production \
+        --host hensler-photography
+
+    DATABASE_BACKUP_EXIT_CODE=$?
+
+    if [ $DATABASE_BACKUP_EXIT_CODE -eq 0 ]; then
+        log "API data backed up successfully"
+    else
+        log_error "API data backup failed with exit code $DATABASE_BACKUP_EXIT_CODE"
+    fi
+else
+    log "API volumes not found - skipping database backup (API not deployed yet)"
 fi
 
 # Backup site content (files)
@@ -192,7 +227,7 @@ fi
 
 # Final status
 log "========================================="
-if [ $BACKUP_EXIT_CODE -eq 0 ] && [ $CONTENT_BACKUP_EXIT_CODE -eq 0 ]; then
+if [ $BACKUP_EXIT_CODE -eq 0 ] && [ $CONTENT_BACKUP_EXIT_CODE -eq 0 ] && [ $DATABASE_BACKUP_EXIT_CODE -eq 0 ]; then
     log "✓ Backup completed successfully"
     log "========================================="
     exit 0

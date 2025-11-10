@@ -15,6 +15,23 @@ services:
       - caddy-data:/data
       - caddy-config:/config
 
+  # API service (uncomment when ready to deploy)
+  # api:
+  #   build: ./api
+  #   restart: unless-stopped
+  #   ports:
+  #     - "4100:8000"
+  #   volumes:
+  #     - gallery-db:/data
+  #     - gallery-images:/app/assets/gallery
+  #   environment:
+  #     - DATABASE_PATH=/data/gallery.db
+  #     - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+  #     - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
 volumes:
   caddy-data:
   caddy-config:
+  # Database and images volumes (uncomment when API is deployed)
+  # gallery-db:
+  # gallery-images:

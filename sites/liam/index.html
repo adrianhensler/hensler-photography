@@ -5,30 +5,466 @@
   <title>Liam Hensler Photography</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Photography by Liam Hensler.">
+
+  <!-- Google Fonts: Playfair Display for headings, Inter for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- GLightbox for image lightbox -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#0b0b0b;color:#eee;display:flex;min-height:100vh}
-    .wrap{margin:auto;max-width:1000px;padding:24px;text-align:center}
-    img{max-width:100%;height:auto;border-radius:16px;display:block;margin:0 auto 20px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-    h1{font-weight:700;margin:0 0 8px;font-size:clamp(28px,4vw,44px)}
-    p{opacity:.9;margin:0 0 18px;line-height:1.5}
-    a.button{display:inline-block;padding:12px 18px;border-radius:999px;border:1px solid #444;text-decoration:none;color:#eee}
-    a.button:hover{background:#151515}
-    footer{opacity:.6;margin-top:28px;font-size:.9rem}
+    /* Base & Layout */
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #f5f5f5;
+      display: flex;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .wrap {
+      margin: auto;
+      max-width: 1000px;
+      padding: clamp(24px, 5vw, 48px);
+      text-align: center;
+    }
+
+    /* Typography - Ghost Effect Header */
+    .site-header {
+      margin: 0 0 48px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      margin: 0;
+      font-size: clamp(56px, 8vw, 80px);
+      letter-spacing: 0.05em;
+      line-height: 1.0;
+      opacity: 0.45;
+      text-transform: lowercase;
+    }
+
+    .subtitle {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(20px, 3vw, 28px);
+      letter-spacing: 0.08em;
+      margin: 8px 0 0;
+      opacity: 0.4;
+      text-transform: lowercase;
+    }
+
+    p {
+      margin: 0 0 24px;
+      line-height: 1.65;
+      font-size: clamp(16px, 2vw, 18px);
+      color: #f5f5f5;
+    }
+
+    /* Bio text */
+    .bio {
+      max-width: 650px;
+      margin: 0 auto 24px;
+      font-size: clamp(17px, 2.2vw, 19px);
+      line-height: 1.7;
+      color: rgba(245, 245, 245, 0.92);
+    }
+
+    /* Slideshow Carousel */
+    .slideshow {
+      margin: 48px 0;
+      position: relative;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .slideshow-container {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      background: #0f0f0f;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+
+    .slideshow-slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slideshow-slide.active {
+      opacity: 1;
+      z-index: 2;
+    }
+
+    .slideshow-slide img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .slideshow-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(10, 10, 10, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f5f5f5;
+      font-size: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .slideshow-nav:hover {
+      background: rgba(232, 213, 181, 0.2);
+      border-color: rgba(232, 213, 181, 0.4);
+    }
+
+    .slideshow-prev {
+      left: 12px;
+    }
+
+    .slideshow-next {
+      right: 12px;
+    }
+
+    /* Gallery Grid */
+    #gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin: 48px 0;
+    }
+
+    .gallery-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0f0f0f;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      cursor: pointer;
+    }
+
+    .gallery-item.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      transition: transform 0.3s ease;
+      background: #0f0f0f;
+    }
+
+    .gallery-item:hover img {
+      transform: scale(1.05);
+    }
+
+    /* Links */
+    a.button {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(245, 245, 245, 0.2);
+      text-decoration: none;
+      color: #f5f5f5;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    a.button:hover {
+      background: rgba(245, 245, 245, 0.05);
+      border-color: rgba(245, 245, 245, 0.4);
+    }
+
+    /* Footer */
+    footer {
+      opacity: 0.5;
+      margin-top: 48px;
+      font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      #gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .slideshow-container {
+        height: 400px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #gallery-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .slideshow-container {
+        height: 300px;
+      }
+    }
+
+    /* Loading state */
+    .loading-message {
+      text-align: center;
+      padding: 60px 20px;
+      opacity: 0.6;
+    }
+
+    .empty-gallery {
+      text-align: center;
+      padding: 80px 20px;
+      opacity: 0.7;
+    }
+
+    .empty-gallery h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(32px, 5vw, 48px);
+      margin: 0 0 16px;
+      opacity: 0.6;
+    }
+
+    .empty-gallery p {
+      font-size: 18px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
   </style>
+
   <meta property="og:title" content="Liam Hensler Photography">
-  <meta property="og:description" content="Follow on Instagram for latest work.">
-  <meta property="og:image" content="/assets/liam-hero.jpg">
+  <meta property="og:description" content="Photography by Liam Hensler.">
   <meta property="og:type" content="website">
 </head>
 <body>
   <main class="wrap">
-    <img src="/assets/liam-hero.jpg" alt="Liam with camera">
-    <h1>Liam Hensler Photography</h1>
-    <p><a class="button" href="https://www.instagram.com/scotiancapture" rel="me noopener" target="_blank">Follow on Instagram</a></p>
-    <footer>© <span id="y"></span> Liam Hensler</footer>
+    <header class="site-header">
+      <h1>liam hensler</h1>
+      <div class="subtitle">photography</div>
+    </header>
+
+    <img src="/assets/liam-hero.jpg" alt="Liam with camera" style="max-width: 300px; height: auto; border-radius: 16px; margin: 24px auto; display: block; box-shadow: 0 10px 30px rgba(0,0,0,.35);">
+
+    <div class="bio">
+      <p>Follow my photography journey on <a href="https://www.instagram.com/scotiancapture" rel="me noopener" target="_blank" class="button">Instagram</a></p>
+    </div>
+
+    <!-- Slideshow Carousel -->
+    <div class="slideshow">
+      <div id="slideshow" class="slideshow-container">
+        <div class="loading-message" id="loading-slideshow">Loading gallery...</div>
+      </div>
+      <button class="slideshow-nav slideshow-prev" onclick="changeSlide(-1)" aria-label="Previous image">‹</button>
+      <button class="slideshow-nav slideshow-next" onclick="changeSlide(1)" aria-label="Next image">›</button>
+    </div>
+
+    <!-- Gallery Grid -->
+    <div id="gallery-grid"></div>
+
+    <footer>
+      © <span id="y"></span> Liam Hensler
+    </footer>
   </main>
+
+  <!-- GLightbox -->
+  <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+
   <script>
-    document.getElementById('y').textContent=new Date().getFullYear();
+    // Global gallery state
+    let galleryData = [];
+    let galleryImages = [];
+    let currentSlide = 0;
+    let slideshowInterval;
+    let slideshowPaused = false;
+
+    // Set copyright year
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    // ===== SLIDESHOW LOGIC =====
+    function initSlideshow() {
+      const container = document.getElementById('slideshow');
+
+      galleryData.forEach((imageData, index) => {
+        const slide = document.createElement('div');
+        slide.className = 'slideshow-slide';
+        if (index === 0) slide.classList.add('active');
+
+        const img = document.createElement('img');
+        img.src = `/assets/gallery/${imageData.filename}`;
+        img.alt = imageData.title || 'Photography by Liam Hensler';
+        img.loading = index === 0 ? 'eager' : 'lazy';
+
+        slide.appendChild(img);
+        container.appendChild(slide);
+      });
+
+      // Auto-advance slideshow every 5 seconds
+      startSlideshow();
+
+      // Pause on hover
+      container.addEventListener('mouseenter', () => {
+        slideshowPaused = true;
+        clearInterval(slideshowInterval);
+      });
+
+      container.addEventListener('mouseleave', () => {
+        slideshowPaused = false;
+        startSlideshow();
+      });
+    }
+
+    function startSlideshow() {
+      if (slideshowPaused) return;
+      slideshowInterval = setInterval(() => {
+        changeSlide(1);
+      }, 5000);
+    }
+
+    function changeSlide(direction) {
+      const slides = document.querySelectorAll('.slideshow-slide');
+      slides[currentSlide].classList.remove('active');
+
+      currentSlide = (currentSlide + direction + slides.length) % slides.length;
+
+      slides[currentSlide].classList.add('active');
+
+      // Reset timer on manual navigation
+      if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+        startSlideshow();
+      }
+    }
+
+    // ===== GALLERY GRID LOGIC =====
+    function initGallery() {
+      const grid = document.getElementById('gallery-grid');
+
+      galleryData.forEach((imageData, index) => {
+        const link = document.createElement('a');
+        link.href = `/assets/gallery/${imageData.filename}`;
+        link.className = 'gallery-item glightbox';
+        link.setAttribute('data-gallery', 'portfolio');
+
+        // Add title and EXIF data if available
+        if (imageData.title) {
+          link.setAttribute('data-title', imageData.title);
+        }
+
+        // Build description with EXIF data if shared
+        let description = '';
+        if (imageData.caption) {
+          description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${imageData.caption}</p>`;
+        }
+
+        if (imageData.share_exif && imageData.exif) {
+          const exif = imageData.exif;
+          const exifParts = [];
+
+          if (exif.camera_make || exif.camera_model) {
+            const camera = [exif.camera_make, exif.camera_model].filter(Boolean).join(' ');
+            if (camera) exifParts.push(camera);
+          }
+          if (exif.lens) exifParts.push(exif.lens);
+          if (exif.focal_length) exifParts.push(exif.focal_length);
+          if (exif.aperture) exifParts.push(exif.aperture);
+          if (exif.shutter_speed) exifParts.push(exif.shutter_speed);
+          if (exif.iso) exifParts.push(`ISO ${exif.iso}`);
+
+          if (exifParts.length > 0) {
+            description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666; font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; letter-spacing: 0.02em;">${exifParts.join(' · ')}</p>`;
+          }
+
+          if (exif.location) {
+            description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">📍 ${exif.location}</p>`;
+          }
+        }
+
+        if (description) {
+          link.setAttribute('data-description', description);
+        }
+
+        const img = document.createElement('img');
+        img.src = `/assets/gallery/${imageData.filename}`;
+        img.alt = imageData.title || 'Photography by Liam Hensler';
+        img.loading = 'lazy';
+        img.setAttribute('decoding', 'async');
+        img.setAttribute('fetchpriority', 'low');
+
+        img.onload = () => {
+          link.classList.add('has-image');
+        };
+
+        link.appendChild(img);
+        grid.appendChild(link);
+      });
+
+      // Initialize GLightbox after gallery is populated
+      setTimeout(() => {
+        const lightbox = GLightbox({
+          selector: '.glightbox',
+          touchNavigation: true,
+          loop: true,
+          autoplayVideos: false,
+          zoomable: false,
+          draggable: true,
+          closeButton: true,
+          closeOnOutsideClick: true
+        });
+      }, 100);
+
+      // Staggered reveal as items scroll into view
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!prefersReducedMotion) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              e.target.classList.add('is-visible');
+              io.unobserve(e.target);
+            }
+          });
+        }, { rootMargin: '120px' });
+
+        document.querySelectorAll('.gallery-item').forEach(el => io.observe(el));
+      } else {
+        // Immediately show all items for users who prefer reduced motion
+        document.querySelectorAll('.gallery-item').forEach(el => {
+          el.classList.add('is-visible');
+        });
+      }
+    }
 
     // ===== ANALYTICS TRACKING =====
     // Session ID management (ephemeral, no PII)
@@ -41,14 +477,19 @@
       return sessionId;
     }
 
-    // Track page view
-    async function trackPageView() {
+    // Track events to analytics endpoint
+    async function trackEvent(eventType, imageId = null) {
       try {
         const payload = {
-          event_type: 'page_view',
+          event_type: eventType,
           session_id: getSessionId()
         };
 
+        if (imageId !== null) {
+          payload.image_id = imageId;
+        }
+
+        // Get referrer from document
         if (document.referrer) {
           payload.referrer = document.referrer;
         }
@@ -61,12 +502,92 @@
           body: JSON.stringify(payload)
         });
       } catch (error) {
+        // Silently fail - don't disrupt user experience
         console.debug('Analytics tracking failed:', error);
       }
     }
 
-    // Track on load
-    window.addEventListener('DOMContentLoaded', trackPageView);
+    // Track page view on load
+    function trackPageView() {
+      trackEvent('page_view');
+    }
+
+    // Add click tracking to gallery items
+    function addGalleryTracking() {
+      document.querySelectorAll('.gallery-item').forEach((item, index) => {
+        item.addEventListener('click', () => {
+          // Use actual database ID instead of index for accurate analytics
+          const imageId = galleryData[index]?.id || index;
+          trackEvent('gallery_click', imageId);
+        });
+      });
+    }
+
+    // Track lightbox opens using GLightbox events
+    function addLightboxTracking() {
+      // Wait for GLightbox to be initialized
+      setTimeout(() => {
+        const lightboxElements = document.querySelectorAll('.glightbox');
+        lightboxElements.forEach((element, index) => {
+          element.addEventListener('click', () => {
+            // Track when lightbox opens (not the gallery click, which was already tracked)
+            setTimeout(() => {
+              // Use actual database ID instead of index for accurate analytics
+              const imageId = galleryData[index]?.id || index;
+              trackEvent('lightbox_open', imageId);
+            }, 100);
+          });
+        });
+      }, 200);
+    }
+
+    // ===== LOAD GALLERY DATA FROM API =====
+    async function loadGalleryData() {
+      try {
+        const response = await fetch('/api/gallery/published?user_id=2');
+        if (!response.ok) {
+          throw new Error(`Failed to load gallery: ${response.status}`);
+        }
+
+        const data = await response.json();
+        galleryData = data.images || [];
+
+        // Extract filenames for backward compatibility with existing code
+        galleryImages = galleryData.map(img => img.filename);
+
+        console.log(`Loaded ${galleryData.length} published images from API`);
+        return true;
+      } catch (error) {
+        console.error('Error loading gallery data:', error);
+        // Fallback to empty gallery on error
+        galleryImages = [];
+        galleryData = [];
+        return false;
+      }
+    }
+
+    // ===== INITIALIZE ON PAGE LOAD =====
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Load gallery data from API first
+      await loadGalleryData();
+
+      // Initialize gallery UI
+      if (galleryData.length > 0) {
+        initSlideshow();
+        initGallery();
+      } else {
+        // Show empty state
+        document.getElementById('slideshow').innerHTML = '<div class="empty-gallery"><h2>No images yet</h2><p>Check back soon for new photography</p></div>';
+        console.warn('No published images found');
+      }
+
+      // Initialize analytics tracking
+      trackPageView();
+      setTimeout(() => {
+        addGalleryTracking();
+        addLightboxTracking();
+      }, 500); // Wait for gallery to be fully initialized
+    });
   </script>
 </body>
 </html>

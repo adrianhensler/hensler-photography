@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Quick Reference
+
+**Key Documentation:**
+- **DATABASE.md** - Complete database schema, creation instructions, and common queries
+- **ARCHITECTURE.md** - System design and technical architecture
+- **DEVELOPMENT.md** - Development workflow and best practices
+- **INTEGRATION_BREAKPOINT.md** - Current integration status (static → API)
+
 ## Project Overview
 
 Multi-site static photography portfolio deployment using a **single Caddy container** serving three domains:
@@ -31,21 +39,21 @@ The architecture supports future expansion where the main site will showcase bot
 └─────────────────────────────────────────────────────────────┘
                          ↕ (NOT YET CONNECTED)
 ┌─────────────────────────────────────────────────────────────┐
-│  Admin System (Port 4100) - Python/FastAPI                 │
-│  - adrian.hensler.photography:4100/admin                    │
-│  - liam.hensler.photography:4100/admin                      │
+│  Management System (Port 4100) - Python/FastAPI            │
+│  - adrian.hensler.photography:4100/manage                   │
+│  - liam.hensler.photography:4100/manage                     │
 │  - JWT authentication with httpOnly cookies                 │
 │  - Image upload with drag-and-drop                          │
 │  - AI-powered metadata (Claude Vision API)                  │
 │  - EXIF extraction and editing                              │
-│  - SQLite database with multi-tenant support                │
+│  - SQLite database with multi-photographer support          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Port Architecture
 
 - **Port 8080**: Public portfolios (development/testing)
-- **Port 4100**: Admin interfaces (development/testing)
+- **Port 4100**: Management interfaces (development/testing)
 - **Port 80/443**: Public portfolios (production)
 - **Port 4100**: Admin interfaces (production) - *TODO: Add firewall rules*
 
@@ -246,17 +254,18 @@ CREATE TABLE ai_costs (
 
 ### Testing URLs
 
-**Admin System** (requires authentication):
-- Login: `https://adrian.hensler.photography:4100/admin/login`
-- Upload: `https://adrian.hensler.photography:4100/manage/upload`
-- Gallery: `https://adrian.hensler.photography:4100/manage/gallery`
+**Management System** (requires authentication):
+- Login: `http://adrian.hensler.photography:4100/admin/login`
+- Dashboard: `http://adrian.hensler.photography:4100/manage`
+- Upload: `http://adrian.hensler.photography:4100/manage/upload`
+- Gallery: `http://adrian.hensler.photography:4100/manage/gallery`
 
 **Credentials** (development):
 - Username: `adrian`
-- Password: `AdrianTest123!`
+- Password: Set via CLI tool (see DATABASE.md)
 
 **Public Site** (open):
-- Homepage: `https://adrian.hensler.photography:8080/`
+- Homepage: `http://adrian.hensler.photography:8080/`
 - Currently shows Flickr images (static)
 
 ### Backend Commands

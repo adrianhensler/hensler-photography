@@ -11,6 +11,12 @@ screenshots/
 # Docker
 .env
 
+# Database files
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
 # OS files
 .DS_Store
 Thumbs.db

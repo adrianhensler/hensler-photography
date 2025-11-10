@@ -418,19 +418,9 @@
 
   <script>
     // ===== IMAGE CONFIGURATION =====
-    // To add more images: Add filename to this array
-    const galleryImages = [
-      '52871221196_95f87f72ce_b.jpg',
-      '53225347053_31cd2f818e_b.jpg',
-      '53470724843_5747fc8ff5_b.jpg',
-      '53615968247_4d4ecff67c_b.jpg',
-      '53617286790_597f1818c5_b.jpg',
-      '53777597401_77cf321b21_b.jpg',
-      '53904082912_fd86ce3ff5_b.jpg',
-      '54097487564_56266abcf2_b.jpg',
-      '54770451360_a3eb449678_b.jpg',
-      '54770451375_d527619b96_b.jpg'
-    ];
+    // Images loaded dynamically from database API
+    let galleryImages = [];
+    let galleryData = [];  // Full image data with titles, captions, etc.
 
     // ===== SLIDESHOW LOGIC =====
     let currentSlide = 0;
@@ -440,14 +430,14 @@
     function initSlideshow() {
       const container = document.getElementById('slideshow');
 
-      galleryImages.forEach((filename, index) => {
+      galleryData.forEach((imageData, index) => {
         const slide = document.createElement('div');
         slide.className = 'slideshow-slide';
         if (index === 0) slide.classList.add('active');
 
         const img = document.createElement('img');
-        img.src = `/assets/gallery/${filename}`;
-        img.alt = 'Photography by Adrian Hensler';
+        img.src = `/assets/gallery/${imageData.filename}`;
+        img.alt = imageData.title || 'Photography by Adrian Hensler';
         img.loading = index === 0 ? 'eager' : 'lazy';
 
         slide.appendChild(img);
@@ -495,15 +485,53 @@
     function initGallery() {
       const grid = document.getElementById('gallery-grid');
 
-      galleryImages.forEach((filename) => {
+      galleryData.forEach((imageData, index) => {
         const link = document.createElement('a');
-        link.href = `/assets/gallery/${filename}`;
+        link.href = `/assets/gallery/${imageData.filename}`;
         link.className = 'gallery-item glightbox';
         link.setAttribute('data-gallery', 'portfolio');
 
+        // Add title and EXIF data if available
+        if (imageData.title) {
+          link.setAttribute('data-title', imageData.title);
+        }
+
+        // Build description with EXIF data if shared
+        let description = '';
+        if (imageData.caption) {
+          description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${imageData.caption}</p>`;
+        }
+
+        if (imageData.share_exif && imageData.exif) {
+          const exif = imageData.exif;
+          const exifParts = [];
+
+          if (exif.camera_make || exif.camera_model) {
+            const camera = [exif.camera_make, exif.camera_model].filter(Boolean).join(' ');
+            if (camera) exifParts.push(camera);
+          }
+          if (exif.lens) exifParts.push(exif.lens);
+          if (exif.focal_length) exifParts.push(exif.focal_length);
+          if (exif.aperture) exifParts.push(exif.aperture);
+          if (exif.shutter_speed) exifParts.push(exif.shutter_speed);
+          if (exif.iso) exifParts.push(`ISO ${exif.iso}`);
+
+          if (exifParts.length > 0) {
+            description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666; font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; letter-spacing: 0.02em;">${exifParts.join(' · ')}</p>`;
+          }
+
+          if (exif.location) {
+            description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">📍 ${exif.location}</p>`;
+          }
+        }
+
+        if (description) {
+          link.setAttribute('data-description', description);
+        }
+
         const img = document.createElement('img');
-        img.src = `/assets/gallery/${filename}`;
-        img.alt = 'Photography by Adrian Hensler';
+        img.src = `/assets/gallery/${imageData.filename}`;
+        img.alt = imageData.title || 'Photography by Adrian Hensler';
         img.loading = 'lazy';
         img.setAttribute('decoding', 'async');
         img.setAttribute('fetchpriority', 'low');
@@ -602,7 +630,9 @@
     function addGalleryTracking() {
       document.querySelectorAll('.gallery-item').forEach((item, index) => {
         item.addEventListener('click', () => {
-          trackEvent('gallery_click', index);
+          // Use actual database ID instead of index for accurate analytics
+          const imageId = galleryData[index]?.id || index;
+          trackEvent('gallery_click', imageId);
         });
       });
     }
@@ -616,17 +646,52 @@
           element.addEventListener('click', () => {
             // Track when lightbox opens (not the gallery click, which was already tracked)
             setTimeout(() => {
-              trackEvent('lightbox_open', index);
+              // Use actual database ID instead of index for accurate analytics
+              const imageId = galleryData[index]?.id || index;
+              trackEvent('lightbox_open', imageId);
             }, 100);
           });
         });
       }, 200);
     }
 
+    // ===== LOAD GALLERY DATA FROM API =====
+    async function loadGalleryData() {
+      try {
+        const response = await fetch('/api/gallery/published?user_id=1');
+        if (!response.ok) {
+          throw new Error(`Failed to load gallery: ${response.status}`);
+        }
+
+        const data = await response.json();
+        galleryData = data.images || [];
+
+        // Extract filenames for backward compatibility with existing code
+        galleryImages = galleryData.map(img => img.filename);
+
+        console.log(`Loaded ${galleryData.length} published images from API`);
+        return true;
+      } catch (error) {
+        console.error('Error loading gallery data:', error);
+        // Fallback to empty gallery on error
+        galleryImages = [];
+        galleryData = [];
+        return false;
+      }
+    }
+
     // ===== INITIALIZE ON PAGE LOAD =====
-    document.addEventListener('DOMContentLoaded', function() {
-      initSlideshow();
-      initGallery();
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Load gallery data from API first
+      await loadGalleryData();
+
+      // Initialize gallery UI
+      if (galleryData.length > 0) {
+        initSlideshow();
+        initGallery();
+      } else {
+        console.warn('No published images found');
+      }
 
       // Initialize analytics tracking
       trackPageView();

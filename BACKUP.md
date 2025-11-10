@@ -11,6 +11,8 @@ This project uses [restic](https://restic.net/) for automated backups of critica
 ### Docker Volumes
 - **caddy-data**: TLS certificates from Let's Encrypt
 - **caddy-config**: Caddy server configuration cache
+- **gallery-db**: SQLite database with image metadata, users, analytics (when API is deployed)
+- **gallery-images**: Uploaded image files (when API is deployed)
 
 ### Site Content
 - `sites/` directory (all three sites)
@@ -93,13 +95,16 @@ sudo -E ./scripts/backup.sh
 
 **What happens:**
 1. Production container stops (prevents data corruption)
-2. Docker volumes backed up
-3. Site content backed up
-4. Production container restarts
-5. Retention policy applied
-6. Repository health check performed
+2. Docker volumes backed up (TLS certificates, configuration)
+3. API data backed up (database and uploaded images, if deployed)
+4. Site content backed up (static files)
+5. Production container restarts
+6. Retention policy applied
+7. Repository health check performed
 
 **Downtime**: ~30 seconds while container is stopped.
+
+**Note**: If the API is not deployed yet, the database backup step will be skipped automatically.
 
 ---
 
@@ -205,6 +210,100 @@ docker compose up -d
 
 # Clean up
 rm -rf /tmp/restore
+```
+
+### Restore Database (API Data)
+
+**When to use**: Recover from database corruption, restore deleted images or data, roll back to previous state.
+
+#### 1. Find the Snapshot with Database Data
+
+```bash
+export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
+
+# List snapshots with database tag
+restic -r /opt/backups/hensler_photography snapshots --tag database
+```
+
+#### 2. Stop API Container
+
+```bash
+cd /opt/prod/hensler_photography
+docker compose down api
+```
+
+#### 3. Restore Database Volume
+
+```bash
+# Get volume mount point
+DB_VOLUME=$(docker volume inspect hensler_photography_gallery-db --format '{{ .Mountpoint }}')
+IMAGES_VOLUME=$(docker volume inspect hensler_photography_gallery-images --format '{{ .Mountpoint }}')
+
+# Restore to temporary location
+restic -r /opt/backups/hensler_photography restore <snapshot-id> \
+  --target /tmp/restore
+
+# Backup current data (safety measure)
+sudo cp -a "$DB_VOLUME" "$DB_VOLUME.backup-$(date +%Y%m%d-%H%M%S)"
+
+# Copy restored database
+sudo cp -a /tmp/restore"$DB_VOLUME"/* "$DB_VOLUME"/
+
+# Optionally restore images too
+sudo cp -a /tmp/restore"$IMAGES_VOLUME"/* "$IMAGES_VOLUME"/
+
+# Clean up
+rm -rf /tmp/restore
+```
+
+#### 4. Restart API Container
+
+```bash
+docker compose up -d api
+
+# Verify database integrity
+docker compose exec api python3 -c "
+from api.database import get_db_connection
+import asyncio
+async def check():
+    async with get_db_connection() as db:
+        cursor = await db.execute('SELECT COUNT(*) FROM images')
+        count = (await cursor.fetchone())[0]
+        print(f'Database OK: {count} images found')
+asyncio.run(check())
+"
+```
+
+#### 5. Verify Restoration
+
+```bash
+# Check API health
+curl http://localhost:4100/api/health
+
+# Check gallery endpoint
+curl http://localhost:4100/api/gallery/published?user_id=1
+```
+
+### Database-Only Backup (Manual)
+
+To create an emergency database export:
+
+```bash
+# SQLite dump (human-readable SQL)
+docker compose exec api sqlite3 /data/gallery.db .dump > gallery_backup_$(date +%Y%m%d).sql
+
+# Or copy database file directly
+docker compose cp api:/data/gallery.db ./gallery_backup_$(date +%Y%m%d).db
+```
+
+**Restore from manual dump:**
+```bash
+# From SQL dump
+cat gallery_backup_20250110.sql | docker compose exec -T api sqlite3 /data/gallery.db
+
+# From database file
+docker compose cp gallery_backup_20250110.db api:/data/gallery.db
+docker compose restart api
 ```
 
 ---

@@ -392,34 +392,16 @@ async def admin_upload(
         context
     )
 
-# Admin gallery management page (protected)
-@app.get("/admin/gallery")
-async def admin_gallery(
-    request: Request,
-    current_user: User = Depends(get_current_user)
-):
-    """Admin gallery management interface (authenticated users only)"""
-    # Check admin role
-    if current_user.role != "admin":
-        raise HTTPException(403, "Admin access required")
-
-    context = {
-        "request": request,
-        "title": "Manage Gallery",
-        "current_user": current_user
-    }
-    context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "admin/gallery.html",
-        context
-    )
+# Admin gallery removed - photographers use /manage/gallery instead
 
 # Include API routers
 from api.routes.ingestion import router as ingestion_router
 from api.routes.auth import router as auth_router
+from api.routes.gallery import router as gallery_router
 
 app.include_router(ingestion_router)
 app.include_router(auth_router)
+app.include_router(gallery_router)
 
 # Track endpoint (public - for frontend JavaScript)
 @app.post("/api/track")
@@ -490,17 +472,6 @@ async def track_event(request: Request, event: TrackingEvent):
             "success": False,
             "error": "Failed to track event"
         }
-
-# Gallery API endpoint (public)
-@app.get("/api/gallery/{username}")
-async def get_gallery(username: str):
-    """Get published images for a user"""
-    # Placeholder - will fetch from database
-    return {
-        "username": username,
-        "images": [],
-        "count": 0
-    }
 
 if __name__ == "__main__":
     import uvicorn

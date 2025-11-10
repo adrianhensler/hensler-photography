@@ -16,6 +16,11 @@ hensler.photography:8080 {
     reverse_proxy api:8000
   }
 
+  # Gallery assets (uploaded images from database)
+  handle /assets/gallery/* {
+    reverse_proxy api:8000
+  }
+
   handle /healthz {
     respond "ok" 200
   }
@@ -42,6 +47,11 @@ liam.hensler.photography:8080 {
     reverse_proxy api:8000
   }
 
+  # Gallery assets (uploaded images from database)
+  handle /assets/gallery/* {
+    reverse_proxy api:8000
+  }
+
   handle /healthz {
     respond "ok" 200
   }
@@ -65,6 +75,11 @@ adrian.hensler.photography:8080 {
 
   # Proxy API requests to backend (for analytics tracking)
   handle /api/* {
+    reverse_proxy api:8000
+  }
+
+  # Gallery assets (uploaded images from database)
+  handle /assets/gallery/* {
     reverse_proxy api:8000
   }
 

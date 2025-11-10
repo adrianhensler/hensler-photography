@@ -387,7 +387,7 @@ async def list_images(
         # Build query dynamically
         query = """
             SELECT id, user_id, filename, slug, title, caption, tags, category,
-                   published, featured, width, height, created_at, updated_at
+                   published, featured, share_exif, width, height, created_at, updated_at
             FROM images
             WHERE 1=1
         """
@@ -453,10 +453,11 @@ async def list_images(
                 "category": row[7],
                 "published": bool(row[8]),
                 "featured": bool(row[9]),
-                "width": row[10],
-                "height": row[11],
-                "created_at": row[12],
-                "updated_at": row[13],
+                "share_exif": bool(row[10]),
+                "width": row[11],
+                "height": row[12],
+                "created_at": row[13],
+                "updated_at": row[14],
                 "thumbnail_url": f"/assets/gallery/{Path(row[2]).stem}_thumbnail.webp"
             })
 
@@ -469,18 +470,47 @@ async def list_images(
 
 
 @router.post("/{image_id}/publish")
-async def publish_image(image_id: int):
-    """Mark an image as published"""
+async def set_visibility(image_id: int, published: bool = True):
+    """
+    Set image visibility: published=True (public), published=False (private).
+    Public images appear on user.hensler.photography, private remain in management interface only.
+    """
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
         await db.execute(
-            "UPDATE images SET published = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-            (image_id,)
+            "UPDATE images SET published = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (1 if published else 0, image_id)
         )
         await db.commit()
 
-    return {"success": True, "image_id": image_id, "published": True}
+    return {"success": True, "image_id": image_id, "published": published}
+
+
+@router.post("/{image_id}/exif-sharing")
+async def set_exif_sharing(image_id: int, share: bool = True):
+    """
+    Toggle EXIF data sharing for public gallery.
+
+    When share=False:
+    - EXIF data not returned in public API
+    - Photographer still sees EXIF in management interface
+
+    Privacy considerations:
+    - Location data can be hidden
+    - Camera/lens info can be hidden
+    - Exposure settings can be hidden
+    """
+    from api.database import get_db_connection
+
+    async with get_db_connection() as db:
+        await db.execute(
+            "UPDATE images SET share_exif = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (1 if share else 0, image_id)
+        )
+        await db.commit()
+
+    return {"success": True, "image_id": image_id, "share_exif": share}
 
 
 @router.post("/{image_id}/featured")
@@ -507,7 +537,7 @@ async def get_image(image_id: int):
     async with get_db_connection() as db:
         cursor = await db.execute("""
             SELECT id, user_id, filename, slug, title, caption, description,
-                   tags, category, published, featured, available_for_sale,
+                   tags, category, published, featured, available_for_sale, share_exif,
                    camera_make, camera_model, lens, focal_length, aperture,
                    shutter_speed, iso, date_taken, location,
                    width, height, aspect_ratio, created_at, updated_at
@@ -540,24 +570,25 @@ async def get_image(image_id: int):
         "published": bool(row[9]),
         "featured": bool(row[10]),
         "available_for_sale": bool(row[11]),
+        "share_exif": bool(row[12]),
         "exif": {
-            "camera_make": row[12],
-            "camera_model": row[13],
-            "lens": row[14],
-            "focal_length": row[15],
-            "aperture": row[16],
-            "shutter_speed": row[17],
-            "iso": row[18],
-            "date_taken": row[19],
-            "location": row[20]
+            "camera_make": row[13],
+            "camera_model": row[14],
+            "lens": row[15],
+            "focal_length": row[16],
+            "aperture": row[17],
+            "shutter_speed": row[18],
+            "iso": row[19],
+            "date_taken": row[20],
+            "location": row[21]
         },
         "dimensions": {
-            "width": row[21],
-            "height": row[22],
-            "aspect_ratio": row[23]
+            "width": row[22],
+            "height": row[23],
+            "aspect_ratio": row[24]
         },
-        "created_at": row[24],
-        "updated_at": row[25],
+        "created_at": row[25],
+        "updated_at": row[26],
         "variants": [
             {
                 "format": v[0],
@@ -658,7 +689,7 @@ async def get_image(image_id: int):
     async with get_db_connection() as db:
         cursor = await db.execute("""
             SELECT id, user_id, filename, slug, title, caption, description,
-                   tags, category, published, featured, available_for_sale,
+                   tags, category, published, featured, available_for_sale, share_exif,
                    camera_make, camera_model, lens, focal_length, aperture,
                    shutter_speed, iso, date_taken, location,
                    width, height, aspect_ratio, created_at, updated_at
@@ -691,24 +722,25 @@ async def get_image(image_id: int):
         "published": bool(row[9]),
         "featured": bool(row[10]),
         "available_for_sale": bool(row[11]),
+        "share_exif": bool(row[12]),
         "exif": {
-            "camera_make": row[12],
-            "camera_model": row[13],
-            "lens": row[14],
-            "focal_length": row[15],
-            "aperture": row[16],
-            "shutter_speed": row[17],
-            "iso": row[18],
-            "date_taken": row[19],
-            "location": row[20]
+            "camera_make": row[13],
+            "camera_model": row[14],
+            "lens": row[15],
+            "focal_length": row[16],
+            "aperture": row[17],
+            "shutter_speed": row[18],
+            "iso": row[19],
+            "date_taken": row[20],
+            "location": row[21]
         },
         "dimensions": {
-            "width": row[21],
-            "height": row[22],
-            "aspect_ratio": row[23]
+            "width": row[22],
+            "height": row[23],
+            "aspect_ratio": row[24]
         },
-        "created_at": row[24],
-        "updated_at": row[25],
+        "created_at": row[25],
+        "updated_at": row[26],
         "variants": [
             {
                 "format": v[0],

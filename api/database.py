@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS images (
     published BOOLEAN DEFAULT 0,
     featured BOOLEAN DEFAULT 0,
     available_for_sale BOOLEAN DEFAULT 0,
+    share_exif BOOLEAN DEFAULT 0,
 
     -- Display order
     sort_order INTEGER DEFAULT 0,
@@ -260,6 +261,21 @@ async def get_db_connection():
         await conn.close()
 
 
+def run_migrations():
+    """Run database migrations for schema updates"""
+    with get_db() as conn:
+        cursor = conn.cursor()
+
+        # Check if share_exif column exists
+        cursor.execute("PRAGMA table_info(images)")
+        columns = [row[1] for row in cursor.fetchall()]
+
+        if 'share_exif' not in columns:
+            print("Running migration: Adding share_exif column to images table")
+            cursor.execute("ALTER TABLE images ADD COLUMN share_exif BOOLEAN DEFAULT 0")
+            print("✓ Migration complete: share_exif column added")
+
+
 def init_database():
     """Initialize database with schema and seed data"""
     # Ensure data directory exists
@@ -275,6 +291,9 @@ def init_database():
         cursor.executescript(SEED_DATA)
 
         print(f"✓ Database initialized at {DATABASE_PATH}")
+
+    # Run migrations for existing databases
+    run_migrations()
 
 
 def get_user(username: str):
