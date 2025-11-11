@@ -85,11 +85,11 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
         # Check if requesting a protected page (not the login page itself)
         path = str(request.url.path)
-        is_protected_page = (path.startswith("/admin") or path.startswith("/manage")) and path != "/admin/login"
+        is_protected_page = (path.startswith("/admin") or path.startswith("/manage")) and path not in ["/admin/login", "/manage/login"]
 
         if is_browser and is_protected_page:
             logger.info(f"Redirecting unauthenticated browser request to login: {path}")
-            return RedirectResponse(url="/admin/login", status_code=303)
+            return RedirectResponse(url="/manage/login", status_code=303)
 
     # Return structured error response for API calls
     return JSONResponse(
@@ -283,6 +283,16 @@ async def health_check_detailed():
 @app.get("/admin/login")
 async def admin_login(request: Request):
     """Admin login page"""
+    context = {"request": request}
+    context = add_csrf_token_to_context(request, context)
+    return templates.TemplateResponse(
+        "admin/login.html",
+        context
+    )
+
+@app.get("/manage/login")
+async def manage_login(request: Request):
+    """Photographer login page (same as admin login)"""
     context = {"request": request}
     context = add_csrf_token_to_context(request, context)
     return templates.TemplateResponse(
