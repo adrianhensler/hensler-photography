@@ -275,6 +275,13 @@
             -webkit-box-orient: vertical;
         }
 
+        .image-upload-date {
+            font-size: 0.75rem;
+            color: #86868b;
+            margin-bottom: 0.5rem;
+            font-style: italic;
+        }
+
         /* Tag pills */
         .image-tags {
             display: flex;
@@ -800,6 +807,19 @@
                     </small>
                 </div>
 
+                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.1rem;">Upload Information</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">Uploaded</label>
+                        <input type="text" id="editCreatedAt" readonly style="font-size: 0.85rem; background: #f5f5f7; color: #6e6e73; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">Last Modified</label>
+                        <input type="text" id="editUpdatedAt" readonly style="font-size: 0.85rem; background: #f5f5f7; color: #6e6e73; cursor: not-allowed;">
+                    </div>
+                </div>
+
                 <div style="margin: 1.5rem 0; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
                     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                         <button type="button" onclick="reextractEXIF()" style="flex: 1; min-width: 200px; padding: 0.75rem; background: white; border: 1px solid #06c; color: #06c; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
@@ -927,6 +947,7 @@
                     <div class="image-content">
                         <div class="image-title">${img.title || 'Untitled'}</div>
                         <div class="image-caption">${img.caption || 'No caption'}</div>
+                        <div class="image-upload-date">Uploaded ${formatDate(img.created_at)}</div>
 
                         ${(img.tags || '').trim() ? `
                         <div class="image-tags">
@@ -1112,6 +1133,10 @@
 
                 // Privacy settings
                 document.getElementById('editShareEXIF').checked = fullImage.share_exif || false;
+
+                // Upload timestamps
+                document.getElementById('editCreatedAt').value = formatFullDate(fullImage.created_at);
+                document.getElementById('editUpdatedAt').value = formatFullDate(fullImage.updated_at);
 
                 document.getElementById('editModal').classList.add('show');
             } catch (error) {
@@ -1314,6 +1339,49 @@
                 clearTimeout(timeout);
                 timeout = setTimeout(() => func.apply(this, args), wait);
             };
+        }
+
+        // Format date for display (relative time for recent, absolute for old)
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            // Relative time for recent uploads
+            if (diffDays === 0) return 'today';
+            if (diffDays === 1) return 'yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+            if (diffDays < 30) {
+                const weeks = Math.floor(diffDays / 7);
+                return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+            }
+            if (diffDays < 365) {
+                const months = Math.floor(diffDays / 30);
+                return months === 1 ? '1 month ago' : `${months} months ago`;
+            }
+
+            // Absolute date for older uploads
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        // Format full timestamp for edit modal
+        function formatFullDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+
+            const date = new Date(dateStr);
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            };
+            return date.toLocaleString('en-US', options);
         }
 
         // Close modal on background click
