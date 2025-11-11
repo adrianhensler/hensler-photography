@@ -445,8 +445,9 @@
         }
 
         .badge-category {
-            background: #f5f5f7;
+            background: var(--bg-tertiary);
             color: var(--text-secondary);
+            border: 1px solid var(--border-color);
         }
 
         .image-actions {
@@ -469,8 +470,9 @@
         }
 
         .image-actions button:hover {
-            background: #f5f5f7;
-            border-color: #d1d1d6;
+            background: var(--bg-secondary);
+            border-color: var(--border-color);
+            transform: translateY(-1px);
         }
 
         /* Visibility toggle button */
@@ -491,15 +493,15 @@
 
         /* Private state - neutral gray */
         .visibility-toggle.is-private {
-            background: #f5f5f7;
+            background: var(--bg-tertiary);
             color: var(--text-secondary);
-            border: 1px solid var(--border-light);
+            border: 1px solid var(--border-color);
         }
 
         .visibility-toggle.is-private:hover {
-            background: #e8e8ed;
+            background: var(--bg-secondary);
             color: var(--text-primary);
-            border-color: #d1d1d6;
+            border-color: var(--border-color);
         }
 
         /* Public state - vibrant green */
@@ -546,12 +548,14 @@
         }
 
         .exif-toggle.is-private {
-            background: #f5f5f7;
+            background: var(--bg-tertiary);
             color: var(--text-secondary);
+            border: 1px solid var(--border-color);
         }
 
         .exif-toggle.is-private:hover {
-            background: #e8e8ed;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             transform: scale(1.05);
         }
 
@@ -567,13 +571,15 @@
 
         .image-actions .action-danger {
             background: var(--bg-primary);
-            color: #ff3b30;
-            border-color: #ff3b30;
+            color: var(--error);
+            border-color: var(--error);
         }
 
         .image-actions .action-danger:hover {
-            background: #ff3b30;
+            background: var(--error);
             color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(255, 59, 48, 0.25);
         }
 
         .empty-state {
