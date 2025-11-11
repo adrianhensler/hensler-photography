@@ -260,13 +260,14 @@ class ImageMetadataUpdate(BaseModel):
             if not v:
                 return None
 
-            # Try to parse common date formats
+            # Try to parse common date formats (including ISO format with T separator)
             from datetime import datetime
             valid_formats = [
-                '%Y-%m-%d %H:%M:%S',
-                '%Y-%m-%d %H:%M',
-                '%Y-%m-%d',
-                '%Y/%m/%d %H:%M:%S',
+                '%Y-%m-%dT%H:%M:%S',      # ISO format: 2024-11-08T14:30:22
+                '%Y-%m-%d %H:%M:%S',      # Standard: 2024-11-08 14:30:22
+                '%Y-%m-%d %H:%M',         # Without seconds
+                '%Y-%m-%d',               # Date only
+                '%Y/%m/%d %H:%M:%S',      # Slash separator
                 '%Y/%m/%d %H:%M',
                 '%Y/%m/%d',
             ]
@@ -281,7 +282,7 @@ class ImageMetadataUpdate(BaseModel):
                     continue
 
             if not parsed:
-                raise ValueError('Date must be in format YYYY-MM-DD HH:MM:SS or YYYY-MM-DD')
+                raise ValueError('Date must be in format YYYY-MM-DD HH:MM:SS, YYYY-MM-DDTHH:MM:SS, or YYYY-MM-DD')
 
         return v
 
