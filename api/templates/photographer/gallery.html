@@ -1321,16 +1321,29 @@
                 date_taken: document.getElementById('editDateTaken').value || null
             };
 
+            let response;  // Declare in outer scope for error handling
+
             try {
                 // Save metadata
-                const response = await fetch(`/api/images/${imageId}`, {
+                response = await fetch(`/api/images/${imageId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify(metadata)
                 });
 
-                if (!response.ok) throw new Error('Failed to save metadata');
+                if (!response.ok) {
+                    // Try to get error details before throwing
+                    const errorData = await response.json();
+                    if (errorData.detail && Array.isArray(errorData.detail)) {
+                        // Pydantic validation errors
+                        const errors = errorData.detail.map(e => `${e.loc[1]}: ${e.msg}`).join(', ');
+                        throw new Error(`Validation failed: ${errors}`);
+                    } else if (errorData.detail) {
+                        throw new Error(errorData.detail);
+                    }
+                    throw new Error('Failed to save metadata');
+                }
 
                 // Save EXIF sharing setting
                 const shareEXIF = document.getElementById('editShareEXIF').checked;
@@ -1348,31 +1361,14 @@
                     image.share_exif = shareEXIF;
                 }
 
+                // Success! Close modal and show confirmation
                 closeEditModal();
                 applyFilters();
                 showToast('✅ Changes saved successfully!', 'success');
-            } catch (error) {
-                console.error('Error:', error);
 
-                // Try to extract validation error message
-                if (response && !response.ok) {
-                    try {
-                        const errorData = await response.json();
-                        if (errorData.detail && Array.isArray(errorData.detail)) {
-                            // Pydantic validation errors
-                            const errors = errorData.detail.map(e => `${e.loc[1]}: ${e.msg}`).join(', ');
-                            showToast(`❌ Validation failed: ${errors}`, 'error');
-                        } else if (errorData.detail) {
-                            showToast(`❌ Error: ${errorData.detail}`, 'error');
-                        } else {
-                            showToast('❌ Failed to save changes', 'error');
-                        }
-                    } catch {
-                        showToast('❌ Failed to save changes', 'error');
-                    }
-                } else {
-                    showToast('❌ Failed to save changes', 'error');
-                }
+            } catch (error) {
+                console.error('Save error:', error);
+                showToast(`❌ ${error.message}`, 'error');
             }
         });
 
