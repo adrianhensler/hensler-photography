@@ -10,6 +10,7 @@ services:
       - "80:80"
       - "443:443"
       - "4001:4001"  # Protected sites range
+      - "4100:4100"  # Management interface with SSL
     volumes:
       - ./sites:/srv/sites:ro
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
@@ -26,8 +27,7 @@ services:
       context: .
       dockerfile: api/Dockerfile
     restart: unless-stopped
-    ports:
-      - "4100:8000"
+    # Port 4100 now handled by Caddy (web container) with SSL
     volumes:
       - gallery-db:/data
       - gallery-images:/app/assets/gallery
