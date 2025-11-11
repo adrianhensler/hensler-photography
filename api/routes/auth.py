@@ -275,6 +275,40 @@ async def get_current_user_optional(request: Request) -> Optional[User]:
         return None
 
 
+async def get_current_user_for_subdomain(request: Request) -> User:
+    """
+    FastAPI dependency that validates user has access to the current subdomain.
+
+    This prevents photographers from accessing each other's management interfaces.
+    For example: Adrian can only access adrian.hensler.photography/manage,
+    Liam can only access liam.hensler.photography/manage.
+
+    Raises HTTPException(403) if user tries to access wrong subdomain.
+    """
+    user = await get_current_user(request)
+
+    # Extract subdomain from request hostname
+    hostname = request.url.hostname or ""
+    subdomain = hostname.split('.')[0] if '.' in hostname else None
+
+    # Admin role can access any subdomain
+    if user.role == 'admin':
+        return user
+
+    # Photographers can only access their own subdomain
+    if user.subdomain != subdomain:
+        logger.warning(
+            f"Subdomain access denied: {user.username} (subdomain={user.subdomain}) tried to access {hostname}",
+            extra={"context": {"user_id": user.id, "requested_subdomain": subdomain}}
+        )
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied. You can only access {user.subdomain}.hensler.photography"
+        )
+
+    return user
+
+
 # Authentication routes
 
 @router.post("/login")

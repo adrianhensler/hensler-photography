@@ -301,14 +301,14 @@ async def manage_login(request: Request):
     )
 
 # Import auth dependencies
-from api.routes.auth import get_current_user, User
+from api.routes.auth import get_current_user, get_current_user_for_subdomain, User
 from fastapi import Depends
 
-# Photographer dashboard (protected - any authenticated user)
+# Photographer dashboard (protected - subdomain validated)
 @app.get("/manage")
 async def photographer_dashboard(
     request: Request,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """Photographer dashboard (authenticated users)"""
     context = {
@@ -326,7 +326,7 @@ async def photographer_dashboard(
 @app.get("/manage/upload")
 async def photographer_upload(
     request: Request,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """Photographer upload interface (authenticated users)"""
     context = {
@@ -344,7 +344,7 @@ async def photographer_upload(
 @app.get("/manage/gallery")
 async def photographer_gallery(
     request: Request,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """Photographer gallery management interface (authenticated users)"""
     context = {
