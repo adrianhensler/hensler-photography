@@ -1,10 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Gallery - Hensler Photography</title>
     <style>
+        /* Theme Variables */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f7;
+            --bg-tertiary: #e8e8ed;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #86868b;
+            --border-color: #d1d1d6;
+            --border-light: #e0e0e0;
+            --accent: #06c;
+            --accent-hover: #0077ed;
+            --success: #34c759;
+            --warning: #ff9500;
+            --error: #ff3b30;
+            --modal-backdrop: rgba(0, 0, 0, 0.4);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1d1d1f;
+            --bg-secondary: #2a2a2a;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-tertiary: #86868b;
+            --border-color: #424245;
+            --border-light: #38383a;
+            --accent: #0a84ff;
+            --accent-hover: #409cff;
+            --success: #32d74b;
+            --warning: #ff9f0a;
+            --error: #ff453a;
+            --modal-backdrop: rgba(0, 0, 0, 0.7);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,24 +48,83 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f5f5f7;
-            color: #1d1d1f;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .header {
-            background: white;
-            border-bottom: 1px solid #e0e0e0;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-light);
             padding: 1rem 2rem;
             position: sticky;
             top: 0;
             z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .header h1 {
+        .header-left h1 {
             font-size: 1.5rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-secondary);
+        }
+
+        .theme-toggle-switch {
+            width: 48px;
+            height: 28px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        [data-theme="dark"] .theme-toggle-switch {
+            background: var(--accent);
+        }
+
+        [data-theme="dark"] .theme-toggle-switch::after {
+            transform: translateX(20px);
+        }
+
+        .theme-icon {
+            font-size: 1.2rem;
         }
 
         nav {
@@ -39,7 +133,7 @@
         }
 
         nav a {
-            color: #06c;
+            color: var(--accent);
             text-decoration: none;
         }
 
@@ -49,7 +143,7 @@
 
         nav a.active {
             font-weight: 500;
-            color: #1d1d1f;
+            color: var(--text-primary);
         }
 
         .container {
@@ -59,7 +153,7 @@
         }
 
         .filters {
-            background: white;
+            background: var(--bg-primary);
             padding: 1.5rem;
             border-radius: 12px;
             margin-bottom: 2rem;
@@ -77,21 +171,23 @@
         .filter-group label {
             font-size: 0.9rem;
             font-weight: 500;
-            color: #6e6e73;
+            color: var(--text-secondary);
         }
 
         .filter-group select,
         .filter-group input {
             padding: 0.75rem;
-            border: 1px solid #d1d1d6;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-size: 0.9rem;
             font-family: inherit;
+            background: var(--bg-primary);
+            color: var(--text-primary);
         }
 
         /* Active tag filter bar */
         .active-tags {
-            background: white;
+            background: var(--bg-primary);
             padding: 1rem 1.5rem;
             border-radius: 12px;
             margin-bottom: 1rem;
@@ -104,7 +200,7 @@
         .active-tags-label {
             font-size: 0.9rem;
             font-weight: 500;
-            color: #6e6e73;
+            color: var(--text-secondary);
         }
 
         #activeTagDisplay {
@@ -114,7 +210,7 @@
         }
 
         #activeTagDisplay .tag-pill {
-            background: #06c;
+            background: var(--accent);
             color: white;
             border: none;
             padding-right: 2rem;
@@ -132,7 +228,7 @@
         .clear-filter {
             padding: 0.5rem 0.75rem;
             background: #f5f5f7;
-            color: #6e6e73;
+            color: var(--text-secondary);
             border: none;
             border-radius: 6px;
             font-size: 0.85rem;
@@ -143,11 +239,11 @@
 
         .clear-filter:hover {
             background: #e8e8ed;
-            color: #1d1d1f;
+            color: var(--text-primary);
         }
 
         .stats {
-            background: white;
+            background: var(--bg-primary);
             padding: 1rem 1.5rem;
             border-radius: 12px;
             margin-bottom: 2rem;
@@ -158,12 +254,12 @@
 
         .stats-info {
             font-size: 0.9rem;
-            color: #6e6e73;
+            color: var(--text-secondary);
         }
 
         .btn {
             padding: 0.75rem 1.5rem;
-            background: #06c;
+            background: var(--accent);
             color: white;
             border: none;
             border-radius: 8px;
@@ -175,12 +271,12 @@
         }
 
         .btn:hover {
-            background: #0077ed;
+            background: var(--accent-hover);
         }
 
         .btn-secondary {
             background: #f5f5f7;
-            color: #1d1d1f;
+            color: var(--text-primary);
         }
 
         .btn-secondary:hover {
@@ -194,7 +290,7 @@
         }
 
         .image-card {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -266,7 +362,7 @@
 
         .image-caption {
             font-size: 0.85rem;
-            color: #6e6e73;
+            color: var(--text-secondary);
             margin-bottom: 0.75rem;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -293,8 +389,8 @@
         .tag-pill {
             padding: 0.3rem 0.75rem;
             background: #f5f5f7;
-            color: #6e6e73;
-            border: 1px solid #e0e0e0;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
             border-radius: 12px;
             font-size: 0.75rem;
             font-weight: 500;
@@ -311,7 +407,7 @@
         }
 
         .tag-pill.active {
-            background: #06c;
+            background: var(--accent);
             color: white;
             border-color: #06c;
         }
@@ -349,7 +445,7 @@
 
         .badge-category {
             background: #f5f5f7;
-            color: #6e6e73;
+            color: var(--text-secondary);
         }
 
         .image-actions {
@@ -361,8 +457,8 @@
 
         .image-actions button {
             padding: 0.5rem 0.75rem;
-            border: 1px solid #e0e0e0;
-            background: white;
+            border: 1px solid var(--border-light);
+            background: var(--bg-primary);
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.85rem;
@@ -395,13 +491,13 @@
         /* Private state - neutral gray */
         .visibility-toggle.is-private {
             background: #f5f5f7;
-            color: #6e6e73;
-            border: 1px solid #e0e0e0;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
         }
 
         .visibility-toggle.is-private:hover {
             background: #e8e8ed;
-            color: #1d1d1f;
+            color: var(--text-primary);
             border-color: #d1d1d6;
         }
 
@@ -450,7 +546,7 @@
 
         .exif-toggle.is-private {
             background: #f5f5f7;
-            color: #6e6e73;
+            color: var(--text-secondary);
         }
 
         .exif-toggle.is-private:hover {
@@ -469,7 +565,7 @@
         }
 
         .image-actions .action-danger {
-            background: white;
+            background: var(--bg-primary);
             color: #ff3b30;
             border-color: #ff3b30;
         }
@@ -482,14 +578,14 @@
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
         }
 
         .empty-state h2 {
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
-            color: #6e6e73;
+            color: var(--text-secondary);
         }
 
         .empty-state p {
@@ -501,7 +597,7 @@
             text-align: center;
             padding: 3rem;
             font-size: 1.1rem;
-            color: #6e6e73;
+            color: var(--text-secondary);
         }
 
         .modal {
@@ -511,7 +607,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: var(--modal-backdrop);
             z-index: 200;
             align-items: center;
             justify-content: center;
@@ -522,7 +618,7 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
             padding: 2rem;
             max-width: 500px;
@@ -549,7 +645,7 @@
         .form-group textarea {
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid #d1d1d6;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-family: inherit;
             font-size: 0.9rem;
@@ -676,16 +772,49 @@
                 grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             }
         }
+
+        /* Toast animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>My Gallery</h1>
-        <nav>
-            <a href="/manage">Dashboard</a>
-            <a href="/manage/gallery" class="active">My Gallery</a>
-            <a href="/manage/upload">Upload</a>
-        </nav>
+        <div class="header-left">
+            <h1>My Gallery</h1>
+            <nav>
+                <a href="/manage">Dashboard</a>
+                <a href="/manage/gallery" class="active">My Gallery</a>
+                <a href="/manage/upload">Upload</a>
+                <a href="/manage/analytics">Analytics</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+                <span class="theme-icon">🌙</span>
+                <div class="theme-toggle-switch"></div>
+                <span class="theme-icon">☀️</span>
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -802,7 +931,7 @@
                         <input type="checkbox" id="editShareEXIF" style="width: auto;">
                         <span>Share EXIF data publicly (camera, lens, exposure settings, location)</span>
                     </label>
-                    <small style="color: #6e6e73; display: block; margin-top: 0.5rem; margin-left: 1.75rem;">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem; margin-left: 1.75rem;">
                         When disabled, technical metadata remains private. Only you can see it in the management interface.
                     </small>
                 </div>
@@ -812,17 +941,17 @@
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
                     <div class="form-group">
                         <label style="font-size: 0.85rem;">Uploaded</label>
-                        <input type="text" id="editCreatedAt" readonly style="font-size: 0.85rem; background: #f5f5f7; color: #6e6e73; cursor: not-allowed;">
+                        <input type="text" id="editCreatedAt" readonly style="font-size: 0.85rem; background: #f5f5f7; color: var(--text-secondary); cursor: not-allowed;">
                     </div>
                     <div class="form-group">
                         <label style="font-size: 0.85rem;">Last Modified</label>
-                        <input type="text" id="editUpdatedAt" readonly style="font-size: 0.85rem; background: #f5f5f7; color: #6e6e73; cursor: not-allowed;">
+                        <input type="text" id="editUpdatedAt" readonly style="font-size: 0.85rem; background: #f5f5f7; color: var(--text-secondary); cursor: not-allowed;">
                     </div>
                 </div>
 
                 <div style="margin: 1.5rem 0; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
                     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                        <button type="button" onclick="reextractEXIF()" style="flex: 1; min-width: 200px; padding: 0.75rem; background: white; border: 1px solid #06c; color: #06c; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                        <button type="button" onclick="reextractEXIF()" style="flex: 1; min-width: 200px; padding: 0.75rem; background: var(--bg-primary); border: 1px solid #06c; color: #06c; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
                             🔄 Re-Extract EXIF
                         </button>
                         <button type="button" onclick="regenerateAI()" style="flex: 1; min-width: 200px; padding: 0.75rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
@@ -840,6 +969,23 @@
     </div>
 
     <script>
+        // Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';  // Default to dark
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Initialize theme on page load
+        initTheme();
+
         // Current user ID injected from server
         const CURRENT_USER_ID = {{ current_user.id }};
 
@@ -1017,7 +1163,7 @@
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to update visibility status');
+                showToast('❌ Failed to update visibility status', 'error');
             }
         }
 
@@ -1039,7 +1185,7 @@
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to update EXIF sharing status');
+                showToast('❌ Failed to update EXIF sharing status', 'error');
             }
         }
 
@@ -1204,7 +1350,7 @@
 
                 closeEditModal();
                 applyFilters();
-                alert('Changes saved successfully!');
+                showToast('✅ Changes saved successfully!', 'success');
             } catch (error) {
                 console.error('Error:', error);
 
@@ -1214,18 +1360,18 @@
                         const errorData = await response.json();
                         if (errorData.detail && Array.isArray(errorData.detail)) {
                             // Pydantic validation errors
-                            const errors = errorData.detail.map(e => `${e.loc[1]}: ${e.msg}`).join('\n');
-                            alert(`Validation failed:\n${errors}`);
+                            const errors = errorData.detail.map(e => `${e.loc[1]}: ${e.msg}`).join(', ');
+                            showToast(`❌ Validation failed: ${errors}`, 'error');
                         } else if (errorData.detail) {
-                            alert(`Error: ${errorData.detail}`);
+                            showToast(`❌ Error: ${errorData.detail}`, 'error');
                         } else {
-                            alert('Failed to save changes');
+                            showToast('❌ Failed to save changes', 'error');
                         }
                     } catch {
-                        alert('Failed to save changes');
+                        showToast('❌ Failed to save changes', 'error');
                     }
                 } else {
-                    alert('Failed to save changes');
+                    showToast('❌ Failed to save changes', 'error');
                 }
             }
         });
@@ -1249,7 +1395,7 @@
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to delete image');
+                showToast('❌ Failed to delete image', 'error');
             }
         }
 
@@ -1271,7 +1417,7 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    alert('EXIF data refreshed from original file!');
+                    showToast('✅ EXIF data refreshed from original file!', 'success');
 
                     // Update UI fields with new EXIF data
                     if (result.exif) {
@@ -1286,11 +1432,11 @@
                         if (exif.date_taken) document.getElementById('editDateTaken').value = exif.date_taken;
                     }
                 } else {
-                    alert(result.error?.user_message || 'Failed to extract EXIF');
+                    showToast('❌ ' + (result.error?.user_message || 'Failed to extract EXIF'), 'error');
                 }
             } catch (error) {
                 console.error('EXIF extraction error:', error);
-                alert('Network error while extracting EXIF');
+                showToast('❌ Network error while extracting EXIF', 'error');
             }
         }
 
@@ -1302,6 +1448,14 @@
             if (!confirm('Regenerate AI metadata for this image? This will cost ~$0.02 and overwrite Title, Caption, Tags, Category.')) {
                 return;
             }
+
+            // Show loading state
+            const regenButton = event.target;
+            const originalText = regenButton.textContent;
+            regenButton.disabled = true;
+            regenButton.textContent = '⏳ Analyzing image...';
+            regenButton.style.opacity = '0.6';
+            regenButton.style.cursor = 'not-allowed';
 
             try {
                 const formData = new FormData();
@@ -1316,20 +1470,53 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    alert('AI metadata regenerated successfully!');
-
                     // Update UI fields with new AI metadata
                     if (result.title) document.getElementById('editTitle').value = result.title;
                     if (result.caption) document.getElementById('editCaption').value = result.caption;
                     if (result.tags) document.getElementById('editTags').value = result.tags;
                     if (result.category) document.getElementById('editCategory').value = result.category;
+
+                    // Show success message
+                    showToast('✅ AI metadata regenerated successfully!', 'success');
                 } else {
-                    alert(result.error?.user_message || 'Failed to regenerate AI metadata');
+                    showToast('❌ ' + (result.error?.user_message || 'Failed to regenerate AI metadata'), 'error');
                 }
             } catch (error) {
                 console.error('AI regeneration error:', error);
-                alert('Network error while regenerating AI metadata');
+                showToast('❌ Network error while regenerating AI metadata', 'error');
+            } finally {
+                // Restore button state
+                regenButton.disabled = false;
+                regenButton.textContent = originalText;
+                regenButton.style.opacity = '1';
+                regenButton.style.cursor = 'pointer';
             }
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 2rem;
+                right: 2rem;
+                background: ${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--error)' : 'var(--accent)'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease-out;
+                max-width: 400px;
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
         }
 
         // Utility: debounce function for search
