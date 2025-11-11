@@ -734,6 +734,143 @@ async def list_images(
 
 ---
 
-**Last Updated**: 2025-11-02
+**Last Updated**: 2025-11-11
 **Maintained By**: Adrian Hensler
 **Next Review**: After Sprint 4 Phase 2 complete
+
+---
+
+## Future Enhancements - Gallery Optimization & Image Protection
+
+### Phase 2: Public Gallery Optimization (WebP Variants)
+
+**Status**: Not Started
+**Priority**: Medium
+**Estimated Effort**: 4-6 hours
+**Added**: 2025-11-11
+
+#### Description
+Public gallery currently serves full-resolution original images. System already generates WebP variants (400px, 800px, 1200px) during upload, but they're not being used by the public gallery.
+
+#### Benefits
+- **10-20x faster page loads**, especially on mobile
+- Lower bandwidth costs
+- Better SEO (improved Core Web Vitals)
+- Enable progressive enhancement (blur-up placeholders)
+
+#### Implementation Tasks
+1. Update `/api/gallery/published` to return variant URLs
+2. Modify frontend JavaScript to load appropriate sizes:
+   - 400px thumbnails for grid view
+   - 1200px WebP for lightbox
+   - Optional full-res on-demand
+3. Implement responsive loading with `<picture>` or `srcset`
+4. Add lazy loading for off-screen images
+5. Test across devices and network speeds
+
+#### Technical Notes
+- WebP variants already exist in `image_variants` table
+- Infrastructure complete, just needs API + frontend wiring
+- Consider adding blur-up placeholder technique
+
+---
+
+### Gallery Size Control & Image Protection
+
+**Status**: Not Started
+**Priority**: Medium
+**Estimated Effort**: 3-4 hours
+**Added**: 2025-11-11
+
+#### Description
+Allow photographers to control whether visitors can view/download full-resolution images. Gives photographers flexibility between showcasing work at highest quality vs. protecting against unauthorized use.
+
+#### Features
+
+**Per-Photographer Settings** (portfolio-wide defaults):
+- `allow_full_size_viewing`: Show full-res in lightbox vs. 1200px max
+- `allow_downloads`: Enable/disable download button
+- `watermark_images` (future): Apply watermark to downloads
+
+**Per-Image Override**:
+- Optional fields in `images` table to override portfolio defaults
+
+**Gallery UI**:
+- Add "View Settings" section to `/manage` dashboard
+- Toggle switches for settings
+- Override options in image edit modal
+- Display "Protected" badge on gallery management
+
+**Public Gallery Enforcement**:
+- `/api/gallery/published` respects `allow_full_size_viewing`
+- Frontend lightbox checks `allow_downloads` flag
+
+#### Database Migration
+```sql
+ALTER TABLE users ADD COLUMN allow_full_size_viewing INTEGER DEFAULT 1;
+ALTER TABLE users ADD COLUMN allow_downloads INTEGER DEFAULT 1;
+ALTER TABLE images ADD COLUMN allow_full_size_viewing INTEGER;  -- NULL = use user default
+ALTER TABLE images ADD COLUMN allow_downloads INTEGER;           -- NULL = use user default
+```
+
+#### Limitations
+- Right-click protection is a "speed bump", not true DRM
+- Browser DevTools can still access images
+- Screenshots always possible
+- Discourages casual copying, not determined theft
+
+---
+
+### Disable Right-Click Save from Gallery
+
+**Status**: Not Started
+**Priority**: Low
+**Estimated Effort**: 1-2 hours
+**Added**: 2025-11-11
+
+#### Description
+Add basic protection against casual right-click saving of images. This is a deterrent, not comprehensive security.
+
+#### Implementation Options
+
+**Option 1: CSS + JavaScript** (Recommended)
+```css
+.gallery-grid img, .lightbox img {
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+.gallery-item {
+  pointer-events: auto;
+}
+```
+
+```javascript
+document.addEventListener('contextmenu', (e) => {
+  if (e.target.tagName === 'IMG') {
+    e.preventDefault();
+    alert('Images are protected. Please contact the photographer for licensing.');
+    return false;
+  }
+});
+```
+
+**Option 2: Transparent Overlay**
+- Invisible div overlay on top of images intercepts clicks
+
+**Option 3: Background Image** (NOT recommended)
+- Breaks accessibility, lightbox libraries, not worth trade-off
+
+#### Additional Measures
+- Disable Ctrl+S / Cmd+S keyboard shortcuts
+- DevTools detection (advanced, fragile, not recommended)
+- **Watermarking** (most effective protection method)
+
+#### Testing Checklist
+- [ ] Right-click disabled on gallery images
+- [ ] Right-click works on text/other elements
+- [ ] Lightbox still functional
+- [ ] Keyboard navigation works
+- [ ] Mobile long-press handled
+- [ ] Screen readers functional
+- [ ] No console errors

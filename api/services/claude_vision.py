@@ -19,6 +19,7 @@ from api.errors import (
     claude_api_error
 )
 from api.logging_config import get_logger
+from api.services.image_processor import generate_ai_analysis_image, cleanup_temp_file
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -60,9 +61,26 @@ async def analyze_image(image_path: str, user_id: int = None, filename: str = No
         error = missing_api_key_error(context=context)
         return fallback, error
 
+    # Track whether we need to cleanup a temp file (initialize before try block)
+    needs_cleanup = False
+    ai_image_path = image_path  # Default to original
+
     try:
-        # Read and encode image
-        with open(image_path, "rb") as img_file:
+        # Generate appropriately-sized image for AI analysis (max 1568px per Anthropic recommendation)
+        ai_image_path, resize_error = generate_ai_analysis_image(image_path, context=context)
+
+        # Log if resize had issues but continue with original
+        if resize_error:
+            logger.warning(
+                f"AI image resize failed, using original: {resize_error.error.message}",
+                extra={"context": context}
+            )
+
+        # Track if we created a temp file that needs cleanup
+        needs_cleanup = ai_image_path != image_path
+
+        # Read and encode image (either temp resized or original)
+        with open(ai_image_path, "rb") as img_file:
             image_data = base64.standard_b64encode(img_file.read()).decode("utf-8")
 
         # Determine media type (use provided, or guess from extension)
@@ -78,7 +96,7 @@ async def analyze_image(image_path: str, user_id: int = None, filename: str = No
 
         logger.info(
             f"Analyzing image with Claude Vision API",
-            extra={"context": {**context, "media_type": media_type, "image_size_kb": len(image_data) / 1024}}
+            extra={"context": {**context, "media_type": media_type, "image_size_kb": len(image_data) / 1024, "using_temp_image": needs_cleanup}}
         )
 
         # Initialize Claude client
@@ -270,6 +288,11 @@ Return ONLY valid JSON, no other text."""
             stack_trace=traceback.format_exc()
         )
         return fallback, error
+
+    finally:
+        # Clean up temporary AI analysis file if one was created
+        if needs_cleanup:
+            cleanup_temp_file(ai_image_path, context=context)
 
 
 def _get_fallback_metadata(image_path: str) -> Dict[str, Any]:
