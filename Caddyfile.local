@@ -56,6 +56,12 @@ liam.hensler.photography:8080 {
     respond "ok" 200
   }
 
+  # Shared gallery filtering assets
+  handle /shared/* {
+    root * /srv/sites
+    file_server
+  }
+
   # Serve static site files
   handle {
     root * /srv/sites/liam
@@ -86,6 +92,12 @@ adrian.hensler.photography:8080 {
   # Health check
   handle /healthz {
     respond "ok" 200
+  }
+
+  # Shared gallery filtering assets
+  handle /shared/* {
+    root * /srv/sites
+    file_server
   }
 
   # Static site files only (admin moved to port 4100)

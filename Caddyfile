@@ -71,6 +71,12 @@ liam.hensler.photography {
     respond "ok" 200
   }
 
+  # Shared gallery filtering assets
+  handle /shared/* {
+    root * /srv/sites
+    file_server
+  }
+
   # Serve static site files
   handle {
     root * /srv/sites/liam
@@ -114,6 +120,12 @@ adrian.hensler.photography {
 
   handle /healthz {
     respond "ok" 200
+  }
+
+  # Shared gallery filtering assets
+  handle /shared/* {
+    root * /srv/sites
+    file_server
   }
 
   # Serve static site files

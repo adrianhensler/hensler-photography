@@ -14,6 +14,9 @@
   <!-- GLightbox for image lightbox -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
 
+  <!-- Shared gallery filtering styles -->
+  <link rel="stylesheet" href="/shared/gallery.css">
+
   <style>
     /* Base & Layout */
     body {
@@ -293,6 +296,30 @@
     <!-- Gallery Grid -->
     <div id="gallery-grid"></div>
 
+    <!-- Category/Tag Filter Section -->
+    <div class="filter-section" id="filter-section">
+      <div class="filter-group">
+        <h3 class="filter-heading">categories</h3>
+        <div class="filter-pills" id="category-pills">
+          <!-- Dynamically populated by JavaScript -->
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <h3 class="filter-heading">tags</h3>
+        <div class="filter-pills" id="tag-pills">
+          <!-- Dynamically populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Active Filters Display -->
+      <div class="active-filters" id="active-filters" style="display: none;">
+        <span class="filter-label">active:</span>
+        <span class="active-filter-text" id="active-filter-text"></span>
+        <button class="clear-filters-btn" id="clear-filters">clear all</button>
+      </div>
+    </div>
+
     <footer>
       © <span id="y"></span> Liam Hensler
     </footer>
@@ -300,6 +327,9 @@
 
   <!-- GLightbox -->
   <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+
+  <!-- Shared gallery filtering module -->
+  <script src="/shared/gallery.js"></script>
 
   <script>
     // Global gallery state
@@ -575,6 +605,9 @@
       if (galleryData.length > 0) {
         initSlideshow();
         initGallery();
+
+        // Initialize filter section (shared module)
+        GalleryFilter.init();
       } else {
         // Show empty state
         document.getElementById('slideshow').innerHTML = '<div class="empty-gallery"><h2>No images yet</h2><p>Check back soon for new photography</p></div>';

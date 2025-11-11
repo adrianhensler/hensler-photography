@@ -1,0 +1,210 @@
+/**
+ * Shared Gallery Filtering Styles
+ * Used by both adrian.hensler.photography and liam.hensler.photography
+ */
+
+/* ===== Category/Tag Filter Section ===== */
+.filter-section {
+  margin: 48px auto 32px;
+  padding: 48px 0 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  max-width: 900px;
+  animation: fadeIn 1s ease-out 0.8s both;
+}
+
+.filter-group {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.filter-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(16px, 2vw, 20px);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  margin: 0 0 20px;
+  opacity: 0.45;
+  text-transform: lowercase;
+}
+
+.filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Pill styling - ghost aesthetic */
+.pill {
+  display: inline-block;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  color: rgba(245, 245, 245, 0.6);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  user-select: none;
+}
+
+.pill:hover {
+  border-color: rgba(232, 213, 181, 0.35);
+  background: rgba(232, 213, 181, 0.04);
+  color: rgba(245, 245, 245, 0.85);
+  transform: translateY(-1px);
+}
+
+.pill.active {
+  border-color: rgba(232, 213, 181, 0.6);
+  background: rgba(232, 213, 181, 0.12);
+  color: #e8d5b5;
+  box-shadow: 0 2px 8px rgba(232, 213, 181, 0.15);
+}
+
+.pill .count {
+  opacity: 0.5;
+  margin-left: 4px;
+  font-size: 12px;
+}
+
+/* Active Filters Display */
+.active-filters {
+  margin-top: 32px;
+  padding: 16px 20px;
+  background: rgba(232, 213, 181, 0.04);
+  border: 1px solid rgba(232, 213, 181, 0.12);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-label {
+  font-size: 12px;
+  opacity: 0.5;
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+  font-weight: 300;
+}
+
+.active-filter-text {
+  color: rgba(232, 213, 181, 0.9);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.clear-filters-btn {
+  background: transparent;
+  border: 1px solid rgba(232, 213, 181, 0.25);
+  border-radius: 16px;
+  color: rgba(232, 213, 181, 0.8);
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+
+.clear-filters-btn:hover {
+  background: rgba(232, 213, 181, 0.08);
+  border-color: rgba(232, 213, 181, 0.45);
+  color: #e8d5b5;
+}
+
+/* Lightbox Description Pills */
+.lightbox-pills {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lightbox-pill {
+  display: inline-block;
+  padding: 5px 12px;
+  background: rgba(232, 213, 181, 0.12);
+  border: 1px solid rgba(232, 213, 181, 0.3);
+  border-radius: 12px;
+  color: #1a1a1a;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lightbox-pill:hover {
+  background: rgba(232, 213, 181, 0.25);
+  border-color: rgba(232, 213, 181, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Gallery placeholder for no results */
+.gallery-placeholder {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.gallery-placeholder button {
+  margin-top: 20px;
+  padding: 10px 24px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  color: rgba(245, 245, 245, 0.7);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.gallery-placeholder button:hover {
+  border-color: rgba(232, 213, 181, 0.4);
+  background: rgba(232, 213, 181, 0.05);
+  color: #e8d5b5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filter-section {
+    margin: 32px auto 24px;
+    padding: 32px 0 24px;
+  }
+
+  .filter-group {
+    margin-bottom: 32px;
+  }
+
+  .filter-pills {
+    gap: 10px;
+  }
+
+  .pill {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+
+  .active-filters {
+    padding: 14px 16px;
+  }
+}
