@@ -1,10 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Photos - Hensler Photography Admin</title>
     <style>
+/* Theme Variables */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e8e8ed;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #86868b;
+            --border-color: #d1d1d6;
+            --border-light: #e0e0e0;
+            --accent: #06c;
+            --accent-hover: #0077ed;
+            --success: #34c759;
+            --warning: #ff9500;
+            --error: #ff3b30;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1d1d1f;
+            --bg-secondary: #2a2a2a;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-tertiary: #86868b;
+            --border-color: #424245;
+            --border-light: #38383a;
+            --accent: #0a84ff;
+            --accent-hover: #409cff;
+            --success: #32d74b;
+            --warning: #ff9f0a;
+            --error: #ff453a;
+        }
+
+        
         * {
             margin: 0;
             padding: 0;
@@ -13,13 +47,13 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f5f5f7;
-            color: #1d1d1f;
+            background: var(--bg-secondary);
+            color: var(--text-primary); transition: background-color 0.3s ease, color 0.3s ease;
             line-height: 1.6;
         }
 
         .header {
-            background: white;
+            background: var(--bg-primary);
             border-bottom: 1px solid #e0e0e0;
             padding: 1rem 2rem;
         }
@@ -34,7 +68,7 @@
         }
 
         nav a {
-            color: #06c;
+            color: var(--accent);
             text-decoration: none;
             margin-right: 1.5rem;
         }
@@ -50,7 +84,7 @@
         }
 
         .upload-area {
-            background: white;
+            background: var(--bg-primary);
             border: 2px dashed #d1d1d6;
             border-radius: 12px;
             padding: 3rem;
@@ -61,12 +95,12 @@
         }
 
         .upload-area.dragover {
-            border-color: #06c;
+            border-color: var(--accent);
             background: #f0f7ff;
         }
 
         .upload-area:hover {
-            border-color: #06c;
+            border-color: var(--accent);
         }
 
         .upload-icon {
@@ -82,14 +116,14 @@
         }
 
         .upload-area p {
-            color: #86868b;
+            color: var(--text-tertiary);
             font-size: 0.9rem;
         }
 
         .btn {
             display: inline-block;
             padding: 0.75rem 1.5rem;
-            background: #06c;
+            background: var(--accent);
             color: white;
             border: none;
             border-radius: 8px;
@@ -101,7 +135,7 @@
         }
 
         .btn:hover {
-            background: #0077ed;
+            background: var(--accent-hover);
         }
 
         .btn:disabled {
@@ -121,7 +155,7 @@
         }
 
         .preview-card {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -131,7 +165,7 @@
             width: 100%;
             height: 200px;
             object-fit: cover;
-            background: #f5f5f7;
+            background: var(--bg-secondary);
         }
 
         .preview-content {
@@ -146,7 +180,7 @@
         }
 
         .preview-size {
-            color: #86868b;
+            color: var(--text-tertiary);
             font-size: 0.85rem;
             margin-bottom: 0.5rem;
         }
@@ -160,7 +194,7 @@
 
         .status-pending {
             background: #f0f7ff;
-            color: #06c;
+            color: var(--accent);
         }
 
         .status-processing {
@@ -181,7 +215,7 @@
         .ai-metadata {
             margin-top: 1rem;
             padding: 1rem;
-            background: #f5f5f7;
+            background: var(--bg-secondary);
             border-radius: 8px;
             font-size: 0.85rem;
         }
@@ -201,7 +235,7 @@
         .ai-metadata textarea {
             width: 100%;
             padding: 0.5rem;
-            border: 1px solid #d1d1d6;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             font-family: inherit;
             font-size: 0.85rem;
@@ -233,7 +267,7 @@
 
         .progress-fill {
             height: 100%;
-            background: #06c;
+            background: var(--accent);
             width: 0%;
             transition: width 0.3s ease;
         }
@@ -247,15 +281,15 @@
         .actions button {
             flex: 1;
             padding: 0.5rem;
-            border: 1px solid #d1d1d6;
-            background: white;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.85rem;
         }
 
         .actions button:hover {
-            background: #f5f5f7;
+            background: var(--bg-secondary);
         }
 
         .actions button.publish {
@@ -280,7 +314,7 @@
 
         .user-select {
             margin-bottom: 2rem;
-            background: white;
+            background: var(--bg-primary);
             padding: 1.5rem;
             border-radius: 12px;
         }
@@ -294,7 +328,7 @@
         .user-select select {
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid #d1d1d6;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-size: 1rem;
             font-family: inherit;
@@ -313,7 +347,7 @@
         }
 
         .toast {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
             padding: 16px;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
@@ -348,7 +382,7 @@
         .toast-error .toast-icon { color: #ff3b30; }
         .toast-warning .toast-icon { color: #ff9500; }
         .toast-success .toast-icon { color: #34c759; }
-        .toast-info .toast-icon { color: #06c; }
+        .toast-info .toast-icon { color: var(--accent); }
 
         .toast-content {
             flex: 1;
@@ -359,12 +393,12 @@
             font-weight: 600;
             font-size: 0.95rem;
             margin-bottom: 4px;
-            color: #1d1d1f;
+            color: var(--text-primary);
         }
 
         .toast-message {
             font-size: 0.85rem;
-            color: #86868b;
+            color: var(--text-tertiary);
             line-height: 1.4;
         }
 
@@ -376,7 +410,7 @@
 
         .toast-details-toggle {
             font-size: 0.8rem;
-            color: #06c;
+            color: var(--accent);
             cursor: pointer;
             user-select: none;
         }
@@ -389,16 +423,16 @@
             margin-top: 8px;
             font-size: 0.75rem;
             font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-            background: #f5f5f7;
+            background: var(--bg-secondary);
             padding: 8px;
             border-radius: 4px;
             max-height: 200px;
             overflow-y: auto;
-            color: #1d1d1f;
+            color: var(--text-primary);
         }
 
         .toast-close {
-            color: #86868b;
+            color: var(--text-tertiary);
             cursor: pointer;
             font-size: 20px;
             line-height: 1;
@@ -407,7 +441,7 @@
         }
 
         .toast-close:hover {
-            color: #1d1d1f;
+            color: var(--text-primary);
         }
 
         @keyframes slideIn {
@@ -431,6 +465,56 @@
                 opacity: 0;
             }
         }
+        /* Theme Toggle */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+            margin-right: 20px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .theme-toggle-switch {
+            width: 48px;
+            height: 28px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        [data-theme="dark"] .theme-toggle-switch {
+            background: var(--accent);
+        }
+
+        [data-theme="dark"] .theme-toggle-switch::after {
+            transform: translateX(20px);
+        }
+
+        .theme-icon {
+            font-size: 1.2rem;
+        }
+
     </style>
 </head>
 <body>
@@ -438,11 +522,20 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <div class="header">
-        <h1>Upload Photos</h1>
-        <nav>
-            <a href="/admin">Dashboard</a>
-            <a href="/admin/upload">Upload</a>
-        </nav>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1>Upload Photos</h1>
+                <nav>
+                    <a href="/admin">Dashboard</a>
+                    <a href="/admin/upload">Upload</a>
+                </nav>
+            </div>
+            <div class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+                <span class="theme-icon">🌙</span>
+                <div class="theme-toggle-switch"></div>
+                <span class="theme-icon">☀️</span>
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -468,6 +561,23 @@
     </div>
 
     <script>
+        // Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Initialize theme on page load
+        initTheme();
+
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const previewsContainer = document.getElementById('previews');

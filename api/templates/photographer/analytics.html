@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,40 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
+/* Theme Variables */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e8e8ed;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #86868b;
+            --border-color: #d1d1d6;
+            --border-light: #e0e0e0;
+            --accent: #06c;
+            --accent-hover: #0077ed;
+            --success: #34c759;
+            --warning: #ff9500;
+            --error: #ff3b30;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1d1d1f;
+            --bg-secondary: #2a2a2a;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-tertiary: #86868b;
+            --border-color: #424245;
+            --border-light: #38383a;
+            --accent: #0a84ff;
+            --accent-hover: #409cff;
+            --success: #32d74b;
+            --warning: #ff9f0a;
+            --error: #ff453a;
+        }
+
+        
         * {
             margin: 0;
             padding: 0;
@@ -15,13 +49,13 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f5f5f7;
-            color: #1d1d1f;
+            background: var(--bg-secondary);
+            color: var(--text-primary); transition: background-color 0.3s ease, color 0.3s ease;
             line-height: 1.6;
         }
 
         .header {
-            background: white;
+            background: var(--bg-primary);
             border-bottom: 1px solid #e0e0e0;
             padding: 1rem 2rem;
             position: sticky;
@@ -41,7 +75,7 @@
         }
 
         nav a {
-            color: #06c;
+            color: var(--accent);
             text-decoration: none;
         }
 
@@ -51,7 +85,7 @@
 
         nav a.active {
             font-weight: 500;
-            color: #1d1d1f;
+            color: var(--text-primary);
         }
 
         .container {
@@ -79,24 +113,24 @@
 
         .date-tab {
             padding: 8px 16px;
-            background: white;
-            border: 1px solid #e0e0e0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
             border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
-            color: #6e6e73;
+            color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .date-tab.active {
-            background: #06c;
+            background: var(--accent);
             color: white;
-            border-color: #06c;
+            border-color: var(--accent);
         }
 
         .date-tab:hover:not(.active) {
-            background: #f5f5f7;
+            background: var(--bg-secondary);
         }
 
         /* Overview cards */
@@ -108,7 +142,7 @@
         }
 
         .overview-card {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -118,13 +152,13 @@
             font-size: 2rem;
             font-weight: 600;
             font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-            color: #1d1d1f;
+            color: var(--text-primary);
             margin-bottom: 0.5rem;
         }
 
         .overview-label {
             font-size: 0.875rem;
-            color: #6e6e73;
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 500;
@@ -145,12 +179,12 @@
         }
 
         .overview-trend.neutral {
-            color: #999;
+            color: var(--text-tertiary);
         }
 
         /* Chart section */
         .chart-section {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
@@ -170,7 +204,7 @@
 
         /* Top images section */
         .top-images-section {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
@@ -185,7 +219,7 @@
 
         .top-images-section .subtitle {
             font-size: 0.875rem;
-            color: #6e6e73;
+            color: var(--text-secondary);
             margin-bottom: 1.5rem;
         }
 
@@ -201,7 +235,7 @@
             gap: 1rem;
             padding: 1rem;
             border-radius: 8px;
-            background: #f9f9f9;
+            background: var(--bg-tertiary);
             transition: all 0.2s ease;
         }
 
@@ -225,13 +259,13 @@
         .top-image-title {
             font-size: 1rem;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--text-primary);
             margin-bottom: 0.25rem;
         }
 
         .top-image-stats {
             font-size: 0.875rem;
-            color: #6e6e73;
+            color: var(--text-secondary);
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
@@ -240,7 +274,7 @@
         .top-image-rank {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #06c;
+            color: var(--accent);
             font-family: 'SF Mono', Monaco, monospace;
             min-width: 40px;
             text-align: center;
@@ -251,13 +285,13 @@
             text-align: center;
             padding: 3rem;
             font-size: 1.1rem;
-            color: #6e6e73;
+            color: var(--text-secondary);
         }
 
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
-            background: white;
+            background: var(--bg-primary);
             border-radius: 12px;
         }
 
@@ -270,13 +304,13 @@
         .empty-state-title {
             font-size: 1.75rem;
             font-weight: 600;
-            color: #6e6e73;
+            color: var(--text-secondary);
             margin-bottom: 1rem;
         }
 
         .empty-state-description {
             font-size: 1rem;
-            color: #86868b;
+            color: var(--text-tertiary);
             line-height: 1.6;
             max-width: 480px;
             margin: 0 auto 2rem;
@@ -284,7 +318,7 @@
 
         .btn {
             padding: 0.75rem 1.5rem;
-            background: #06c;
+            background: var(--accent);
             color: white;
             border: none;
             border-radius: 8px;
@@ -296,7 +330,7 @@
         }
 
         .btn:hover {
-            background: #0077ed;
+            background: var(--accent-hover);
         }
 
         /* Responsive */
@@ -334,17 +368,76 @@
                 order: -1;
             }
         }
+        /* Theme Toggle */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+            margin-right: 20px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .theme-toggle-switch {
+            width: 48px;
+            height: 28px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        [data-theme="dark"] .theme-toggle-switch {
+            background: var(--accent);
+        }
+
+        [data-theme="dark"] .theme-toggle-switch::after {
+            transform: translateX(20px);
+        }
+
+        .theme-icon {
+            font-size: 1.2rem;
+        }
+
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Portfolio Analytics</h1>
-        <nav>
-            <a href="/manage">Dashboard</a>
-            <a href="/manage/gallery">My Gallery</a>
-            <a href="/manage/analytics" class="active">Analytics</a>
-            <a href="/manage/upload">Upload</a>
-        </nav>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1>Portfolio Analytics</h1>
+                <nav>
+                    <a href="/manage">Dashboard</a>
+                    <a href="/manage/gallery">My Gallery</a>
+                    <a href="/manage/analytics" class="active">Analytics</a>
+                    <a href="/manage/upload">Upload</a>
+                </nav>
+            </div>
+            <div class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+                <span class="theme-icon">🌙</span>
+                <div class="theme-toggle-switch"></div>
+                <span class="theme-icon">☀️</span>
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -399,6 +492,23 @@
     </div>
 
     <script>
+        // Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Initialize theme on page load
+        initTheme();
+
         const CURRENT_USER_ID = {{ current_user.id }};
         let currentDays = 30;
         let analyticsChart = null;
