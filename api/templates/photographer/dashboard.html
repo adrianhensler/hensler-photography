@@ -190,6 +190,75 @@
         .api-link:hover {
             text-decoration: underline;
         }
+
+        /* Analytics card styles */
+        .analytics-preview {
+            margin: 20px 0;
+        }
+
+        .analytics-stat-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .analytics-stat {
+            text-align: center;
+            padding: 16px 12px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .analytics-number {
+            font-size: 28px;
+            font-weight: 600;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .analytics-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .analytics-trend {
+            font-size: 12px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .analytics-trend.up {
+            color: #34c759;
+        }
+
+        .analytics-trend.down {
+            color: #ff3b30;
+        }
+
+        .analytics-trend.neutral {
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .analytics-stat-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .analytics-stat {
+                padding: 12px;
+            }
+
+            .analytics-number {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -221,6 +290,69 @@
                 window.location.href = '/admin/login';
             }
         }
+
+        // Load analytics on page load
+        async function loadAnalytics() {
+            try {
+                const res = await fetch('/api/analytics/overview?days=30', {
+                    credentials: 'include'
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to load analytics');
+                }
+
+                const data = await res.json();
+
+                // Update numbers
+                document.getElementById('totalViews').textContent = data.views.toLocaleString();
+                document.getElementById('uniqueVisitors').textContent = data.visitors.toLocaleString();
+                document.getElementById('totalClicks').textContent = data.clicks.toLocaleString();
+                document.getElementById('clickRate').textContent = Math.round(data.click_rate * 100) + '%';
+
+                // Update trends
+                updateTrend('viewsTrend', data.views_trend);
+                updateTrend('visitorsTrend', data.visitors_trend);
+                updateTrend('clicksTrend', data.clicks_trend);
+
+                // Update status
+                const status = document.getElementById('analyticsStatus');
+                if (data.views > 0) {
+                    status.textContent = 'View Details →';
+                    status.className = 'status';
+                } else {
+                    status.textContent = 'No data yet';
+                    status.style.background = '#f5f5f5';
+                    status.style.color = '#999';
+                }
+
+            } catch (error) {
+                console.error('Analytics load error:', error);
+                document.getElementById('analyticsStatus').textContent = 'Error loading';
+                document.getElementById('analyticsStatus').style.background = '#ffe8e8';
+                document.getElementById('analyticsStatus').style.color = '#cc0000';
+            }
+        }
+
+        function updateTrend(elementId, trend) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            if (Math.abs(trend) < 1) {
+                // No significant change
+                element.textContent = '';
+                element.className = 'analytics-trend neutral';
+            } else if (trend > 0) {
+                element.textContent = '↑ ' + Math.abs(trend) + '%';
+                element.className = 'analytics-trend up';
+            } else {
+                element.textContent = '↓ ' + Math.abs(trend) + '%';
+                element.className = 'analytics-trend down';
+            }
+        }
+
+        // Load analytics when page loads
+        loadAnalytics();
     </script>
 
     <div class="container">
@@ -242,6 +374,40 @@
                 <h3>My Gallery</h3>
                 <p>View, edit, publish, and manage your uploaded images.</p>
                 <span class="status">Ready</span>
+            </div>
+
+            <div class="card clickable" onclick="window.location.href='/manage/analytics'">
+                <div class="icon">📊</div>
+                <h3>Portfolio Analytics</h3>
+                <p>Track engagement and reach across your published images.</p>
+
+                <div class="analytics-preview">
+                    <div class="analytics-stat-row">
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="totalViews">--</div>
+                            <div class="analytics-label">Views</div>
+                            <div class="analytics-trend" id="viewsTrend"></div>
+                        </div>
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="uniqueVisitors">--</div>
+                            <div class="analytics-label">Visitors</div>
+                            <div class="analytics-trend" id="visitorsTrend"></div>
+                        </div>
+                    </div>
+                    <div class="analytics-stat-row">
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="totalClicks">--</div>
+                            <div class="analytics-label">Clicks</div>
+                            <div class="analytics-trend" id="clicksTrend"></div>
+                        </div>
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="clickRate">--%</div>
+                            <div class="analytics-label">Click Rate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <span class="status" id="analyticsStatus">Loading...</span>
             </div>
         </div>
 

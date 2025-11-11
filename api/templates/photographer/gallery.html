@@ -563,6 +563,56 @@
             flex: 1;
         }
 
+        /* Engagement analytics styles */
+        .engagement-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.80);
+            backdrop-filter: blur(12px);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .image-card:hover .engagement-badge {
+            opacity: 1;
+        }
+
+        .engagement-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .engagement-icon {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Engagement level indicators */
+        .image-card.engagement-high {
+            border-left: 3px solid #34c759;
+        }
+
+        .image-card.engagement-medium {
+            border-left: 3px solid #ff9500;
+        }
+
+        .image-card.engagement-low {
+            /* No special border */
+        }
+
         /* Mobile responsive styles */
         @media (max-width: 768px) {
             .container {
@@ -785,8 +835,8 @@
 
         async function loadImages() {
             try {
-                // Filter by current user automatically
-                const response = await fetch(`/api/images/list?user_id=${CURRENT_USER_ID}&limit=1000`, {
+                // Filter by current user automatically, include analytics
+                const response = await fetch(`/api/images/list?user_id=${CURRENT_USER_ID}&limit=1000&with_analytics=true`, {
                     credentials: 'include'
                 });
                 if (!response.ok) throw new Error('Failed to load images');
@@ -852,11 +902,27 @@
                 return;
             }
 
-            gallery.innerHTML = images.map(img => `
-                <div class="image-card ${img.published ? 'is-public' : ''}">
+            gallery.innerHTML = images.map(img => {
+                // Determine engagement level class
+                const engagementClass = img.analytics ? `engagement-${img.analytics.engagement_level}` : '';
+
+                return `
+                <div class="image-card ${img.published ? 'is-public' : ''} ${engagementClass}">
                     <div class="image-thumbnail-wrapper">
                         <img src="${img.thumbnail_url}" alt="${img.title || 'Untitled'}" class="image-thumbnail">
                         ${img.published ? '<div class="public-overlay">Public</div>' : ''}
+                        ${img.analytics ? `
+                            <div class="engagement-badge">
+                                <div class="engagement-stat">
+                                    <span class="engagement-icon">👁️</span>
+                                    <span>${img.analytics.views}</span>
+                                </div>
+                                <div class="engagement-stat">
+                                    <span class="engagement-icon">🖱️</span>
+                                    <span>${img.analytics.clicks}</span>
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="image-content">
                         <div class="image-title">${img.title || 'Untitled'}</div>
@@ -897,7 +963,8 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function updateStats(filtered, total) {

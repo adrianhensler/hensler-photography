@@ -367,7 +367,8 @@ async def list_images(
     category: str = None,
     search: str = None,
     limit: int = 100,
-    offset: int = 0
+    offset: int = 0,
+    with_analytics: bool = False
 ):
     """
     List all images with optional filters
@@ -380,6 +381,7 @@ async def list_images(
     - search: Search in title, caption, description, tags
     - limit: Max results to return (default 100)
     - offset: Pagination offset (default 0)
+    - with_analytics: Include engagement analytics for each image (default false)
     """
     from api.database import get_db_connection
 
@@ -442,7 +444,7 @@ async def list_images(
 
         images = []
         for row in rows:
-            images.append({
+            image = {
                 "id": row[0],
                 "user_id": row[1],
                 "filename": row[2],
@@ -459,7 +461,56 @@ async def list_images(
                 "created_at": row[13],
                 "updated_at": row[14],
                 "thumbnail_url": f"/assets/gallery/{Path(row[2]).stem}_thumbnail.webp"
-            })
+            }
+
+            # Include analytics if requested
+            if with_analytics:
+                analytics_cursor = await db.execute("""
+                    SELECT
+                        COUNT(CASE WHEN event_type = 'page_view' THEN 1 END) as views,
+                        COUNT(CASE WHEN event_type = 'gallery_click' THEN 1 END) as clicks,
+                        COUNT(CASE WHEN event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
+                    FROM image_events
+                    WHERE image_id = ?
+                """, (row[0],))
+
+                analytics_row = await analytics_cursor.fetchone()
+                views = analytics_row[0] or 0
+                clicks = analytics_row[1] or 0
+                click_rate = (clicks / views) if views > 0 else 0
+
+                # Calculate engagement level (compared to user's average)
+                # This will be calculated later with full portfolio context
+                engagement_level = "medium"  # Default
+
+                image["analytics"] = {
+                    "views": views,
+                    "clicks": clicks,
+                    "lightbox_opens": analytics_row[2] or 0,
+                    "click_rate": round(click_rate, 3),
+                    "engagement_level": engagement_level
+                }
+
+            images.append(image)
+
+        # Calculate engagement levels if analytics requested
+        if with_analytics and images:
+            # Calculate average views across all images
+            total_views = sum(img["analytics"]["views"] for img in images)
+            avg_views = total_views / len(images) if len(images) > 0 else 0
+
+            # Assign engagement levels
+            for img in images:
+                views = img["analytics"]["views"]
+                if avg_views > 0:
+                    if views >= avg_views * 1.5:
+                        img["analytics"]["engagement_level"] = "high"
+                    elif views >= avg_views * 0.75:
+                        img["analytics"]["engagement_level"] = "medium"
+                    else:
+                        img["analytics"]["engagement_level"] = "low"
+                else:
+                    img["analytics"]["engagement_level"] = "low"
 
         return {
             "images": images,

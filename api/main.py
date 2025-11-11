@@ -358,6 +358,24 @@ async def photographer_gallery(
         context
     )
 
+# Photographer analytics page (protected)
+@app.get("/manage/analytics")
+async def photographer_analytics(
+    request: Request,
+    current_user: User = Depends(get_current_user_for_subdomain)
+):
+    """Photographer analytics dashboard (authenticated users)"""
+    context = {
+        "request": request,
+        "title": "Portfolio Analytics",
+        "current_user": current_user
+    }
+    context = add_csrf_token_to_context(request, context)
+    return templates.TemplateResponse(
+        "photographer/analytics.html",
+        context
+    )
+
 # Admin dashboard (protected)
 @app.get("/admin")
 async def admin_dashboard(
@@ -409,11 +427,13 @@ from api.routes.ingestion import router as ingestion_router
 from api.routes.auth import router as auth_router
 from api.routes.gallery import router as gallery_router
 from api.routes.photographer import router as photographer_router
+from api.routes.analytics import router as analytics_router
 
 app.include_router(ingestion_router)
 app.include_router(auth_router)
 app.include_router(gallery_router)
 app.include_router(photographer_router)
+app.include_router(analytics_router)
 
 # Track endpoint (public - for frontend JavaScript)
 @app.post("/api/track")
