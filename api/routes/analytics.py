@@ -203,27 +203,31 @@ async def get_analytics_timeline(
 async def get_top_images(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
     limit: int = Query(10, ge=1, le=50, description="Number of top images to return"),
-    metric: str = Query("views", regex="^(views|clicks|lightbox_opens)$", description="Metric to rank by"),
+    metric: str = Query("impressions", regex="^(impressions|clicks|views)$", description="Metric to rank by"),
     current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """
     Get top performing images ranked by engagement.
 
-    Returns images with highest views, clicks, or lightbox opens.
+    Returns images with highest impressions, clicks, or lightbox views.
+    Impressions = times image entered viewport (50% visible)
+    Clicks = gallery grid clicks
+    Views = lightbox opens (full-screen views)
     """
     user_id = current_user.id
     since = datetime.now() - timedelta(days=days)
 
     # Map metric to event type
     event_type_map = {
-        "views": "page_view",
+        "impressions": "image_impression",
         "clicks": "gallery_click",
-        "lightbox_opens": "lightbox_open"
+        "views": "lightbox_open"
     }
     event_type = event_type_map[metric]
 
     try:
         async with get_db_connection() as db:
+            # Get top images with engagement metrics
             cursor = await db.execute("""
                 SELECT
                     i.id,
@@ -231,26 +235,54 @@ async def get_top_images(
                     i.caption,
                     i.category,
                     i.filename,
-                    COUNT(CASE WHEN e.event_type = 'page_view' THEN 1 END) as views,
+                    COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
                     COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
-                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
+                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as views
                 FROM images i
                 LEFT JOIN image_events e ON i.id = e.image_id AND e.timestamp >= ?
                 WHERE i.user_id = ?
                 AND i.published = 1
                 GROUP BY i.id
-                HAVING COUNT(CASE WHEN e.event_type = ? THEN 1 END) > 0
                 ORDER BY COUNT(CASE WHEN e.event_type = ? THEN 1 END) DESC
                 LIMIT ?
-            """, (since, user_id, event_type, event_type, limit))
+            """, (since, user_id, event_type, limit))
 
             rows = await cursor.fetchall()
 
+            # Get average view duration for each image (from lightbox_close events)
             top_images = []
             for row in rows:
-                views = row[5]
+                impressions = row[5]
                 clicks = row[6]
-                click_rate = (clicks / views) if views > 0 else 0
+                views = row[7]
+
+                # Calculate CTR (clicks / impressions)
+                ctr = (clicks / impressions) if impressions > 0 else 0
+
+                # Calculate view rate (views / clicks)
+                view_rate = (views / clicks) if clicks > 0 else 0
+
+                # Get average duration from metadata
+                duration_cursor = await db.execute("""
+                    SELECT metadata FROM image_events
+                    WHERE image_id = ?
+                    AND event_type = 'lightbox_close'
+                    AND timestamp >= ?
+                    AND metadata IS NOT NULL
+                """, (row[0], since))
+
+                duration_rows = await duration_cursor.fetchall()
+                durations = []
+                for dr in duration_rows:
+                    try:
+                        import json
+                        meta = json.loads(dr[0])
+                        if 'duration' in meta:
+                            durations.append(meta['duration'])
+                    except:
+                        pass
+
+                avg_duration = sum(durations) / len(durations) if durations else 0
 
                 top_images.append({
                     "id": row[0],
@@ -259,10 +291,12 @@ async def get_top_images(
                     "category": row[3],
                     "thumbnail_url": f"/assets/gallery/{row[4]}",
                     "analytics": {
-                        "views": views,
+                        "impressions": impressions,
                         "clicks": clicks,
-                        "lightbox_opens": row[7],
-                        "click_rate": round(click_rate, 3)
+                        "views": views,
+                        "ctr": round(ctr, 3),
+                        "view_rate": round(view_rate, 3),
+                        "avg_duration": round(avg_duration, 1)
                     }
                 })
 
@@ -334,6 +368,137 @@ async def get_referrer_breakdown(
     except Exception as e:
         logger.error(f"Failed to get referrer breakdown: {str(e)}", exc_info=e)
         raise HTTPException(500, "Failed to retrieve referrer data")
+
+
+@router.get("/category-performance")
+async def get_category_performance(
+    days: int = Query(30, ge=1, le=365, description="Number of days to include"),
+    current_user: User = Depends(get_current_user_for_subdomain)
+):
+    """
+    Get engagement metrics broken down by image category.
+
+    Returns performance metrics for each category (nature, wildlife, portrait, etc.)
+    """
+    user_id = current_user.id
+    since = datetime.now() - timedelta(days=days)
+
+    try:
+        async with get_db_connection() as db:
+            cursor = await db.execute("""
+                SELECT
+                    i.category,
+                    COUNT(DISTINCT i.id) as image_count,
+                    COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
+                    COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
+                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as views
+                FROM images i
+                LEFT JOIN image_events e ON i.id = e.image_id AND e.timestamp >= ?
+                WHERE i.user_id = ?
+                AND i.published = 1
+                AND i.category IS NOT NULL
+                GROUP BY i.category
+                ORDER BY impressions DESC
+            """, (since, user_id))
+
+            rows = await cursor.fetchall()
+
+            categories = []
+            for row in rows:
+                impressions = row[2]
+                clicks = row[3]
+                views = row[4]
+
+                # Calculate metrics
+                ctr = (clicks / impressions) if impressions > 0 else 0
+                view_rate = (views / clicks) if clicks > 0 else 0
+
+                categories.append({
+                    "category": row[0],
+                    "image_count": row[1],
+                    "impressions": impressions,
+                    "clicks": clicks,
+                    "views": views,
+                    "ctr": round(ctr, 3),
+                    "view_rate": round(view_rate, 3)
+                })
+
+            return {
+                "period_days": days,
+                "categories": categories
+            }
+
+    except Exception as e:
+        logger.error(f"Failed to get category performance: {str(e)}", exc_info=e)
+        raise HTTPException(500, "Failed to retrieve category data")
+
+
+@router.get("/scroll-depth")
+async def get_scroll_depth(
+    days: int = Query(30, ge=1, le=365, description="Number of days to include"),
+    current_user: User = Depends(get_current_user_for_subdomain)
+):
+    """
+    Get scroll depth distribution.
+
+    Returns how many sessions reached each scroll milestone (25%, 50%, 75%, 100%).
+    """
+    user_id = current_user.id
+    since = datetime.now() - timedelta(days=days)
+
+    try:
+        async with get_db_connection() as db:
+            cursor = await db.execute("""
+                SELECT metadata FROM image_events e
+                LEFT JOIN images i ON e.image_id = i.id
+                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                AND e.event_type = 'scroll_depth'
+                AND e.timestamp >= ?
+            """, (user_id, since))
+
+            rows = await cursor.fetchall()
+
+            # Parse metadata to extract depth values
+            depth_counts = {25: 0, 50: 0, 75: 0, 100: 0}
+            for row in rows:
+                if row[0]:
+                    try:
+                        import json
+                        meta = json.loads(row[0])
+                        depth = meta.get('depth')
+                        if depth in depth_counts:
+                            depth_counts[depth] += 1
+                    except:
+                        pass
+
+            # Get total sessions for percentage calculation
+            cursor = await db.execute("""
+                SELECT COUNT(DISTINCT session_id) FROM image_events e
+                LEFT JOIN images i ON e.image_id = i.id
+                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                AND e.timestamp >= ?
+            """, (user_id, since))
+
+            total_sessions = (await cursor.fetchone())[0]
+
+            milestones = []
+            for depth, count in sorted(depth_counts.items()):
+                percentage = (count / total_sessions * 100) if total_sessions > 0 else 0
+                milestones.append({
+                    "depth": depth,
+                    "sessions": count,
+                    "percentage": round(percentage, 1)
+                })
+
+            return {
+                "period_days": days,
+                "total_sessions": total_sessions,
+                "milestones": milestones
+            }
+
+    except Exception as e:
+        logger.error(f"Failed to get scroll depth: {str(e)}", exc_info=e)
+        raise HTTPException(500, "Failed to retrieve scroll depth data")
 
 
 @router.get("/image/{image_id}")

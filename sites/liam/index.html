@@ -508,7 +508,7 @@
     }
 
     // Track events to analytics endpoint
-    async function trackEvent(eventType, imageId = null) {
+    async function trackEvent(eventType, imageId = null, metadata = null) {
       try {
         const payload = {
           event_type: eventType,
@@ -522,6 +522,11 @@
         // Get referrer from document
         if (document.referrer) {
           payload.referrer = document.referrer;
+        }
+
+        // Add metadata (duration, scroll depth, etc.)
+        if (metadata) {
+          payload.metadata = JSON.stringify(metadata);
         }
 
         await fetch('/api/track', {
@@ -554,6 +559,7 @@
     }
 
     // Track lightbox opens using GLightbox events
+    let lightboxOpenTime = null;
     function addLightboxTracking() {
       // Wait for GLightbox to be initialized
       setTimeout(() => {
@@ -565,10 +571,76 @@
               // Use actual database ID instead of index for accurate analytics
               const imageId = galleryData[index]?.id || index;
               trackEvent('lightbox_open', imageId);
+              lightboxOpenTime = Date.now(); // Start duration tracking
             }, 100);
           });
         });
+
+        // Track lightbox close and duration
+        document.addEventListener('click', (e) => {
+          if (e.target.classList.contains('gclose') || e.target.classList.contains('goverlay')) {
+            if (lightboxOpenTime) {
+              const duration = Math.round((Date.now() - lightboxOpenTime) / 1000); // seconds
+              trackEvent('lightbox_close', null, { duration });
+              lightboxOpenTime = null;
+            }
+          }
+        });
       }, 200);
+    }
+
+    // Track image impressions (when images enter viewport)
+    function addImpressionTracking() {
+      const impressedImages = new Set(); // Prevent duplicate impressions
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+            const index = parseInt(entry.target.dataset.index);
+            const imageId = galleryData[index]?.id;
+
+            if (imageId && !impressedImages.has(imageId)) {
+              impressedImages.add(imageId);
+              trackEvent('image_impression', imageId);
+            }
+          }
+        });
+      }, {
+        threshold: 0.5, // 50% visible
+        rootMargin: '0px'
+      });
+
+      // Observe all gallery items
+      document.querySelectorAll('.gallery-item').forEach((item, index) => {
+        item.dataset.index = index;
+        observer.observe(item);
+      });
+    }
+
+    // Track scroll depth milestones
+    function addScrollDepthTracking() {
+      const milestones = [25, 50, 75, 100];
+      const reached = new Set();
+
+      function checkScrollDepth() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrollPercent = (scrollTop / docHeight) * 100;
+
+        milestones.forEach(milestone => {
+          if (scrollPercent >= milestone && !reached.has(milestone)) {
+            reached.add(milestone);
+            trackEvent('scroll_depth', null, { depth: milestone });
+          }
+        });
+      }
+
+      // Throttle scroll events
+      let scrollTimeout;
+      window.addEventListener('scroll', () => {
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(checkScrollDepth, 200);
+      });
     }
 
     // ===== LOAD GALLERY DATA FROM API =====
@@ -619,6 +691,8 @@
       setTimeout(() => {
         addGalleryTracking();
         addLightboxTracking();
+        addImpressionTracking();
+        addScrollDepthTracking();
       }, 500); // Wait for gallery to be fully initialized
     });
   </script>

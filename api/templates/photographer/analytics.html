@@ -484,9 +484,27 @@
         <!-- Top Images -->
         <div class="top-images-section">
             <h3>Top Performing Images</h3>
-            <div class="subtitle">Ranked by total views</div>
+            <div class="subtitle">Ranked by impressions (viewport visibility)</div>
             <div id="topImagesList" class="top-images-list">
                 <div class="loading">Loading top images...</div>
+            </div>
+        </div>
+
+        <!-- Category Performance -->
+        <div class="top-images-section">
+            <h3>Category Performance</h3>
+            <div class="subtitle">Engagement metrics by category</div>
+            <div id="categoryList" class="top-images-list">
+                <div class="loading">Loading category data...</div>
+            </div>
+        </div>
+
+        <!-- Scroll Depth -->
+        <div class="top-images-section">
+            <h3>Scroll Depth Analysis</h3>
+            <div class="subtitle">How far visitors scroll down the gallery</div>
+            <div id="scrollDepthChart" style="padding: 2rem;">
+                <div class="loading">Loading scroll depth...</div>
             </div>
         </div>
     </div>
@@ -520,7 +538,9 @@
             await Promise.all([
                 loadOverview(),
                 loadTimeline(),
-                loadTopImages()
+                loadTopImages(),
+                loadCategoryPerformance(),
+                loadScrollDepth()
             ]);
         }
 
@@ -640,7 +660,7 @@
 
         async function loadTopImages() {
             try {
-                const res = await fetch(`/api/analytics/top-images?days=${currentDays}&limit=10&metric=views`, {
+                const res = await fetch(`/api/analytics/top-images?days=${currentDays}&limit=10&metric=impressions`, {
                     credentials: 'include'
                 });
 
@@ -654,11 +674,12 @@
                     container.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-state-icon">📊</div>
-                            <div class="empty-state-title">No engagement data yet</div>
+                            <div class="empty-state-title">Collecting engagement data</div>
                             <div class="empty-state-description">
-                                Publish your images to start tracking engagement.
+                                As visitors view your gallery, impression and engagement metrics will appear here.
+                                This includes viewport visibility, clicks, and full-screen views.
                             </div>
-                            <a href="/manage/gallery" class="btn">Go to Gallery</a>
+                            <a href="/manage/gallery" class="btn">View Gallery</a>
                         </div>
                     `;
                     return;
@@ -671,11 +692,14 @@
                         <div class="top-image-info">
                             <div class="top-image-title">${img.title || 'Untitled'}</div>
                             <div class="top-image-stats">
-                                <span>${img.analytics.views} views</span>
+                                <span>${img.analytics.impressions} impressions</span>
                                 <span>•</span>
                                 <span>${img.analytics.clicks} clicks</span>
                                 <span>•</span>
-                                <span>${Math.round(img.analytics.click_rate * 100)}% CTR</span>
+                                <span>${img.analytics.views} views</span>
+                                <span>•</span>
+                                <span>${Math.round(img.analytics.ctr * 100)}% CTR</span>
+                                ${img.analytics.avg_duration > 0 ? `<span>•</span><span>${img.analytics.avg_duration}s avg</span>` : ''}
                                 ${img.category ? `<span>•</span><span>${img.category}</span>` : ''}
                             </div>
                         </div>
@@ -684,6 +708,105 @@
 
             } catch (error) {
                 console.error('Top images load error:', error);
+            }
+        }
+
+        async function loadCategoryPerformance() {
+            try {
+                const res = await fetch(`/api/analytics/category-performance?days=${currentDays}`, {
+                    credentials: 'include'
+                });
+
+                if (!res.ok) throw new Error('Failed to load category data');
+
+                const data = await res.json();
+
+                const container = document.getElementById('categoryList');
+
+                if (data.categories.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📁</div>
+                            <div class="empty-state-title">No category data yet</div>
+                            <div class="empty-state-description">
+                                Add categories to your images to see performance breakdowns.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.categories.map((cat, index) => `
+                    <div class="top-image-card">
+                        <div class="top-image-rank">#${index + 1}</div>
+                        <div class="top-image-info" style="margin-left: 1rem;">
+                            <div class="top-image-title">${cat.category}</div>
+                            <div class="top-image-stats">
+                                <span>${cat.image_count} images</span>
+                                <span>•</span>
+                                <span>${cat.impressions} impressions</span>
+                                <span>•</span>
+                                <span>${cat.clicks} clicks</span>
+                                <span>•</span>
+                                <span>${cat.views} views</span>
+                                <span>•</span>
+                                <span>${Math.round(cat.ctr * 100)}% CTR</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Category performance load error:', error);
+            }
+        }
+
+        async function loadScrollDepth() {
+            try {
+                const res = await fetch(`/api/analytics/scroll-depth?days=${currentDays}`, {
+                    credentials: 'include'
+                });
+
+                if (!res.ok) throw new Error('Failed to load scroll depth');
+
+                const data = await res.json();
+
+                const container = document.getElementById('scrollDepthChart');
+
+                if (data.total_sessions === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <div class="empty-state-title">No scroll data yet</div>
+                            <div class="empty-state-description">
+                                Scroll depth tracking shows how far visitors scroll down your gallery.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const milestoneHTML = data.milestones.map(m => `
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="font-weight: 500;">${m.depth}% Scroll Depth</span>
+                            <span style="color: var(--text-secondary);">${m.sessions} sessions (${m.percentage}%)</span>
+                        </div>
+                        <div style="background: var(--bg-tertiary); height: 8px; border-radius: 4px; overflow: hidden;">
+                            <div style="background: var(--accent); height: 100%; width: ${m.percentage}%; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.innerHTML = `
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Based on ${data.total_sessions} sessions in the last ${data.period_days} days
+                    </div>
+                    ${milestoneHTML}
+                `;
+
+            } catch (error) {
+                console.error('Scroll depth load error:', error);
             }
         }
 
