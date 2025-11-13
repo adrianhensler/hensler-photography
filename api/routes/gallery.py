@@ -50,22 +50,40 @@ async def get_published_gallery(user_id: int):
     async with get_db_connection() as db:
         cursor = await db.execute("""
             SELECT
-                id, filename, slug, title, caption, tags, category,
-                width, height, aspect_ratio, share_exif,
-                camera_make, camera_model, lens, focal_length,
-                aperture, shutter_speed, iso, date_taken, location,
-                created_at
-            FROM images
-            WHERE user_id = ? AND published = 1
-            ORDER BY sort_order ASC, created_at DESC
+                i.id, i.filename, i.slug, i.title, i.caption, i.tags, i.category,
+                i.width, i.height, i.aspect_ratio, i.share_exif,
+                i.camera_make, i.camera_model, i.lens, i.focal_length,
+                i.aperture, i.shutter_speed, i.iso, i.date_taken, i.location,
+                i.created_at,
+                thumb.filename as thumbnail_filename,
+                medium.filename as medium_filename,
+                large.filename as large_filename
+            FROM images i
+            LEFT JOIN image_variants thumb ON i.id = thumb.image_id
+                AND thumb.format = 'webp' AND thumb.size = 'thumbnail'
+            LEFT JOIN image_variants medium ON i.id = medium.image_id
+                AND medium.format = 'webp' AND medium.size = 'medium'
+            LEFT JOIN image_variants large ON i.id = large.image_id
+                AND large.format = 'webp' AND large.size = 'large'
+            WHERE i.user_id = ? AND i.published = 1
+            ORDER BY i.sort_order ASC, i.created_at DESC
         """, (user_id,))
 
         rows = await cursor.fetchall()
 
         images = []
         for row in rows:
-            # Construct image URLs from filename
-            base_url = f"/assets/gallery/{row[1]}"
+            # Get variant filenames (fallback to original if not available)
+            original_filename = row[1]
+            thumbnail_filename = row[21] or original_filename
+            medium_filename = row[22] or original_filename
+            large_filename = row[23] or original_filename
+
+            # Construct URLs
+            original_url = f"/assets/gallery/{original_filename}"
+            thumbnail_url = f"/assets/gallery/{thumbnail_filename}"
+            medium_url = f"/assets/gallery/{medium_filename}"
+            large_url = f"/assets/gallery/{large_filename}"
 
             # Only include EXIF if share_exif = 1
             exif_data = None
@@ -84,7 +102,7 @@ async def get_published_gallery(user_id: int):
 
             images.append({
                 "id": row[0],
-                "filename": row[1],
+                "filename": original_filename,
                 "slug": row[2],
                 "title": row[3],
                 "caption": row[4],
@@ -95,8 +113,12 @@ async def get_published_gallery(user_id: int):
                 "aspect_ratio": row[9],
                 "share_exif": bool(row[10]),
                 "exif": exif_data,
-                "image_url": base_url,
-                "thumbnail_url": base_url,  # For now, same as full image
+                # Original full-resolution image
+                "image_url": original_url,
+                # Optimized WebP variants (400px, 800px, 1200px)
+                "thumbnail_url": thumbnail_url,      # 400px for grid
+                "medium_url": medium_url,            # 800px for tablets
+                "large_url": large_url,              # 1200px for lightbox
                 "created_at": row[20]
             })
 

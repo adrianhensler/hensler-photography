@@ -352,7 +352,10 @@
         if (index === 0) slide.classList.add('active');
 
         const img = document.createElement('img');
-        img.src = `/assets/gallery/${imageData.filename}`;
+        // Use large variant (1200px) for hero slideshow with responsive srcset
+        img.src = imageData.large_url || imageData.medium_url || `/assets/gallery/${imageData.filename}`;
+        img.srcset = `${imageData.medium_url} 800w, ${imageData.large_url} 1200w`;
+        img.sizes = '100vw';
         img.alt = imageData.title || 'Photography by Liam Hensler';
         img.loading = index === 0 ? 'eager' : 'lazy';
 
@@ -403,7 +406,8 @@
 
       galleryData.forEach((imageData, index) => {
         const link = document.createElement('a');
-        link.href = `/assets/gallery/${imageData.filename}`;
+        // Use 1200px WebP variant for lightbox (optimized, not full-res)
+        link.href = imageData.large_url || `/assets/gallery/${imageData.filename}`;
         link.className = 'gallery-item glightbox';
         link.setAttribute('data-gallery', 'portfolio');
 
@@ -446,7 +450,10 @@
         }
 
         const img = document.createElement('img');
-        img.src = `/assets/gallery/${imageData.filename}`;
+        // Use optimized WebP variants with responsive srcset
+        img.src = imageData.thumbnail_url || `/assets/gallery/${imageData.filename}`;
+        img.srcset = `${imageData.thumbnail_url} 400w, ${imageData.medium_url} 800w`;
+        img.sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
         img.alt = imageData.title || 'Photography by Liam Hensler';
         img.loading = 'lazy';
         img.setAttribute('decoding', 'async');
