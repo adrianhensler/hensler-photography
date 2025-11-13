@@ -418,6 +418,164 @@
             font-size: 1.2rem;
         }
 
+        /* Analytics Explanation Section */
+        .analytics-info {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .analytics-info-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .analytics-info-header:hover {
+            background: var(--bg-secondary);
+        }
+
+        .analytics-info-icon {
+            font-size: 1rem;
+            color: var(--accent);
+        }
+
+        .analytics-info-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        .analytics-info-toggle {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            transition: transform 0.3s;
+        }
+
+        .analytics-info-toggle.expanded {
+            transform: rotate(180deg);
+        }
+
+        .analytics-info-content {
+            padding: 0 1.25rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .analytics-info-content.expanded {
+            max-height: 1200px;
+            padding: 0 1.25rem 1.5rem;
+        }
+
+        .analytics-info-content h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin: 1rem 0 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .analytics-info-content h4:first-child {
+            margin-top: 0;
+        }
+
+        .analytics-info-content p {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .analytics-info-content ul {
+            margin: 0.5rem 0 1rem 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .analytics-info-content li {
+            margin-bottom: 0.4rem;
+        }
+
+        .analytics-info-content strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Info Icon Tooltips */
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: help;
+            margin-left: 0.3rem;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .info-icon:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .info-icon::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-size: 0.8rem;
+            font-weight: 400;
+            line-height: 1.4;
+            color: var(--text-primary);
+            white-space: normal;
+            width: 280px;
+            text-align: left;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 1000;
+        }
+
+        .info-icon:hover::after {
+            opacity: 1;
+        }
+
+        .info-icon::before {
+            content: '';
+            position: absolute;
+            bottom: calc(100% + 2px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: var(--border-color);
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1001;
+        }
+
+        .info-icon:hover::before {
+            opacity: 1;
+        }
+
     </style>
 </head>
 <body>
@@ -450,26 +608,68 @@
             </div>
         </div>
 
+        <!-- Analytics Explanation -->
+        <div class="analytics-info">
+            <div class="analytics-info-header" onclick="toggleAnalyticsInfo()">
+                <span class="analytics-info-icon">ⓘ</span>
+                <span class="analytics-info-title">About Analytics & Data Collection</span>
+                <span class="analytics-info-toggle" id="analyticsInfoToggle">▼</span>
+            </div>
+            <div class="analytics-info-content" id="analyticsInfoContent">
+                <h4>How Metrics Are Collected</h4>
+                <p>All analytics are collected automatically as visitors interact with your public gallery. Data is anonymous and aggregates visitor behavior to help you understand what resonates with your audience.</p>
+
+                <h4>What Each Metric Means</h4>
+                <ul>
+                    <li><strong>Impressions:</strong> Times an image became visible in the viewport (at least 50% visible while scrolling). Shows which images attract attention.</li>
+                    <li><strong>Clicks:</strong> Times a visitor clicked a thumbnail in the gallery grid. Indicates strong interest in viewing the full image.</li>
+                    <li><strong>Views:</strong> Times the full-screen lightbox was opened. Represents deep engagement with your work.</li>
+                    <li><strong>CTR (Click-Through Rate):</strong> Percentage of impressions that resulted in clicks. Industry average: 2-5%, excellent: 10%+. Shows image appeal strength.</li>
+                    <li><strong>View Rate:</strong> Percentage of clicks that opened the lightbox. Usually 95-100%. Low rates may indicate technical issues.</li>
+                    <li><strong>Average Duration:</strong> Mean seconds spent viewing full-screen images. Typical: 2-5s quick look, 5-10s normal interest, 10+s high engagement.</li>
+                </ul>
+
+                <h4>Privacy & Data</h4>
+                <p><strong>What's collected:</strong> Event types, timestamps, which images were viewed, where visitors came from (referrer), and session IDs (random strings).</p>
+                <p><strong>What's NOT collected:</strong> IP addresses, names, emails, personal information, tracking cookies, or any data that identifies individual visitors. All data is anonymous and aggregated.</p>
+
+                <h4>Understanding Scroll Depth</h4>
+                <p>Shows how far down visitors scroll through your gallery. Higher percentages at deeper depths indicate engaging content. It's normal for fewer visitors to reach 100% - attention naturally falls off as users scroll.</p>
+            </div>
+        </div>
+
         <!-- Overview Cards -->
         <div class="overview-cards">
             <div class="overview-card">
                 <div class="overview-number" id="overviewViews">--</div>
-                <div class="overview-label">Views</div>
+                <div class="overview-label">
+                    Views
+                    <span class="info-icon" data-tooltip="Total page views across your portfolio. Counts each time someone lands on your gallery page.">ⓘ</span>
+                </div>
                 <div class="overview-trend" id="overviewViewsTrend"></div>
             </div>
             <div class="overview-card">
                 <div class="overview-number" id="overviewVisitors">--</div>
-                <div class="overview-label">Visitors</div>
+                <div class="overview-label">
+                    Visitors
+                    <span class="info-icon" data-tooltip="Unique sessions visiting your portfolio. Tracked by anonymous session IDs - no personal data collected.">ⓘ</span>
+                </div>
                 <div class="overview-trend" id="overviewVisitorsTrend"></div>
             </div>
             <div class="overview-card">
                 <div class="overview-number" id="overviewClicks">--</div>
-                <div class="overview-label">Clicks</div>
+                <div class="overview-label">
+                    Clicks
+                    <span class="info-icon" data-tooltip="Total thumbnail clicks in gallery grid. Shows interest in viewing images at full size.">ⓘ</span>
+                </div>
                 <div class="overview-trend" id="overviewClicksTrend"></div>
             </div>
             <div class="overview-card">
                 <div class="overview-number" id="overviewClickRate">--%</div>
-                <div class="overview-label">Click Rate</div>
+                <div class="overview-label">
+                    Click Rate
+                    <span class="info-icon" data-tooltip="Percentage of page views that resulted in at least one image click. Higher rates indicate engaging galleries.">ⓘ</span>
+                </div>
             </div>
         </div>
 
@@ -522,6 +722,21 @@
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
+        }
+
+        // Analytics Info Toggle
+        function toggleAnalyticsInfo() {
+            const content = document.getElementById('analyticsInfoContent');
+            const toggle = document.getElementById('analyticsInfoToggle');
+            const isExpanded = content.classList.contains('expanded');
+
+            if (isExpanded) {
+                content.classList.remove('expanded');
+                toggle.classList.remove('expanded');
+            } else {
+                content.classList.add('expanded');
+                toggle.classList.add('expanded');
+            }
         }
 
         // Initialize theme on page load
