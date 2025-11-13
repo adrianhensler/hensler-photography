@@ -468,15 +468,16 @@ async def track_event(request: Request, event: TrackingEvent):
         async with get_db_connection() as db:
             cursor = await db.execute("""
                 INSERT INTO image_events
-                (image_id, event_type, user_agent, referrer, ip_hash, session_id, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                (image_id, event_type, user_agent, referrer, ip_hash, session_id, metadata, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             """, (
                 event.image_id,
                 event.event_type,
                 user_agent,
                 referrer,
                 ip_hash,
-                event.session_id
+                event.session_id,
+                event.metadata
             ))
             await db.commit()
             event_id = cursor.lastrowid

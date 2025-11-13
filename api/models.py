@@ -403,12 +403,19 @@ class ErrorResponse(BaseModel):
 
 class TrackingEvent(BaseModel):
     """Model for tracking image engagement events"""
-    event_type: Literal["gallery_click", "lightbox_open", "page_view"] = Field(
+    event_type: Literal[
+        "gallery_click",
+        "lightbox_open",
+        "lightbox_close",
+        "page_view",
+        "image_impression",
+        "scroll_depth"
+    ] = Field(
         description="Type of event being tracked"
     )
     image_id: Optional[int] = Field(
         None,
-        description="Image ID (optional for page_view events)"
+        description="Image ID (optional for page_view and scroll_depth events)"
     )
     session_id: Optional[str] = Field(
         None,
@@ -420,11 +427,16 @@ class TrackingEvent(BaseModel):
         max_length=500,
         description="HTTP referrer"
     )
+    metadata: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="JSON metadata for events (e.g., duration, scroll depth)"
+    )
 
     @validator('image_id')
     def validate_image_id_for_type(cls, v, values):
-        """Require image_id for gallery_click and lightbox_open"""
+        """Require image_id for image-specific events"""
         event_type = values.get('event_type')
-        if event_type in ['gallery_click', 'lightbox_open'] and v is None:
+        if event_type in ['gallery_click', 'lightbox_open', 'image_impression'] and v is None:
             raise ValueError(f'{event_type} events require an image_id')
         return v
