@@ -228,6 +228,7 @@ async def get_top_images(
     try:
         async with get_db_connection() as db:
             # Get top images with engagement metrics
+            # Use thumbnail variant (400px WebP) instead of full-size original
             cursor = await db.execute("""
                 SELECT
                     i.id,
@@ -235,11 +236,15 @@ async def get_top_images(
                     i.caption,
                     i.category,
                     i.filename,
+                    iv.filename as thumbnail_filename,
                     COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
                     COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
                     COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as views
                 FROM images i
                 LEFT JOIN image_events e ON i.id = e.image_id AND e.timestamp >= ?
+                LEFT JOIN image_variants iv ON i.id = iv.image_id
+                    AND iv.format = 'webp'
+                    AND iv.size = 'thumbnail'
                 WHERE i.user_id = ?
                 AND i.published = 1
                 GROUP BY i.id
@@ -252,9 +257,10 @@ async def get_top_images(
             # Get average view duration for each image (from lightbox_close events)
             top_images = []
             for row in rows:
-                impressions = row[5]
-                clicks = row[6]
-                views = row[7]
+                # Updated indices after adding thumbnail_filename column
+                impressions = row[6]
+                clicks = row[7]
+                views = row[8]
 
                 # Calculate CTR (clicks / impressions)
                 ctr = (clicks / impressions) if impressions > 0 else 0
@@ -284,12 +290,15 @@ async def get_top_images(
 
                 avg_duration = sum(durations) / len(durations) if durations else 0
 
+                # Use thumbnail variant (400px WebP) if available, fallback to original
+                thumbnail_file = row[5] or row[4]  # thumbnail_filename or original filename
+
                 top_images.append({
                     "id": row[0],
                     "title": row[1] or "Untitled",
                     "caption": row[2],
                     "category": row[3],
-                    "thumbnail_url": f"/assets/gallery/{row[4]}",
+                    "thumbnail_url": f"/assets/gallery/{thumbnail_file}",
                     "analytics": {
                         "impressions": impressions,
                         "clicks": clicks,
