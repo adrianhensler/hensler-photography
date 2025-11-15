@@ -25,40 +25,46 @@ The architecture supports future expansion where the main site will showcase bot
 
 ### Architecture Overview
 
-**Two-Tier System**:
-1. **Public Portfolio Sites** (Port 80/443 production, 8080 test) - Static HTML/CSS/JS
-2. **Admin Management System** (Port 4100) - FastAPI backend with authentication
+**Single-Port Architecture**:
+- All routes (public + admin) served on same port
+- Production: Port 443 (standard HTTPS)
+- Development: Port 8080 (with HTTPS)
+- JWT authentication secures `/admin` and `/manage` routes
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Public Sites (Port 80/443)                                 │
-│  - adrian.hensler.photography                               │
-│  - liam.hensler.photography                                 │
+│  Port 443 (Production) / 8080 (Development)                 │
+│                                                              │
+│  Public Routes:                                              │
+│  - adrian.hensler.photography/                              │
+│  - liam.hensler.photography/                                │
 │  - Dynamic loading via /api/gallery/published               │
 │  - Responsive WebP variants (400px/800px/1200px)            │
 │  - 10-20x faster with optimized images                      │
-└─────────────────────────────────────────────────────────────┘
-                         ↕ (FULLY INTEGRATED ✓)
-┌─────────────────────────────────────────────────────────────┐
-│  Management System (Port 4100) - Python/FastAPI            │
-│  - adrian.hensler.photography:4100/manage                   │
-│  - liam.hensler.photography:4100/manage                     │
+│                                                              │
+│  Management Routes (JWT auth required):                      │
+│  - /admin/login (authentication)                            │
+│  - /manage (dashboard)                                       │
+│  - /manage/upload (image upload with AI metadata)           │
+│  - /manage/gallery (publish workflow, EXIF editing)          │
+│  - /manage/analytics (engagement metrics)                    │
+│                                                              │
+│  Backend: Python/FastAPI + SQLite                            │
 │  - JWT authentication with httpOnly cookies                 │
-│  - Image upload with drag-and-drop                          │
 │  - AI-powered metadata (Claude Vision API)                  │
-│  - EXIF extraction and editing                              │
 │  - WebP variant generation (400px/800px/1200px)             │
-│  - Analytics dashboard with impression tracking             │
-│  - SQLite database with multi-photographer support          │
+│  - Analytics tracking (privacy-preserving)                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Port Architecture
 
-- **Port 8080**: Public portfolios (development/testing)
-- **Port 4100**: Management interfaces (development/testing)
-- **Port 80/443**: Public portfolios (production)
-- **Port 4100**: Admin interfaces (production) - *TODO: Add firewall rules*
+- **Production**: Port 443 only (standard HTTPS)
+  - Public routes: Open to all
+  - Management routes: JWT authentication required
+- **Development**: Port 8080 only (with HTTPS)
+  - Same structure as production
+  - Test with: `https://adrian.hensler.photography:8080/manage`
 
 ### Backend Stack
 
@@ -288,7 +294,7 @@ CREATE TABLE ai_costs (
 - **Thumbnail**: `YYYYMMDD_HHMMSS_hash_thumbnail.webp` (400px, ~10-30KB)
 - **Medium**: `YYYYMMDD_HHMMSS_hash_medium.webp` (800px, ~30-80KB)
 - **Large**: `YYYYMMDD_HHMMSS_hash_large.webp` (1200px, ~40-150KB)
-- All files served via: `https://adrian.hensler.photography:4100/assets/gallery/filename`
+- All files served via: `https://adrian.hensler.photography/assets/gallery/filename`
 - Metadata stored in database (images + image_variants tables)
 
 **Public Gallery Loading**:
@@ -343,11 +349,17 @@ CREATE TABLE ai_costs (
 
 ### Testing URLs
 
-**Management System** (requires authentication):
-- Login: `http://adrian.hensler.photography:4100/admin/login`
-- Dashboard: `http://adrian.hensler.photography:4100/manage`
-- Upload: `http://adrian.hensler.photography:4100/manage/upload`
-- Gallery: `http://adrian.hensler.photography:4100/manage/gallery`
+**Production** (requires authentication):
+- Login: `https://adrian.hensler.photography/admin/login`
+- Dashboard: `https://adrian.hensler.photography/manage`
+- Upload: `https://adrian.hensler.photography/manage/upload`
+- Gallery: `https://adrian.hensler.photography/manage/gallery`
+
+**Development** (requires authentication):
+- Login: `https://adrian.hensler.photography:8080/admin/login`
+- Dashboard: `https://adrian.hensler.photography:8080/manage`
+- Upload: `https://adrian.hensler.photography:8080/manage/upload`
+- Gallery: `https://adrian.hensler.photography:8080/manage/gallery`
 
 **Credentials** (development):
 - Username: `adrian`
