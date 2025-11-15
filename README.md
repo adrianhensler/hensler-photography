@@ -9,13 +9,14 @@ Modern photography portfolio system with API-driven galleries, backend image man
 - **liam.hensler.photography** — Liam's portfolio (ready for API integration)
 - **adrian.hensler.photography** — Adrian's portfolio (✓ API-driven, 21 published images)
 
-**Backend Management System** (Port 4100):
+**Backend Management System** (Port 443):
 - Image upload with AI metadata generation (Claude Vision API)
 - Gallery management (publish/unpublish, featured images)
 - Analytics dashboard (impressions, clicks, views, scroll depth)
 - WebP optimization (automatic 400px/800px/1200px variants)
 - EXIF extraction and editing
 - SQLite database with multi-tenant support
+- Accessed via `/admin` and `/manage` routes on each domain
 
 **Performance**: 10-20x faster page loads with WebP variants (5-10s → 0.5-1s on 4G)
 
@@ -59,7 +60,7 @@ Work in `/opt/dev/hensler_photography` (isolated from production):
 ```bash
 cd /opt/dev/hensler_photography
 
-# Start both web and API services on port 8080/4100
+# Start both web and API services on port 8080
 npm run dev
 
 # Or use docker compose directly
@@ -74,14 +75,14 @@ docker compose -p hensler_test -f docker-compose.local.yml up -d
 - Adrian: http://localhost:8080/adrian
 - Health: http://localhost:8080/healthz
 
-**Management Interface** (Port 4100):
-- Login: http://localhost:4100/admin/login
-- Dashboard: http://localhost:4100/manage
-- Upload: http://localhost:4100/manage/upload
-- Gallery: http://localhost:4100/manage/gallery
-- Analytics: http://localhost:4100/manage/analytics
+**Management Interface** (Port 8080):
+- Login: https://adrian.hensler.photography:8080/admin/login
+- Dashboard: https://adrian.hensler.photography:8080/manage
+- Upload: https://adrian.hensler.photography:8080/manage/upload
+- Gallery: https://adrian.hensler.photography:8080/manage/gallery
+- Analytics: https://adrian.hensler.photography:8080/manage/analytics
 
-Or from remote machine: `http://YOUR-VPS-IP:8080/` and `http://YOUR-VPS-IP:4100/manage`
+**Note**: Development uses same `/admin` and `/manage` routes as production, just on port 8080 instead of 443
 
 ### Development Credentials
 
@@ -105,7 +106,7 @@ docker compose -p hensler_test -f docker-compose.local.yml down
 
 ### Development
 ```bash
-npm run dev              # Start test server (ports 8080/4100)
+npm run dev              # Start test server (port 8080 with /admin + /manage routes)
 npm run dev:stop         # Stop test server
 npm run dev:logs         # View test server logs
 npm run dev:restart      # Restart test server
@@ -143,7 +144,7 @@ npm run screenshot       # Generate screenshots only
 
 ### Production
 ```bash
-npm run prod:start       # Start production (ports 80/443/4100)
+npm run prod:start       # Start production (ports 80/443)
 npm run prod:stop        # Stop production
 npm run prod:restart     # Graceful restart (recommended for updates)
 npm run prod:logs        # View production logs
@@ -219,8 +220,8 @@ See **[DATABASE.md](DATABASE.md)** for complete schema and queries.
 
 ### Directory Structure
 
-- **`/opt/prod/hensler_photography/`** - Production (ports 80/443/4100)
-- **`/opt/dev/hensler_photography/`** - Development (ports 8080/4100)
+- **`/opt/prod/hensler_photography/`** - Production (ports 80/443)
+- **`/opt/dev/hensler_photography/`** - Development (port 8080)
 
 **Critical**: Always make changes in `/opt/dev/`, test, then deploy via git.
 
@@ -231,7 +232,7 @@ See **[DATABASE.md](DATABASE.md)** for complete schema and queries.
    - `hensler.photography` → VPS IP
    - `liam.hensler.photography` → VPS IP
    - `adrian.hensler.photography` → VPS IP
-3. Ports 80/443/4100 open in firewall
+3. Ports 80/443 open in firewall
 
 ### Initial Production Setup
 
@@ -261,10 +262,10 @@ curl -I https://adrian.hensler.photography/healthz
 After making changes in `/opt/dev/hensler_photography`:
 
 ```bash
-# 1. Test locally on port 8080/4100
+# 1. Test locally on port 8080
 cd /opt/dev/hensler_photography
 npm run dev
-# Browse to http://localhost:8080/adrian and verify changes
+# Browse to http://localhost:8080/adrian and https://adrian.hensler.photography:8080/manage
 
 # 2. Commit and push changes
 git add .
@@ -282,16 +283,18 @@ curl -I https://adrian.hensler.photography/healthz
 
 ### Port Configuration
 
-- **Port 80/443**: Public portfolios (web container, auto-HTTPS)
-- **Port 8080**: Public portfolios (development only)
-- **Port 4100**: Management interface (API container, both environments)
+**Production**:
+- **Port 80/443**: Public portfolios + admin/manage routes
+  - `https://adrian.hensler.photography/` (public site)
+  - `https://adrian.hensler.photography/manage` (management dashboard)
+  - `https://adrian.hensler.photography/admin/login` (admin login)
 
-**Security Note**: Port 4100 is currently open for development. Add firewall rules to restrict access in production:
+**Development**:
+- **Port 8080**: Public portfolios + admin/manage routes
+  - `https://adrian.hensler.photography:8080/` (public site)
+  - `https://adrian.hensler.photography:8080/manage` (management dashboard)
 
-```bash
-# Restrict port 4100 to specific IP (optional)
-sudo ufw allow from YOUR_IP to any port 4100
-```
+**Architecture**: All routes consolidated to single port. Authentication enforced via JWT cookies and role-based access control. No need for separate management port.
 
 ---
 
@@ -301,25 +304,27 @@ sudo ufw allow from YOUR_IP to any port 4100
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Public Sites (Port 80/443)                                 │
-│  - Static HTML/CSS/JS served by Caddy                       │
-│  - adrian.hensler.photography (API-driven gallery)          │
-│  - liam.hensler.photography (ready for API)                 │
+│  Port 443 (Production) / Port 8080 (Development)            │
+│                                                              │
+│  Public Routes:                                              │
+│  - adrian.hensler.photography/ (API-driven gallery)         │
+│  - liam.hensler.photography/ (ready for API)                │
 │  - Dynamic loading via /api/gallery/published               │
 │  - Responsive WebP variants (400px/800px/1200px)            │
 │  - 10-20x faster with optimized images                      │
-└─────────────────────────────────────────────────────────────┘
-                         ↕ (FULLY INTEGRATED ✓)
-┌─────────────────────────────────────────────────────────────┐
-│  Management System (Port 4100) - Python/FastAPI            │
-│  - adrian.hensler.photography:4100/manage                   │
+│                                                              │
+│  Management Routes (JWT auth required):                      │
+│  - /admin/login (authentication)                            │
+│  - /manage (dashboard)                                       │
+│  - /manage/upload (drag-and-drop, AI metadata)              │
+│  - /manage/gallery (publish workflow, EXIF editing)          │
+│  - /manage/analytics (impressions, engagement metrics)       │
+│                                                              │
+│  Backend: Python/FastAPI + SQLite                            │
 │  - JWT authentication with httpOnly cookies                 │
-│  - Image upload with drag-and-drop                          │
 │  - AI-powered metadata (Claude Vision API)                  │
-│  - EXIF extraction and editing                              │
 │  - WebP variant generation (400px/800px/1200px)             │
-│  - Analytics dashboard with impression tracking             │
-│  - SQLite database with multi-photographer support          │
+│  - Privacy-preserving analytics tracking                    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -327,7 +332,7 @@ sudo ufw allow from YOUR_IP to any port 4100
 
 ```
 /opt/prod/hensler_photography/       # Production
-├── docker-compose.yml               # Production config (ports 80/443/4100)
+├── docker-compose.yml               # Production config (ports 80/443)
 ├── Caddyfile                        # Production: 3 domains + API proxy
 ├── sites/
 │   ├── main/                        # hensler.photography
@@ -346,7 +351,7 @@ sudo ufw allow from YOUR_IP to any port 4100
 └── README.md                        # This file
 
 /opt/dev/hensler_photography/        # Development (isolated)
-├── docker-compose.local.yml         # Dev config (ports 8080/4100)
+├── docker-compose.local.yml         # Dev config (port 8080)
 ├── Caddyfile.local                  # Dev: path-based routing
 └── (same structure as prod)
 ```
@@ -440,7 +445,7 @@ gh release list
 
 ### Upload New Images
 
-1. **Login**: http://adrian.hensler.photography:4100/admin/login
+1. **Login**: https://adrian.hensler.photography/admin/login
 2. **Navigate**: Click "Upload Images"
 3. **Select**: Drag-and-drop or click to browse
 4. **Process**: AI generates metadata (~$0.02 per image)
@@ -449,7 +454,7 @@ gh release list
 
 ### Edit Existing Images
 
-1. **Navigate**: http://adrian.hensler.photography:4100/manage/gallery
+1. **Navigate**: https://adrian.hensler.photography/manage/gallery
 2. **Find Image**: Use search or filter by category/status
 3. **Edit**: Click pencil icon to modify metadata
 4. **Re-extract EXIF**: Free operation if metadata is wrong
@@ -458,7 +463,7 @@ gh release list
 
 ### View Analytics
 
-1. **Navigate**: http://adrian.hensler.photography:4100/manage/analytics
+1. **Navigate**: https://adrian.hensler.photography/manage/analytics
 2. **Select Period**: 7/30/90 days
 3. **Review Metrics**: Views, visitors, CTR, scroll depth
 4. **Top Images**: See which photos perform best
@@ -534,8 +539,11 @@ print(f'Total images: {cursor.fetchone()[0]}')
 
 ### API Not Responding
 ```bash
-# Check API is running
-curl http://localhost:4100/api/health
+# Check API is running (production)
+curl https://adrian.hensler.photography/api/health
+
+# Or development
+curl -k https://adrian.hensler.photography:8080/api/health
 
 # Check logs for errors
 docker compose logs api --tail 100
@@ -570,7 +578,7 @@ print(f'Total variants: {cursor.fetchone()[0]}')
 ### Development Workflow
 
 1. **Work in development**: `/opt/dev/hensler_photography`
-2. **Start test server**: `npm run dev` (ports 8080/4100)
+2. **Start test server**: `npm run dev` (port 8080 with /admin + /manage routes)
 3. **Make changes**: Edit code, test locally
 4. **Run tests**: `npm test` (Playwright)
 5. **Commit**: Clear, descriptive commit messages
