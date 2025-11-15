@@ -1,16 +1,17 @@
-# Production Caddyfile - serves all 3 domains on standard ports
-
-# Management interface on port 4100 with SSL
-adrian.hensler.photography:4100 {
-  reverse_proxy api:8000
-}
-
-liam.hensler.photography:4100 {
-  reverse_proxy api:8000
-}
+# Production Caddyfile - serves all 3 domains on standard HTTPS (port 443)
 
 hensler.photography {
   encode zstd gzip
+
+  # Admin dashboard
+  handle /admin* {
+    reverse_proxy api:8000
+  }
+
+  # Management dashboard
+  handle /manage* {
+    reverse_proxy api:8000
+  }
 
   # Proxy API requests to backend (for analytics tracking)
   handle /api/* {
