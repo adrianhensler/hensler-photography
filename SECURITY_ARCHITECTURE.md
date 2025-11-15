@@ -8,14 +8,13 @@
 
 ## Overview
 
-Hensler Photography uses a **two-tier architecture** with public portfolio sites (port 80/443) and authenticated management interfaces (port 443/4100). Security is based on JWT authentication, role-based access control, and data isolation by user.
+Hensler Photography uses a **single-port architecture** with public portfolio sites and authenticated management interfaces both served on standard HTTPS (port 443). Security is based on JWT authentication, role-based access control, and data isolation by user.
 
 **Security Model**: Defense in depth
-- **Layer 1**: Firewall (port 4100 only)
-- **Layer 2**: HTTPS/TLS (all traffic encrypted)
-- **Layer 3**: JWT authentication (httpOnly cookies)
-- **Layer 4**: Rate limiting (login endpoints)
-- **Layer 5**: Database isolation (user_id filtering)
+- **Layer 1**: HTTPS/TLS (all traffic encrypted)
+- **Layer 2**: JWT authentication (httpOnly cookies)
+- **Layer 3**: Rate limiting (login endpoints)
+- **Layer 4**: Database isolation (user_id filtering)
 
 ---
 
@@ -45,36 +44,9 @@ Hensler Photography uses a **two-tier architecture** with public portfolio sites
 - ✅ HSTS header (force HTTPS)
 - ✅ XSS protection headers
 
-**When to use**: Default access method for all users
+**When to use**: Primary and only access method for all users
 
----
-
-### Port 4100 (Management) - Admin Backdoor 🔒
-
-**URL Pattern**: `https://{subdomain}.hensler.photography:4100/manage`
-
-**Examples**:
-- Admin: `https://adrian.hensler.photography:4100/manage`
-- Photographer: `https://liam.hensler.photography:4100/manage`
-
-**Characteristics**:
-- **Audience**: Admin users from trusted locations (home network)
-- **Firewall**: Restricted to HOME_IP address only
-- **Authentication**: Required (same JWT system as port 443)
-- **Access from**: Home network only (VPN if traveling)
-- **Certificate**: Let's Encrypt TLS cert (non-standard port)
-
-**Security Features**:
-- ✅ All features from port 443 (JWT, rate limiting, HTTPS)
-- ✅ Additional firewall layer (only one IP allowed)
-- ✅ Optional convenience for admins at home
-
-**When to use**:
-- Convenience for admin/family users at home
-- Optional - port 443 is primary access method
-- Not required for operation
-
-**Important**: This is **not the only way** to access the management interface. Port 443 provides the same functionality with authentication.
+**Note**: Previously, the system used a separate port (4100) for management interfaces. This has been consolidated to port 443 for simplicity while maintaining the same security model through JWT authentication and role-based access control.
 
 ---
 
@@ -372,10 +344,10 @@ curl -H "Cookie: session_token=liam_jwt" \
 - **Status**: ⚠️ Confusing UX, not a security vulnerability
 - **Current Behavior**:
   - Admin user (role='admin') can log into any subdomain
-  - When admin accesses wrong subdomain (e.g., Adrian logs into liam.hensler.photography:4100), they see their own data (not the subdomain owner's data)
+  - When admin accesses wrong subdomain (e.g., Adrian logs into liam.hensler.photography), they see their own data (not the subdomain owner's data)
   - No UI indication that admin is on someone else's subdomain
 - **Example**:
-  - Adrian logs into `liam.hensler.photography:4100/manage/analytics`
+  - Adrian logs into `liam.hensler.photography/manage/analytics`
   - URL shows "liam" but analytics show Adrian's images
   - Confusing but not a security bug (no data leakage)
 - **Root Cause**:
@@ -663,10 +635,16 @@ docker compose exec api python -m api.cli set-password jane
 
 ## Version History
 
+- **v2.0.1** (Nov 15, 2025): Consolidated to single-port architecture
+  - Removed port 4100 (admin backdoor)
+  - All routes now on port 443 (production) / port 8080 (development)
+  - Same security model via JWT authentication and role-based access control
+  - Simplified architecture, easier to understand and maintain
+
 - **v2.0.0** (Nov 13, 2025): Initial security architecture documentation
   - JWT authentication implemented
   - Rate limiting active
   - Multi-user model with role-based access
-  - Port 443 primary access, port 4100 admin backdoor
+  - Dual-port architecture (443 + 4100)
 
 **Next Review**: After adding first non-family photographer
