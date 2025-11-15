@@ -1,0 +1,153 @@
+/* Design System Variables */
+/* Hensler Photography Admin Interface */
+
+:root {
+    /* Brand Colors */
+    --brand-blue: #0066cc;
+    --brand-blue-dark: #0052a3;
+    --brand-gradient: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+
+    /* Light Theme Colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f7;
+    --bg-tertiary: #e8e8ed;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --text-tertiary: #999999;
+    --border-light: #e0e0e0;
+    --border-medium: #cccccc;
+
+    /* Interactive States */
+    --hover-bg: #f0f0f5;
+    --active-bg: #e8e8ed;
+    --focus-ring: rgba(0, 102, 204, 0.1);
+    --focus-border: #0066cc;
+
+    /* Semantic Colors */
+    --success-bg: #e6f4ea;
+    --success-text: #1e7e34;
+    --success-border: #28a745;
+    --warning-bg: #fff3cd;
+    --warning-text: #856404;
+    --warning-border: #ffc107;
+    --error-bg: #fee;
+    --error-text: #c33;
+    --error-border: #dc3545;
+    --danger-bg: #fee;
+    --danger-text: #c33;
+    --danger-hover: #fdd;
+
+    /* Component-Specific */
+    --card-bg: #ffffff;
+    --card-border: #e0e0e0;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    /* Spacing Scale */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+
+    /* Typography */
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-base: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 24px;
+    --font-size-3xl: 32px;
+
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-full: 9999px;
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.2s ease;
+    --transition-slow: 0.3s ease;
+
+    /* Z-Index Scale */
+    --z-dropdown: 1000;
+    --z-modal: 1100;
+    --z-toast: 1200;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --bg-tertiary: #3a3a3a;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-tertiary: #808080;
+    --border-light: #3a3a3a;
+    --border-medium: #4a4a4a;
+
+    --hover-bg: #2a2a2a;
+    --active-bg: #3a3a3a;
+    --focus-ring: rgba(0, 102, 204, 0.2);
+
+    --card-bg: #2a2a2a;
+    --card-border: #3a3a3a;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+    --success-bg: rgba(40, 167, 69, 0.15);
+    --success-text: #4ade80;
+    --warning-bg: rgba(255, 193, 7, 0.15);
+    --warning-text: #fbbf24;
+    --error-bg: rgba(220, 53, 69, 0.15);
+    --error-text: #f87171;
+    --danger-bg: rgba(220, 53, 69, 0.15);
+    --danger-text: #f87171;
+    --danger-hover: rgba(220, 53, 69, 0.25);
+}
+
+/* Base Resets */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+/* Utility Classes */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+}
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+
+.bg-primary { background: var(--bg-primary); }
+.bg-secondary { background: var(--bg-secondary); }
+.bg-tertiary { background: var(--bg-tertiary); }
