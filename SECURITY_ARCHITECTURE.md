@@ -366,6 +366,33 @@ curl -H "Cookie: session_token=liam_jwt" \
 
 ---
 
+### Known UX Issues 🟡
+
+#### Admin Subdomain Access (Design Flaw)
+- **Status**: ⚠️ Confusing UX, not a security vulnerability
+- **Current Behavior**:
+  - Admin user (role='admin') can log into any subdomain
+  - When admin accesses wrong subdomain (e.g., Adrian logs into liam.hensler.photography:4100), they see their own data (not the subdomain owner's data)
+  - No UI indication that admin is on someone else's subdomain
+- **Example**:
+  - Adrian logs into `liam.hensler.photography:4100/manage/analytics`
+  - URL shows "liam" but analytics show Adrian's images
+  - Confusing but not a security bug (no data leakage)
+- **Root Cause**:
+  - Code intentionally allows admin to bypass subdomain check (`api/routes/auth.py:294-296`)
+  - Analytics queries filter by current_user.id (always shows logged-in user's data)
+- **Impact**: Confusing for admin users, potentially misleading
+- **Security Assessment**:
+  - ✅ No data leakage (admin sees own data, not Liam's)
+  - ✅ No cross-user access vulnerability
+  - ❌ Poor UX (URL doesn't match displayed data)
+- **Recommended Fixes**:
+  - **Short-term (v2.1.0)**: Block admins from wrong subdomains (enforce subdomain matching for all users)
+  - **Long-term (v3.0.0)**: Implement user selector dropdown (admin can choose which user's data to view)
+- **Priority**: HIGH (before adding non-family photographers)
+
+---
+
 ## Authentication Implementation Details
 
 ### JWT Token Structure
