@@ -127,6 +127,132 @@
             font-size: 1.2rem;
         }
 
+        /* User Dropdown Component */
+        .user-dropdown {
+            position: relative;
+        }
+
+        .user-dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .user-dropdown-trigger:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
+        }
+
+        .user-dropdown-trigger .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .user-dropdown-trigger .user-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .user-dropdown-trigger .dropdown-arrow {
+            font-size: 10px;
+            color: var(--text-secondary);
+            transition: transform 0.2s ease;
+        }
+
+        .user-dropdown.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .user-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 200px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .user-dropdown.active .user-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .user-dropdown-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .user-dropdown-header .name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .user-dropdown-header .role {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: capitalize;
+        }
+
+        .user-dropdown-menu a,
+        .user-dropdown-menu button {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--text-primary);
+            text-decoration: none;
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .user-dropdown-menu a:hover,
+        .user-dropdown-menu button:hover {
+            background: var(--bg-secondary);
+        }
+
+        .user-dropdown-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 4px 0;
+        }
+
+        .user-dropdown-menu button.danger {
+            color: #dc3545;
+        }
+
+        .user-dropdown-menu button.danger:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
         nav {
             display: flex;
             gap: 1.5rem;
@@ -463,6 +589,7 @@
             padding: 0.5rem 0.75rem;
             border: 1px solid var(--border-light);
             background: var(--bg-primary);
+            color: var(--text-primary);
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.85rem;
@@ -848,6 +975,24 @@
                 <div class="theme-toggle-switch"></div>
                 <span class="theme-icon">☀️</span>
             </div>
+            <div class="user-dropdown" id="userDropdown">
+                <button class="user-dropdown-trigger" onclick="toggleUserDropdown(event)">
+                    <div class="avatar">{{ current_user.display_name[0]|upper }}</div>
+                    <span class="user-name">{{ current_user.display_name }}</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="user-dropdown-menu">
+                    <div class="user-dropdown-header">
+                        <div class="name">{{ current_user.display_name }}</div>
+                        <div class="role">{{ current_user.role }}</div>
+                    </div>
+                    <a href="/manage">Dashboard</a>
+                    <a href="/manage/gallery">My Gallery</a>
+                    <a href="/manage/settings">Settings</a>
+                    <div class="user-dropdown-divider"></div>
+                    <button class="danger" onclick="logout()">Sign Out</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1019,6 +1164,45 @@
 
         // Initialize theme on page load
         initTheme();
+
+        // User Dropdown Management
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        // Close dropdown on escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const dropdown = document.getElementById('userDropdown');
+                if (dropdown) {
+                    dropdown.classList.remove('active');
+                }
+            }
+        });
+
+        // Logout function
+        async function logout() {
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = '/admin/login';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/admin/login';
+            }
+        }
 
         // Current user ID injected from server
         const CURRENT_USER_ID = {{ current_user.id }};
