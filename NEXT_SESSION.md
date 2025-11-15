@@ -46,9 +46,9 @@
 - 🔴 Missing features block public release
 
 **Review Findings** (from SECURITY_ARCHITECTURE.md):
-- Port 4100 is secure (firewall + auth) - documented, no action needed
-- Port 443 already multi-user ready - authentication works
-- Need to complete user-facing authentication features
+- Single-port architecture (port 443 only) - simplified and deployed ✅
+- Authentication system solid (JWT, rate limiting, role-based access)
+- Need to complete user-facing authentication features (settings, password reset)
 
 ---
 
@@ -262,8 +262,8 @@ git branch
 docker ps --filter name=hensler_photography
 # Should show: hensler_photography-api-1, hensler_photography-web-1
 
-# Verify API health
-curl http://localhost:4100/api/health
+# Verify API health (production)
+curl https://adrian.hensler.photography/api/health
 # Should return: {"status":"healthy", ...}
 
 # Check production site
@@ -285,7 +285,7 @@ docker compose -p hensler_test -f docker-compose.local.yml up -d
 
 # Access development sites
 # Public: http://localhost:8080/adrian
-# Admin: http://localhost:4100/manage
+# Admin: https://adrian.hensler.photography:8080/manage
 ```
 
 ---
@@ -293,7 +293,7 @@ docker compose -p hensler_test -f docker-compose.local.yml up -d
 ## 📚 KEY DOCUMENTATION FILES
 
 **Essential Reading**:
-1. **SECURITY_ARCHITECTURE.md** ← Port 4100 clarification, threat model, scaling
+1. **SECURITY_ARCHITECTURE.md** ← Single-port architecture, threat model, scaling
 2. **GOOGLE_OAUTH_TODO.md** ← Step-by-step OAuth implementation guide
 3. **CLAUDE.md** ← Complete project overview and architecture
 4. **README.md** ← Getting started, deployment, workflows
