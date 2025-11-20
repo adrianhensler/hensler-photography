@@ -4,29 +4,180 @@
   <meta charset="utf-8">
   <title>Hensler Photography</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Photography by the Hensler family.">
+  <meta name="description" content="Hensler Photography landing page linking to Adrian and Liam galleries.">
+
+  <!-- Google Fonts: Playfair Display for headings, Inter for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#0b0b0b;color:#eee;display:flex;min-height:100vh}
-    .wrap{margin:auto;max-width:1000px;padding:24px;text-align:center}
-    h1{font-weight:700;margin:0 0 8px;font-size:clamp(28px,4vw,44px)}
-    p{opacity:.9;margin:0 0 18px;line-height:1.5}
-    .links{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:24px 0}
-    a.button{display:inline-block;padding:12px 18px;border-radius:999px;border:1px solid #444;text-decoration:none;color:#eee}
-    a.button:hover{background:#151515}
-    footer{opacity:.6;margin-top:28px;font-size:.9rem}
+    :root {
+      color-scheme: dark;
+      --bg: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.05), transparent 30%),
+            radial-gradient(circle at 80% 0%, rgba(255,255,255,0.04), transparent 28%),
+            #0a0a0a;
+      --panel: rgba(17, 17, 17, 0.8);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f5f5f5;
+      --muted: rgba(245, 245, 245, 0.68);
+      --accent: rgba(255, 215, 160, 0.6);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    main.wrap {
+      margin: auto;
+      width: min(1100px, 100%);
+      padding: clamp(24px, 5vw, 48px);
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 600;
+      margin: 18px 0 10px;
+      font-size: clamp(48px, 8vw, 88px);
+      letter-spacing: 0.05em;
+      text-transform: lowercase;
+      opacity: 0.58;
+      line-height: 1.05;
+    }
+
+    .lede {
+      margin: 12px auto 0;
+      max-width: 640px;
+      font-size: clamp(15px, 2vw, 18px);
+      color: var(--muted);
+      line-height: 1.6;
+      letter-spacing: 0.01em;
+    }
+
+    .profiles {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .card {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      background: linear-gradient(145deg, rgba(23,23,23,0.8), rgba(12,12,12,0.9));
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      transition: transform 160ms ease, border-color 200ms ease, box-shadow 200ms ease;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 215, 160, 0.25);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.65);
+    }
+
+    .card-image {
+      position: relative;
+      height: 220px;
+      background-size: cover;
+      background-position: center;
+      filter: saturate(0.96) brightness(0.95);
+    }
+
+    .card-image::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.65) 100%);
+    }
+
+    .card-body {
+      padding: 18px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      letter-spacing: 0.02em;
+      margin: 0;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: #fdf6ea;
+      background: rgba(255,255,255,0.03);
+      font-weight: 600;
+      transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+      align-self: start;
+    }
+
+    .cta:hover {
+      background: rgba(255, 215, 160, 0.08);
+      border-color: rgba(255, 215, 160, 0.35);
+      transform: translateY(-1px);
+    }
+
+    footer {
+      opacity: .6;
+      margin-top: 18px;
+      font-size: .92rem;
+      text-align: center;
+    }
+
+    @media (min-width: 900px) {
+      .hero { margin-bottom: 56px; }
+      .card-image { height: 260px; }
+    }
   </style>
-  <meta property="og:title" content="Hensler Photography">
-  <meta property="og:description" content="Photography by the Hensler family.">
-  <meta property="og:type" content="website">
 </head>
 <body>
   <main class="wrap">
-    <h1>Hensler Photography</h1>
-    <p>Coming Soon</p>
-    <div class="links">
-      <a class="button" href="https://liam.hensler.photography">Liam Hensler</a>
-      <a class="button" href="https://adrian.hensler.photography">Adrian Hensler</a>
-    </div>
+    <header class="hero">
+      <h1>hensler photography</h1>
+      <p class="lede">Directory for hensler.photography. Direct links to the live Adrian and Liam galleries.</p>
+    </header>
+
+    <section class="profiles" aria-label="Hensler family sites">
+      <article class="card">
+        <div class="card-image" style="background-image:url('assets/liam-preview.jpg');"></div>
+        <div class="card-body">
+          <p class="name">Liam Hensler</p>
+          <a class="cta" href="https://liam.hensler.photography">Open site →</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-image" style="background-image:url('assets/adrian-preview.jpg');"></div>
+        <div class="card-body">
+          <p class="name">Adrian Hensler</p>
+          <a class="cta" href="https://adrian.hensler.photography">Open site →</a>
+        </div>
+      </article>
+    </section>
+
     <footer>© <span id="y"></span> Hensler Photography</footer>
   </main>
   <script>document.getElementById('y').textContent=new Date().getFullYear()</script>
