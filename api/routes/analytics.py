@@ -28,6 +28,13 @@ async def _verify_user_access(current_user: User, user_id: int):
         raise HTTPException(403, "Not authorized to view these analytics")
 
 
+def calc_trend(current_value: int, previous_value: int) -> float:
+    """Calculate percentage change between two values."""
+    if previous_value == 0:
+        return 0 if current_value == 0 else 100
+    return round(((current_value - previous_value) / previous_value) * 100, 1)
+
+
 @router.get("/overview")
 async def get_analytics_overview(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
@@ -92,12 +99,6 @@ async def get_analytics_overview(
 
             # Calculate click-through rate
             click_rate = (clicks / views) if views > 0 else 0
-
-            # Calculate trends (percentage change)
-            def calc_trend(current, previous):
-                if previous == 0:
-                    return 0 if current == 0 else 100
-                return round(((current - previous) / previous) * 100, 1)
 
             views_trend = calc_trend(views, prev_views)
             visitors_trend = calc_trend(visitors, prev_visitors)
@@ -194,11 +195,6 @@ async def get_analytics_highlights(
             prev_clicks = previous[2] or 0
 
             click_rate = (clicks / views) if views > 0 else 0
-
-            def calc_trend(current_value, previous_value):
-                if previous_value == 0:
-                    return 0 if current_value == 0 else 100
-                return round(((current_value - previous_value) / previous_value) * 100, 1)
 
             overview = {
                 "views": views,
@@ -310,6 +306,7 @@ async def get_analytics_highlights(
                 LEFT JOIN images i ON e.image_id = i.id
                 WHERE (i.user_id = ? OR e.image_id IS NULL)
                 AND e.timestamp >= ?
+                AND e.event_type IN ('image_impression', 'gallery_click', 'lightbox_open')
                 """,
                 (user_id, since),
             )
@@ -324,6 +321,7 @@ async def get_analytics_highlights(
                     LEFT JOIN images i ON e.image_id = i.id
                     WHERE (i.user_id = ? OR e.image_id IS NULL)
                     AND e.timestamp >= ?
+                    AND e.event_type IN ('image_impression', 'gallery_click', 'lightbox_open')
                     GROUP BY session_id
                     ORDER BY count DESC
                     LIMIT 1
@@ -446,6 +444,7 @@ async def get_analytics_timeline(
 async def get_recent_engagement(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
     limit: int = Query(20, ge=1, le=100, description="Number of recent events to return"),
+    offset: int = Query(0, ge=0, le=1000, description="Number of events to skip for pagination"),
     current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
@@ -459,6 +458,8 @@ async def get_recent_engagement(
 
     try:
         async with get_db_connection() as db:
+            fetch_limit = limit + 1  # Grab one extra to detect remaining pages
+
             cursor = await db.execute(
                 """
                 SELECT
@@ -478,15 +479,15 @@ async def get_recent_engagement(
                 AND e.timestamp >= ?
                 AND e.event_type IN ('gallery_click', 'lightbox_open')
                 ORDER BY e.timestamp DESC
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """,
-                (user_id, since, limit),
+                (user_id, since, fetch_limit, offset),
             )
 
             rows = await cursor.fetchall()
 
             events: List[Dict[str, Any]] = []
-            for row in rows:
+            for row in rows[:limit]:
                 image_id = row[4]
                 if image_id is None:
                     continue
@@ -508,7 +509,9 @@ async def get_recent_engagement(
                     }
                 )
 
-            return {"period_days": days, "events": events}
+            has_more = len(rows) > limit
+
+            return {"period_days": days, "events": events, "has_more": has_more}
 
     except Exception as e:
         logger.error(f"Failed to get recent engagement: {str(e)}", exc_info=e)

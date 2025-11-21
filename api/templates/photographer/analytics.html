@@ -387,6 +387,12 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
+        .recent-engagement-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
         .recent-engagement-header {
             display: flex;
             justify-content: space-between;
@@ -500,6 +506,22 @@
 
         .btn:hover {
             background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         /* Responsive */
@@ -1046,6 +1068,11 @@
             <div id="recentEngagementList" class="recent-events-list">
                 <div class="loading">Loading recent engagement...</div>
             </div>
+            <div class="recent-engagement-actions">
+                <button id="loadMoreEngagement" class="btn-secondary" style="display: none;" onclick="loadMoreEngagement()">
+                    Load more
+                </button>
+            </div>
         </div>
 
         <!-- Top Images -->
@@ -1148,6 +1175,9 @@
         const CURRENT_USER_ID = {{ current_user.id }};
         let currentDays = 30;
         let analyticsChart = null;
+        let recentEngagementOffset = 0;
+        let recentEngagementHasMore = false;
+        const RECENT_EVENTS_LIMIT = 12;
 
         // Load analytics on page load
         loadAnalytics();
@@ -1340,9 +1370,17 @@
             }
         }
 
-        async function loadRecentEngagement() {
+        async function loadRecentEngagement({ append = false } = {}) {
+            const container = document.getElementById('recentEngagementList');
+
             try {
-                const res = await fetch(`/api/analytics/recent-engagement?days=${currentDays}&limit=12`, {
+                if (!append) {
+                    recentEngagementOffset = 0;
+                    recentEngagementHasMore = false;
+                    container.innerHTML = '<div class="loading">Loading recent engagement...</div>';
+                }
+
+                const res = await fetch(`/api/analytics/recent-engagement?days=${currentDays}&limit=${RECENT_EVENTS_LIMIT}&offset=${recentEngagementOffset}`, {
                     credentials: 'include'
                 });
 
@@ -1352,13 +1390,18 @@
 
                 document.getElementById('recentEventsWindow').textContent = `Last ${data.period_days} days`;
 
-                const container = document.getElementById('recentEngagementList');
                 if (!data.events || data.events.length === 0) {
                     container.innerHTML = '<div class="insight-item">No recent clicks or views in this window.</div>';
+                    recentEngagementHasMore = false;
+                    updateLoadMoreButton();
                     return;
                 }
 
-                container.innerHTML = data.events.map(event => {
+                if (!append) {
+                    container.innerHTML = '';
+                }
+
+                const eventsHtml = data.events.map(event => {
                     const label = event.event_type === 'gallery_click' ? 'Thumbnail click' : 'Lightbox view';
                     const relative = formatRelativeTime(event.timestamp);
                     const exact = formatExactTime(event.timestamp);
@@ -1377,8 +1420,31 @@
                     `;
                 }).join('');
 
+                container.insertAdjacentHTML('beforeend', eventsHtml);
+
+                recentEngagementOffset += data.events.length;
+                recentEngagementHasMore = data.has_more;
+                updateLoadMoreButton();
+
             } catch (error) {
                 console.error('Recent engagement load error:', error);
+                recentEngagementHasMore = false;
+                updateLoadMoreButton();
+            }
+        }
+
+        async function loadMoreEngagement() {
+            const button = document.getElementById('loadMoreEngagement');
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Loading...';
+            }
+
+            await loadRecentEngagement({ append: true });
+
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'Load more';
             }
         }
 
@@ -1552,6 +1618,13 @@
         function formatExactTime(timestamp) {
             const date = new Date(timestamp);
             return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        }
+
+        function updateLoadMoreButton() {
+            const button = document.getElementById('loadMoreEngagement');
+            if (!button) return;
+
+            button.style.display = recentEngagementHasMore ? 'inline-flex' : 'none';
         }
 
         function updateTrend(elementId, trend) {
