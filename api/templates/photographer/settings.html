@@ -1,0 +1,122 @@
+{% extends 'photographer/base.html' %}
+{% block styles %}
+<style>
+    .settings-page {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+        padding: 24px;
+    }
+
+    .settings-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        padding: 20px 24px;
+    }
+
+    .settings-card h2 {
+        font-size: 1.05rem;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+    }
+
+    .settings-card p {
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+
+    .settings-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 14px;
+    }
+
+    .settings-field label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .settings-field input,
+    .settings-field select,
+    .settings-field textarea {
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        padding: 10px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .settings-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border-light);
+        border-radius: 10px;
+        padding: 10px 16px;
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+    <div class="settings-card">
+        <h2>Profile</h2>
+        <p>Update the details visitors see on your portfolio.</p>
+        <div class="settings-field">
+            <label for="display_name">Display name</label>
+            <input id="display_name" name="display_name" type="text" value="{{ current_user.display_name }}" />
+        </div>
+        <div class="settings-field">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" rows="3" placeholder="Short introduction"></textarea>
+        </div>
+        <div class="settings-actions">
+            <button class="btn-primary" type="button">Save profile</button>
+            <button class="btn-secondary" type="button">Cancel</button>
+        </div>
+    </div>
+
+    <div class="settings-card">
+        <h2>Notifications</h2>
+        <p>Choose how you want to hear about uploads, shares, and analytics.</p>
+        <div class="settings-field">
+            <label for="email_frequency">Email frequency</label>
+            <select id="email_frequency" name="email_frequency">
+                <option value="daily">Daily summary</option>
+                <option value="weekly" selected>Weekly digest</option>
+                <option value="off">Off</option>
+            </select>
+        </div>
+        <div class="settings-field">
+            <label>
+                <input type="checkbox" name="upload_alerts" checked>
+                Notify me when uploads finish
+            </label>
+        </div>
+        <div class="settings-actions">
+            <button class="btn-primary" type="button">Save preferences</button>
+            <button class="btn-secondary" type="button">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

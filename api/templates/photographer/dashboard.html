@@ -1,45 +1,6 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Hensler Photography</title>
-    <link rel="stylesheet" href="/static/css/variables.css">
-    <link rel="stylesheet" href="/static/css/admin-common.css">
+{% extends 'photographer/base.html' %}
+{% block styles %}
     <style>
-        /* Theme Variables */
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f5;
-            --bg-tertiary: #e8e8ed;
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-tertiary: #86868b;
-            --border-color: #d1d1d6;
-            --border-light: #e0e0e0;
-            --accent: #06c;
-            --accent-hover: #0077ed;
-            --success: #34c759;
-            --warning: #ff9500;
-            --error: #ff3b30;
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #1d1d1f;
-            --bg-secondary: #2a2a2a;
-            --bg-tertiary: #3a3a3a;
-            --text-primary: #f5f5f7;
-            --text-secondary: #a1a1a6;
-            --text-tertiary: #86868b;
-            --border-color: #424245;
-            --border-light: #38383a;
-            --accent: #0a84ff;
-            --accent-hover: #409cff;
-            --success: #32d74b;
-            --warning: #ff9f0a;
-            --error: #ff453a;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -418,94 +379,77 @@
                 font-size: 24px;
             }
         }
+    
     </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Hensler Photography</h1>
-        <div class="header-right">
-            <div class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
-                <span class="theme-icon">🌙</span>
-                <div class="theme-toggle-switch"></div>
-                <span class="theme-icon">☀️</span>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+        <div class="welcome">
+            <h2>Welcome, {{ current_user.display_name }}!</h2>
+            <p>Manage your photography portfolio. Upload new images and organize your gallery.</p>
+        </div>
+
+        <div class="cards">
+            <div class="card clickable" onclick="window.location.href='/manage/upload'">
+                <div class="icon">📤</div>
+                <h3>Upload Photos</h3>
+                <p>Upload new photos with AI-powered analysis and automatic EXIF extraction.</p>
+                <span class="status">Ready</span>
             </div>
-            <div class="user-dropdown" id="userDropdown">
-                <button class="user-dropdown-trigger" onclick="toggleUserDropdown(event)">
-                    <div class="avatar">{{ current_user.display_name[0]|upper }}</div>
-                    <span class="user-name">{{ current_user.display_name }}</span>
-                    <span class="dropdown-arrow">▼</span>
-                </button>
-                <div class="user-dropdown-menu">
-                    <div class="user-dropdown-header">
-                        <div class="name">{{ current_user.display_name }}</div>
-                        <div class="role">{{ current_user.role }}</div>
+
+            <div class="card clickable" onclick="window.location.href='/manage/gallery'">
+                <div class="icon">🖼️</div>
+                <h3>My Gallery</h3>
+                <p>View, edit, publish, and manage your uploaded images.</p>
+                <span class="status">Ready</span>
+            </div>
+
+            <div class="card clickable" onclick="window.location.href='/manage/analytics'">
+                <div class="icon">📊</div>
+                <h3>Portfolio Analytics</h3>
+                <p>Track engagement and reach across your published images.</p>
+
+                <div class="analytics-preview">
+                    <div class="analytics-stat-row">
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="totalViews">--</div>
+                            <div class="analytics-label">Views</div>
+                            <div class="analytics-trend" id="viewsTrend"></div>
+                        </div>
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="uniqueVisitors">--</div>
+                            <div class="analytics-label">Visitors</div>
+                            <div class="analytics-trend" id="visitorsTrend"></div>
+                        </div>
                     </div>
-                    <a href="/manage">Dashboard</a>
-                    <a href="/manage/settings">Settings</a>
-                    <div class="user-dropdown-divider"></div>
-                    <button class="danger" onclick="logout()">Sign Out</button>
+                    <div class="analytics-stat-row">
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="totalClicks">--</div>
+                            <div class="analytics-label">Clicks</div>
+                            <div class="analytics-trend" id="clicksTrend"></div>
+                        </div>
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="clickRate">--%</div>
+                            <div class="analytics-label">Click Rate</div>
+                        </div>
+                    </div>
                 </div>
+
+                <span class="status" id="analyticsStatus">Loading...</span>
             </div>
         </div>
+
+        <div class="footer">
+            <p>
+                Your Portfolio: <a href="https://{{ current_user.username }}.hensler.photography" class="api-link" target="_blank">{{ current_user.username }}.hensler.photography</a>
+            </p>
+        </div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script>
-        // Theme Management
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        }
-
-        // Initialize theme on page load
-        initTheme();
-
-        async function logout() {
-            try {
-                await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                window.location.href = '/admin/login';
-            } catch (error) {
-                console.error('Logout error:', error);
-                // Redirect anyway
-                window.location.href = '/admin/login';
-            }
-        }
-
-        // User Dropdown Management
-        function toggleUserDropdown(event) {
-            event.stopPropagation();
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.toggle('active');
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('userDropdown');
-            if (dropdown && !dropdown.contains(event.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-
-        // Close dropdown on escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const dropdown = document.getElementById('userDropdown');
-                if (dropdown) {
-                    dropdown.classList.remove('active');
-                }
-            }
-        });
-
         // Load analytics on page load
         async function loadAnalytics() {
             try {
@@ -568,69 +512,7 @@
 
         // Load analytics when page loads
         loadAnalytics();
+    
     </script>
+{% endblock %}
 
-    <div class="container">
-        <div class="welcome">
-            <h2>Welcome, {{ current_user.display_name }}!</h2>
-            <p>Manage your photography portfolio. Upload new images and organize your gallery.</p>
-        </div>
-
-        <div class="cards">
-            <div class="card clickable" onclick="window.location.href='/manage/upload'">
-                <div class="icon">📤</div>
-                <h3>Upload Photos</h3>
-                <p>Upload new photos with AI-powered analysis and automatic EXIF extraction.</p>
-                <span class="status">Ready</span>
-            </div>
-
-            <div class="card clickable" onclick="window.location.href='/manage/gallery'">
-                <div class="icon">🖼️</div>
-                <h3>My Gallery</h3>
-                <p>View, edit, publish, and manage your uploaded images.</p>
-                <span class="status">Ready</span>
-            </div>
-
-            <div class="card clickable" onclick="window.location.href='/manage/analytics'">
-                <div class="icon">📊</div>
-                <h3>Portfolio Analytics</h3>
-                <p>Track engagement and reach across your published images.</p>
-
-                <div class="analytics-preview">
-                    <div class="analytics-stat-row">
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="totalViews">--</div>
-                            <div class="analytics-label">Views</div>
-                            <div class="analytics-trend" id="viewsTrend"></div>
-                        </div>
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="uniqueVisitors">--</div>
-                            <div class="analytics-label">Visitors</div>
-                            <div class="analytics-trend" id="visitorsTrend"></div>
-                        </div>
-                    </div>
-                    <div class="analytics-stat-row">
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="totalClicks">--</div>
-                            <div class="analytics-label">Clicks</div>
-                            <div class="analytics-trend" id="clicksTrend"></div>
-                        </div>
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="clickRate">--%</div>
-                            <div class="analytics-label">Click Rate</div>
-                        </div>
-                    </div>
-                </div>
-
-                <span class="status" id="analyticsStatus">Loading...</span>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>
-                Your Portfolio: <a href="https://{{ current_user.username }}.hensler.photography" class="api-link" target="_blank">{{ current_user.username }}.hensler.photography</a>
-            </p>
-        </div>
-    </div>
-</body>
-</html>
