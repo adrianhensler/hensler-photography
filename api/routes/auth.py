@@ -68,12 +68,15 @@ _validate_jwt_secret()
 
 # User model (simple dict for now)
 class User:
-    def __init__(self, id: int, username: str, display_name: str, email: str, role: str):
+    def __init__(self, id: int, username: str, display_name: str, email: str, role: str,
+                 subdomain: Optional[str] = None, bio: Optional[str] = None):
         self.id = id
         self.username = username
         self.display_name = display_name
         self.email = email
         self.role = role
+        self.subdomain = subdomain
+        self.bio = bio
 
 
 # Password validation and hashing functions
@@ -158,7 +161,7 @@ async def get_user_by_username(username: str) -> Optional[User]:
         await db.execute("PRAGMA foreign_keys = ON")
         cursor = await db.execute(
             """
-            SELECT id, username, display_name, email, role, password_hash
+            SELECT id, username, display_name, email, role, password_hash, subdomain, bio
             FROM users
             WHERE username = ?
             """,
@@ -174,7 +177,9 @@ async def get_user_by_username(username: str) -> Optional[User]:
             username=row[1],
             display_name=row[2] or row[1],  # Fallback to username
             email=row[3],
-            role=row[4]
+            role=row[4],
+            subdomain=row[6],
+            bio=row[7]
         ), row[5]  # Return user and password_hash
 
 
@@ -184,7 +189,7 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
         await db.execute("PRAGMA foreign_keys = ON")
         cursor = await db.execute(
             """
-            SELECT id, username, display_name, email, role
+            SELECT id, username, display_name, email, role, subdomain, bio
             FROM users
             WHERE id = ?
             """,
@@ -200,7 +205,9 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
             username=row[1],
             display_name=row[2] or row[1],
             email=row[3],
-            role=row[4]
+            role=row[4],
+            subdomain=row[5],
+            bio=row[6]
         )
 
 
