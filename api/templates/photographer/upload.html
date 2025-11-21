@@ -1,46 +1,6 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Photos - Hensler Photography</title>
-    <link rel="stylesheet" href="/static/css/variables.css">
-    <link rel="stylesheet" href="/static/css/admin-common.css">
+{% extends 'photographer/base.html' %}
+{% block styles %}
     <style>
-/* Theme Variables */
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f5;
-            --bg-tertiary: #e8e8ed;
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-tertiary: #86868b;
-            --border-color: #d1d1d6;
-            --border-light: #e0e0e0;
-            --accent: #06c;
-            --accent-hover: #0077ed;
-            --success: #34c759;
-            --warning: #ff9500;
-            --error: #ff3b30;
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #1d1d1f;
-            --bg-secondary: #2a2a2a;
-            --bg-tertiary: #3a3a3a;
-            --text-primary: #f5f5f7;
-            --text-secondary: #a1a1a6;
-            --text-tertiary: #86868b;
-            --border-color: #424245;
-            --border-light: #38383a;
-            --accent: #0a84ff;
-            --accent-hover: #409cff;
-            --success: #32d74b;
-            --warning: #ff9f0a;
-            --error: #ff453a;
-        }
-
-        
         * {
             margin: 0;
             padding: 0;
@@ -815,48 +775,15 @@
             background: rgba(220, 53, 69, 0.1);
         }
 
+    
     </style>
-</head>
-<body>
-    <!-- Toast Notification Container -->
+{% endblock %}
+
+{% block content %}
+<!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <div class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1>Upload Photos</h1>
-                <nav>
-                    <a href="/manage">Dashboard</a>
-                    <a href="/manage/gallery">My Gallery</a>
-                </nav>
-            </div>
-            <div style="display: flex; align-items: center; gap: 1.5rem;">
-                <div class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
-                    <span class="theme-icon">🌙</span>
-                    <div class="theme-toggle-switch"></div>
-                    <span class="theme-icon">☀️</span>
-                </div>
-                <div class="user-dropdown" id="userDropdown">
-                    <button class="user-dropdown-trigger" onclick="toggleUserDropdown(event)">
-                        <div class="avatar">{{ current_user.display_name[0]|upper }}</div>
-                        <span class="user-name">{{ current_user.display_name }}</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="user-dropdown-menu">
-                        <div class="user-dropdown-header">
-                            <div class="name">{{ current_user.display_name }}</div>
-                            <div class="role">{{ current_user.role }}</div>
-                        </div>
-                        <a href="/manage">Dashboard</a>
-                        <a href="/manage/upload">Upload</a>
-                        <a href="/manage/settings">Settings</a>
-                        <div class="user-dropdown-divider"></div>
-                        <button class="danger" onclick="logout()">Sign Out</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
     <div class="container">
         <div class="upload-area" id="uploadArea">
@@ -880,61 +807,10 @@
 
         <div id="previews" class="previews"></div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script>
-        // Theme Management
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        }
-
-        // Initialize theme on page load
-        initTheme();
-
-        // User Dropdown Management
-        function toggleUserDropdown(event) {
-            event.stopPropagation();
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.toggle('active');
-        }
-
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('userDropdown');
-            if (dropdown && !dropdown.contains(event.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const dropdown = document.getElementById('userDropdown');
-                if (dropdown) {
-                    dropdown.classList.remove('active');
-                }
-            }
-        });
-
-        async function logout() {
-            try {
-                await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                window.location.href = '/admin/login';
-            } catch (error) {
-                console.error('Logout error:', error);
-                window.location.href = '/admin/login';
-            }
-        }
-
         // Get current user ID from page context
         const CURRENT_USER_ID = {{ current_user.id }};
 
@@ -1801,6 +1677,7 @@
                 showToast('error', 'AI Regeneration Failed', 'Network error');
             }
         }
+    
     </script>
-</body>
-</html>
+{% endblock %}
+

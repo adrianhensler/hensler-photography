@@ -376,6 +376,24 @@ async def photographer_analytics(
         context
     )
 
+# Photographer settings page (protected)
+@app.get("/manage/settings")
+async def photographer_settings(
+    request: Request,
+    current_user: User = Depends(get_current_user_for_subdomain)
+):
+    """Photographer account settings (authenticated users)"""
+    context = {
+        "request": request,
+        "title": "Settings",
+        "current_user": current_user
+    }
+    context = add_csrf_token_to_context(request, context)
+    return templates.TemplateResponse(
+        "photographer/settings.html",
+        context
+    )
+
 # Admin dashboard (protected)
 @app.get("/admin")
 async def admin_dashboard(

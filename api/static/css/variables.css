@@ -6,6 +6,15 @@
     --brand-blue: #0066cc;
     --brand-blue-dark: #0052a3;
     --brand-gradient: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+    --avatar-gradient: var(--brand-gradient);
+
+    /* Accent Palette (shared across manage experience) */
+    --accent: var(--brand-blue);
+    --accent-hover: #0077ed;
+    --success: #34c759;
+    --warning: #ff9500;
+    --error: #ff3b30;
+    --modal-backdrop: rgba(0, 0, 0, 0.4);
 
     /* Light Theme Colors */
     --bg-primary: #ffffff;
@@ -100,6 +109,13 @@
     --text-tertiary: #808080;
     --border-light: #3a3a3a;
     --border-medium: #4a4a4a;
+
+    --accent: #0a84ff;
+    --accent-hover: #409cff;
+    --success: #32d74b;
+    --warning: #ff9f0a;
+    --error: #ff453a;
+    --modal-backdrop: rgba(0, 0, 0, 0.7);
 
     --hover-bg: #2a2a2a;
     --active-bg: #3a3a3a;
