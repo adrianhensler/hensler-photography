@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Gallery - Hensler Photography</title>
-    <link rel="stylesheet" href="/static/css/variables.css">
-    <link rel="stylesheet" href="/static/css/admin-common.css">
-    <link rel="stylesheet" href="/static/css/manage-shell.css">
-    <script src="/static/js/manage-header.js" defer></script>
+{% extends 'photographer/base.html' %}
+{% block styles %}
     <style>
         /* Theme Variables */
         :root {
@@ -960,12 +952,12 @@
                 opacity: 0;
             }
         }
+    
     </style>
-</head>
-<body>
-    {% include 'photographer/_header.html' %}
+{% endblock %}
 
-    <div class="container">
+{% block content %}
+<div class="container">
         <div class="filters">
             <div class="filter-group">
                 <label>Status</label>
@@ -1115,7 +1107,9 @@
             </form>
         </div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script>
         // Current user ID injected from server
         const CURRENT_USER_ID = {{ current_user.id }};
@@ -1704,6 +1698,7 @@
                 closeEditModal();
             }
         });
+    
     </script>
-</body>
-</html>
+{% endblock %}
+

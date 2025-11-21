@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Hensler Photography</title>
-    <link rel="stylesheet" href="/static/css/variables.css">
-    <link rel="stylesheet" href="/static/css/admin-common.css">
-    <link rel="stylesheet" href="/static/css/manage-shell.css">
-    <script src="/static/js/manage-header.js" defer></script>
+{% extends 'photographer/base.html' %}
+{% block styles %}
     <style>
         /* Theme Variables */
         :root {
@@ -420,11 +412,76 @@
                 font-size: 24px;
             }
         }
+    
     </style>
-</head>
-<body>
-    {% include 'photographer/_header.html' %}
+{% endblock %}
 
+{% block content %}
+<div class="container">
+        <div class="welcome">
+            <h2>Welcome, {{ current_user.display_name }}!</h2>
+            <p>Manage your photography portfolio. Upload new images and organize your gallery.</p>
+        </div>
+
+        <div class="cards">
+            <div class="card clickable" onclick="window.location.href='/manage/upload'">
+                <div class="icon">📤</div>
+                <h3>Upload Photos</h3>
+                <p>Upload new photos with AI-powered analysis and automatic EXIF extraction.</p>
+                <span class="status">Ready</span>
+            </div>
+
+            <div class="card clickable" onclick="window.location.href='/manage/gallery'">
+                <div class="icon">🖼️</div>
+                <h3>My Gallery</h3>
+                <p>View, edit, publish, and manage your uploaded images.</p>
+                <span class="status">Ready</span>
+            </div>
+
+            <div class="card clickable" onclick="window.location.href='/manage/analytics'">
+                <div class="icon">📊</div>
+                <h3>Portfolio Analytics</h3>
+                <p>Track engagement and reach across your published images.</p>
+
+                <div class="analytics-preview">
+                    <div class="analytics-stat-row">
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="totalViews">--</div>
+                            <div class="analytics-label">Views</div>
+                            <div class="analytics-trend" id="viewsTrend"></div>
+                        </div>
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="uniqueVisitors">--</div>
+                            <div class="analytics-label">Visitors</div>
+                            <div class="analytics-trend" id="visitorsTrend"></div>
+                        </div>
+                    </div>
+                    <div class="analytics-stat-row">
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="totalClicks">--</div>
+                            <div class="analytics-label">Clicks</div>
+                            <div class="analytics-trend" id="clicksTrend"></div>
+                        </div>
+                        <div class="analytics-stat">
+                            <div class="analytics-number" id="clickRate">--%</div>
+                            <div class="analytics-label">Click Rate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <span class="status" id="analyticsStatus">Loading...</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                Your Portfolio: <a href="https://{{ current_user.username }}.hensler.photography" class="api-link" target="_blank">{{ current_user.username }}.hensler.photography</a>
+            </p>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
     <script>
         // Load analytics on page load
         async function loadAnalytics() {
@@ -488,69 +545,7 @@
 
         // Load analytics when page loads
         loadAnalytics();
+    
     </script>
+{% endblock %}
 
-    <div class="container">
-        <div class="welcome">
-            <h2>Welcome, {{ current_user.display_name }}!</h2>
-            <p>Manage your photography portfolio. Upload new images and organize your gallery.</p>
-        </div>
-
-        <div class="cards">
-            <div class="card clickable" onclick="window.location.href='/manage/upload'">
-                <div class="icon">📤</div>
-                <h3>Upload Photos</h3>
-                <p>Upload new photos with AI-powered analysis and automatic EXIF extraction.</p>
-                <span class="status">Ready</span>
-            </div>
-
-            <div class="card clickable" onclick="window.location.href='/manage/gallery'">
-                <div class="icon">🖼️</div>
-                <h3>My Gallery</h3>
-                <p>View, edit, publish, and manage your uploaded images.</p>
-                <span class="status">Ready</span>
-            </div>
-
-            <div class="card clickable" onclick="window.location.href='/manage/analytics'">
-                <div class="icon">📊</div>
-                <h3>Portfolio Analytics</h3>
-                <p>Track engagement and reach across your published images.</p>
-
-                <div class="analytics-preview">
-                    <div class="analytics-stat-row">
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="totalViews">--</div>
-                            <div class="analytics-label">Views</div>
-                            <div class="analytics-trend" id="viewsTrend"></div>
-                        </div>
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="uniqueVisitors">--</div>
-                            <div class="analytics-label">Visitors</div>
-                            <div class="analytics-trend" id="visitorsTrend"></div>
-                        </div>
-                    </div>
-                    <div class="analytics-stat-row">
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="totalClicks">--</div>
-                            <div class="analytics-label">Clicks</div>
-                            <div class="analytics-trend" id="clicksTrend"></div>
-                        </div>
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="clickRate">--%</div>
-                            <div class="analytics-label">Click Rate</div>
-                        </div>
-                    </div>
-                </div>
-
-                <span class="status" id="analyticsStatus">Loading...</span>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>
-                Your Portfolio: <a href="https://{{ current_user.username }}.hensler.photography" class="api-link" target="_blank">{{ current_user.username }}.hensler.photography</a>
-            </p>
-        </div>
-    </div>
-</body>
-</html>

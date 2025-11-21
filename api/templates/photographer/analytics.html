@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Hensler Photography</title>
-    <link rel="stylesheet" href="/static/css/variables.css">
-    <link rel="stylesheet" href="/static/css/admin-common.css">
-    <link rel="stylesheet" href="/static/css/manage-shell.css">
-    <script src="/static/js/manage-header.js" defer></script>
-    <!-- Chart.js CDN -->
+{% extends 'photographer/base.html' %}
+{% block head_scripts %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block styles %}
     <style>
 /* Theme Variables */
         :root {
@@ -908,12 +902,12 @@
             opacity: 1;
         }
 
+    
     </style>
-</head>
-<body>
-    {% include 'photographer/_header.html' %}
+{% endblock %}
 
-    <div class="container">
+{% block content %}
+<div class="container">
         <div class="analytics-header">
             <h2>Your Performance</h2>
             <div class="date-range-tabs">
@@ -1067,7 +1061,9 @@
             </div>
         </div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script>
         // Analytics Info Toggle
         function toggleAnalyticsInfo() {
@@ -1579,6 +1575,7 @@
             // Reload data
             await loadAnalytics();
         }
+    
     </script>
-</body>
-</html>
+{% endblock %}
+

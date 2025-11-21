@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Photos - Hensler Photography</title>
-    <link rel="stylesheet" href="/static/css/variables.css">
-    <link rel="stylesheet" href="/static/css/admin-common.css">
-    <link rel="stylesheet" href="/static/css/manage-shell.css">
-    <script src="/static/js/manage-header.js" defer></script>
+{% extends 'photographer/base.html' %}
+{% block styles %}
     <style>
 /* Theme Variables */
         :root {
@@ -817,13 +809,15 @@
             background: rgba(220, 53, 69, 0.1);
         }
 
+    
     </style>
-</head>
-<body>
-    <!-- Toast Notification Container -->
+{% endblock %}
+
+{% block content %}
+<!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    {% include 'photographer/_header.html' %}
+    
 
     <div class="container">
         <div class="upload-area" id="uploadArea">
@@ -847,7 +841,9 @@
 
         <div id="previews" class="previews"></div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script>
         // Get current user ID from page context
         const CURRENT_USER_ID = {{ current_user.id }};
@@ -1715,6 +1711,7 @@
                 showToast('error', 'AI Regeneration Failed', 'Network error');
             }
         }
+    
     </script>
-</body>
-</html>
+{% endblock %}
+
