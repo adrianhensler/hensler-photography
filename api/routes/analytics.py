@@ -35,6 +35,15 @@ def calc_trend(current_value: int, previous_value: int) -> float:
     return round(((current_value - previous_value) / previous_value) * 100, 1)
 
 
+def get_subdomain_filter(subdomain: Optional[str]) -> str:
+    """
+    Get SQL WHERE clause for filtering events by user and subdomain.
+
+    Filters both image-specific events (by user_id) and site-level events (by referrer subdomain).
+    """
+    return "((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))"
+
+
 @router.get("/overview")
 async def get_analytics_overview(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
@@ -52,6 +61,10 @@ async def get_analytics_overview(
     - Trends (comparison to previous period)
     """
     user_id = current_user.id
+   subdomain = current_user.subdomain or ""
+   subdomain_pattern = f"%{subdomain}.hensler.photography%"
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
     prev_since = since - timedelta(days=days)  # Previous period for comparison
 
@@ -66,9 +79,10 @@ async def get_analytics_overview(
                     COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL)
+                       OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.timestamp >= ?
-            """, (user_id, since))
+            """, (user_id, subdomain_pattern, since))
 
             current = await cursor.fetchone()
 
@@ -81,9 +95,10 @@ async def get_analytics_overview(
                     COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL)
+                       OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.timestamp >= ? AND e.timestamp < ?
-            """, (user_id, prev_since, since))
+            """, (user_id, subdomain_pattern, prev_since, since))
 
             previous = await cursor.fetchone()
 
@@ -145,6 +160,10 @@ async def get_analytics_highlights(
     session skew to keep insights grounded in collected data.
     """
     user_id = current_user.id
+   subdomain = current_user.subdomain or ""
+   subdomain_pattern = f"%{subdomain}.hensler.photography%"
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
     prev_since = since - timedelta(days=days)
 
@@ -160,10 +179,10 @@ async def get_analytics_highlights(
                     COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.timestamp >= ?
                 """,
-                (user_id, since),
+                (user_id, subdomain_pattern, since),
             )
 
             current = await cursor.fetchone()
@@ -177,10 +196,10 @@ async def get_analytics_highlights(
                     COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.timestamp >= ? AND e.timestamp < ?
                 """,
-                (user_id, prev_since, since),
+                (user_id, subdomain_pattern, prev_since, since),
             )
 
             previous = await cursor.fetchone()
@@ -304,7 +323,7 @@ async def get_analytics_highlights(
                 """
                 SELECT COUNT(*) FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.timestamp >= ?
                 AND e.event_type IN ('image_impression', 'gallery_click', 'lightbox_open')
                 """,
@@ -319,7 +338,7 @@ async def get_analytics_highlights(
                     SELECT COALESCE(session_id, 'unknown'), COUNT(*) as count
                     FROM image_events e
                     LEFT JOIN images i ON e.image_id = i.id
-                    WHERE (i.user_id = ? OR e.image_id IS NULL)
+                    WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                     AND e.timestamp >= ?
                     AND e.event_type IN ('image_impression', 'gallery_click', 'lightbox_open')
                     GROUP BY session_id
@@ -385,6 +404,10 @@ async def get_analytics_timeline(
     Returns daily counts for specified metric (views, clicks, or lightbox_opens).
     """
     user_id = current_user.id
+   subdomain = current_user.subdomain or ""
+   subdomain_pattern = f"%{subdomain}.hensler.photography%"
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
 
     # Map metric to event type
@@ -403,12 +426,12 @@ async def get_analytics_timeline(
                     COUNT(*) as count
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.event_type = ?
                 AND e.timestamp >= ?
                 GROUP BY DATE(e.timestamp)
                 ORDER BY date ASC
-            """, (user_id, event_type, since))
+            """, (user_id, subdomain_pattern, event_type, since))
 
             rows = await cursor.fetchall()
 
@@ -454,6 +477,8 @@ async def get_recent_engagement(
     """
 
     user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
 
     try:
@@ -475,13 +500,13 @@ async def get_recent_engagement(
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
                 LEFT JOIN image_variants iv ON i.id = iv.image_id AND iv.format = 'webp' AND iv.size = 'thumbnail'
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.timestamp >= ?
                 AND e.event_type IN ('gallery_click', 'lightbox_open')
                 ORDER BY e.timestamp DESC
                 LIMIT ? OFFSET ?
                 """,
-                (user_id, since, fetch_limit, offset),
+                (user_id, subdomain_pattern, since, fetch_limit, offset),
             )
 
             rows = await cursor.fetchall()
@@ -534,6 +559,8 @@ async def get_top_images(
     Views = lightbox opens (full-screen views)
     """
     user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
 
     # Map metric to event type
@@ -651,6 +678,8 @@ async def get_referrer_breakdown(
     Returns top referrer URLs and their counts.
     """
     user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
 
     try:
@@ -664,12 +693,12 @@ async def get_referrer_breakdown(
                     COUNT(*) as count
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.timestamp >= ?
                 GROUP BY referrer_group
                 ORDER BY count DESC
                 LIMIT ?
-            """, (user_id, since, limit))
+            """, (user_id, subdomain_pattern, since, limit))
 
             rows = await cursor.fetchall()
 
@@ -709,6 +738,8 @@ async def get_category_performance(
     Returns performance metrics for each category (nature, wildlife, portrait, etc.)
     """
     user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
 
     try:
@@ -772,6 +803,8 @@ async def get_scroll_depth(
     Returns how many sessions reached each scroll milestone (25%, 50%, 75%, 100%).
     """
     user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
 
     try:
@@ -779,10 +812,10 @@ async def get_scroll_depth(
             cursor = await db.execute("""
                 SELECT metadata FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.event_type = 'scroll_depth'
                 AND e.timestamp >= ?
-            """, (user_id, since))
+            """, (user_id, subdomain_pattern, since))
 
             rows = await cursor.fetchall()
 
@@ -803,9 +836,9 @@ async def get_scroll_depth(
             cursor = await db.execute("""
                 SELECT COUNT(DISTINCT session_id) FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.timestamp >= ?
-            """, (user_id, since))
+            """, (user_id, subdomain_pattern, since))
 
             total_sessions = (await cursor.fetchone())[0]
 
@@ -841,6 +874,8 @@ async def get_image_analytics(
     Returns engagement metrics and timeline for single image.
     """
     user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
 
     try:
