@@ -61,8 +61,8 @@ async def get_analytics_overview(
     - Trends (comparison to previous period)
     """
     user_id = current_user.id
-   subdomain = current_user.subdomain or ""
-   subdomain_pattern = f"%{subdomain}.hensler.photography%"
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     subdomain = current_user.subdomain or ""
     subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
@@ -160,8 +160,8 @@ async def get_analytics_highlights(
     session skew to keep insights grounded in collected data.
     """
     user_id = current_user.id
-   subdomain = current_user.subdomain or ""
-   subdomain_pattern = f"%{subdomain}.hensler.photography%"
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     subdomain = current_user.subdomain or ""
     subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
@@ -404,8 +404,8 @@ async def get_analytics_timeline(
     Returns daily counts for specified metric (views, clicks, or lightbox_opens).
     """
     user_id = current_user.id
-   subdomain = current_user.subdomain or ""
-   subdomain_pattern = f"%{subdomain}.hensler.photography%"
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     subdomain = current_user.subdomain or ""
     subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
