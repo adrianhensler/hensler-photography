@@ -28,6 +28,13 @@ async def _verify_user_access(current_user: User, user_id: int):
         raise HTTPException(403, "Not authorized to view these analytics")
 
 
+def calc_trend(current_value: int, previous_value: int) -> float:
+    """Calculate percentage change between two values."""
+    if previous_value == 0:
+        return 0 if current_value == 0 else 100
+    return round(((current_value - previous_value) / previous_value) * 100, 1)
+
+
 @router.get("/overview")
 async def get_analytics_overview(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
@@ -93,12 +100,6 @@ async def get_analytics_overview(
             # Calculate click-through rate
             click_rate = (clicks / views) if views > 0 else 0
 
-            # Calculate trends (percentage change)
-            def calc_trend(current, previous):
-                if previous == 0:
-                    return 0 if current == 0 else 100
-                return round(((current - previous) / previous) * 100, 1)
-
             views_trend = calc_trend(views, prev_views)
             visitors_trend = calc_trend(visitors, prev_visitors)
             clicks_trend = calc_trend(clicks, prev_clicks)
@@ -130,6 +131,246 @@ async def get_analytics_overview(
     except Exception as e:
         logger.error(f"Failed to get analytics overview: {str(e)}", exc_info=e)
         raise HTTPException(500, "Failed to retrieve analytics data")
+
+
+@router.get("/highlights")
+async def get_analytics_highlights(
+    days: int = Query(30, ge=1, le=365, description="Number of days to include"),
+    current_user: User = Depends(get_current_user_for_subdomain)
+):
+    """
+    Provide a concise, fact-based performance summary.
+
+    Combines overview metrics with standout images, leading category, and
+    session skew to keep insights grounded in collected data.
+    """
+    user_id = current_user.id
+    since = datetime.now() - timedelta(days=days)
+    prev_since = since - timedelta(days=days)
+
+    try:
+        async with get_db_connection() as db:
+            # Current period overview
+            cursor = await db.execute(
+                """
+                SELECT
+                    COUNT(CASE WHEN e.event_type = 'page_view' THEN 1 END) as views,
+                    COUNT(DISTINCT e.session_id) as visitors,
+                    COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
+                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
+                FROM image_events e
+                LEFT JOIN images i ON e.image_id = i.id
+                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                AND e.timestamp >= ?
+                """,
+                (user_id, since),
+            )
+
+            current = await cursor.fetchone()
+
+            # Previous period for trend context
+            cursor = await db.execute(
+                """
+                SELECT
+                    COUNT(CASE WHEN e.event_type = 'page_view' THEN 1 END) as views,
+                    COUNT(DISTINCT e.session_id) as visitors,
+                    COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks
+                FROM image_events e
+                LEFT JOIN images i ON e.image_id = i.id
+                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                AND e.timestamp >= ? AND e.timestamp < ?
+                """,
+                (user_id, prev_since, since),
+            )
+
+            previous = await cursor.fetchone()
+
+            views = current[0] or 0
+            visitors = current[1] or 0
+            clicks = current[2] or 0
+            lightbox_opens = current[3] or 0
+
+            prev_views = previous[0] or 0
+            prev_visitors = previous[1] or 0
+            prev_clicks = previous[2] or 0
+
+            click_rate = (clicks / views) if views > 0 else 0
+
+            overview = {
+                "views": views,
+                "views_trend": calc_trend(views, prev_views),
+                "visitors": visitors,
+                "visitors_trend": calc_trend(visitors, prev_visitors),
+                "clicks": clicks,
+                "clicks_trend": calc_trend(clicks, prev_clicks),
+                "lightbox_opens": lightbox_opens,
+                "click_rate": round(click_rate, 3),
+                "period_days": days,
+            }
+
+            # Top images by clicks to spotlight what people chose to open
+            cursor = await db.execute(
+                """
+                SELECT
+                    i.id,
+                    i.title,
+                    i.category,
+                    i.filename,
+                    iv.filename as thumbnail_filename,
+                    COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
+                    COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
+                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as views
+                FROM images i
+                LEFT JOIN image_events e ON i.id = e.image_id AND e.timestamp >= ?
+                LEFT JOIN image_variants iv ON i.id = iv.image_id AND iv.format = 'webp' AND iv.size = 'thumbnail'
+                WHERE i.user_id = ?
+                AND i.published = 1
+                GROUP BY i.id
+                ORDER BY clicks DESC
+                LIMIT 3
+                """,
+                (since, user_id),
+            )
+
+            image_rows = await cursor.fetchall()
+            top_images = []
+            for row in image_rows:
+                impressions = row[5]
+                clicks = row[6]
+                views = row[7]
+
+                ctr = (clicks / impressions) if impressions > 0 else 0
+                view_rate = (views / clicks) if clicks > 0 else 0
+
+                thumbnail_file = row[4] or row[3]
+
+                top_images.append(
+                    {
+                        "id": row[0],
+                        "title": row[1] or "Untitled",
+                        "category": row[2],
+                        "thumbnail_url": f"/assets/gallery/{thumbnail_file}",
+                        "analytics": {
+                            "impressions": impressions,
+                            "clicks": clicks,
+                            "views": views,
+                            "ctr": round(ctr, 3),
+                            "view_rate": round(view_rate, 3),
+                        },
+                    }
+                )
+
+            # Leading category by impressions with engagement context
+            cursor = await db.execute(
+                """
+                SELECT
+                    i.category,
+                    COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
+                    COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
+                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as views
+                FROM images i
+                LEFT JOIN image_events e ON i.id = e.image_id AND e.timestamp >= ?
+                WHERE i.user_id = ?
+                AND i.published = 1
+                AND i.category IS NOT NULL
+                GROUP BY i.category
+                ORDER BY impressions DESC
+                LIMIT 1
+                """,
+                (since, user_id),
+            )
+
+            category_row = await cursor.fetchone()
+            leading_category = None
+            if category_row:
+                cat_impressions = category_row[1]
+                cat_clicks = category_row[2]
+                cat_views = category_row[3]
+
+                cat_ctr = (cat_clicks / cat_impressions) if cat_impressions > 0 else 0
+                cat_view_rate = (cat_views / cat_clicks) if cat_clicks > 0 else 0
+
+                leading_category = {
+                    "category": category_row[0],
+                    "impressions": cat_impressions,
+                    "clicks": cat_clicks,
+                    "views": cat_views,
+                    "ctr": round(cat_ctr, 3),
+                    "view_rate": round(cat_view_rate, 3),
+                }
+
+            # Identify whether a single session is skewing data
+            cursor = await db.execute(
+                """
+                SELECT COUNT(*) FROM image_events e
+                LEFT JOIN images i ON e.image_id = i.id
+                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                AND e.timestamp >= ?
+                AND e.event_type IN ('image_impression', 'gallery_click', 'lightbox_open')
+                """,
+                (user_id, since),
+            )
+            total_events = (await cursor.fetchone())[0] or 0
+
+            session_skew = None
+            if total_events > 0:
+                cursor = await db.execute(
+                    """
+                    SELECT COALESCE(session_id, 'unknown'), COUNT(*) as count
+                    FROM image_events e
+                    LEFT JOIN images i ON e.image_id = i.id
+                    WHERE (i.user_id = ? OR e.image_id IS NULL)
+                    AND e.timestamp >= ?
+                    AND e.event_type IN ('image_impression', 'gallery_click', 'lightbox_open')
+                    GROUP BY session_id
+                    ORDER BY count DESC
+                    LIMIT 1
+                    """,
+                    (user_id, since),
+                )
+
+                top_session = await cursor.fetchone()
+                top_count = top_session[1] if top_session else 0
+
+                session_skew = {
+                    "top_session_share": round(top_count / total_events, 3) if total_events else 0,
+                    "total_events": total_events,
+                }
+
+            insights = []
+            if views > 0:
+                insights.append(
+                    f"{views} views in the last {days} days ({overview['views_trend']}% vs prior period) with a {round(click_rate * 100, 1)}% click rate."
+                )
+
+            if top_images:
+                hero = top_images[0]
+                insights.append(
+                    f"Top image: '{hero['title']}' earned {hero['analytics']['clicks']} clicks and {hero['analytics']['views']} lightbox views."
+                )
+
+            if leading_category:
+                insights.append(
+                    f"Leading theme: {leading_category['category']} with {leading_category['impressions']} impressions and {round(leading_category['ctr'] * 100, 1)}% CTR."
+                )
+
+            if session_skew and session_skew["top_session_share"] >= 0.5:
+                insights.append(
+                    f"Traffic is concentrated: your busiest session accounts for {round(session_skew['top_session_share'] * 100, 1)}% of events."
+                )
+
+            return {
+                "period_days": days,
+                "overview": overview,
+                "top_images": top_images,
+                "leading_category": leading_category,
+                "session_skew": session_skew,
+                "insights": insights,
+            }
+
+    except Exception as e:
+        logger.error(f"Failed to build analytics highlights: {str(e)}", exc_info=e)
+        raise HTTPException(500, "Failed to retrieve analytics highlights")
 
 
 @router.get("/timeline")
@@ -197,6 +438,84 @@ async def get_analytics_timeline(
     except Exception as e:
         logger.error(f"Failed to get analytics timeline: {str(e)}", exc_info=e)
         raise HTTPException(500, "Failed to retrieve timeline data")
+
+
+@router.get("/recent-engagement")
+async def get_recent_engagement(
+    days: int = Query(30, ge=1, le=365, description="Number of days to include"),
+    limit: int = Query(20, ge=1, le=100, description="Number of recent events to return"),
+    offset: int = Query(0, ge=0, le=1000, description="Number of events to skip for pagination"),
+    current_user: User = Depends(get_current_user_for_subdomain),
+):
+    """
+    Return the most recent engagement events that involved an image click or lightbox view.
+
+    Helps photographers see what visitors opened most recently without guessing.
+    """
+
+    user_id = current_user.id
+    since = datetime.now() - timedelta(days=days)
+
+    try:
+        async with get_db_connection() as db:
+            fetch_limit = limit + 1  # Grab one extra to detect remaining pages
+
+            cursor = await db.execute(
+                """
+                SELECT
+                    e.event_type,
+                    e.timestamp,
+                    e.referrer,
+                    e.session_id,
+                    i.id,
+                    i.title,
+                    i.category,
+                    i.filename,
+                    iv.filename as thumbnail_filename
+                FROM image_events e
+                LEFT JOIN images i ON e.image_id = i.id
+                LEFT JOIN image_variants iv ON i.id = iv.image_id AND iv.format = 'webp' AND iv.size = 'thumbnail'
+                WHERE (i.user_id = ? OR e.image_id IS NULL)
+                AND e.timestamp >= ?
+                AND e.event_type IN ('gallery_click', 'lightbox_open')
+                ORDER BY e.timestamp DESC
+                LIMIT ? OFFSET ?
+                """,
+                (user_id, since, fetch_limit, offset),
+            )
+
+            rows = await cursor.fetchall()
+
+            events: List[Dict[str, Any]] = []
+            for row in rows[:limit]:
+                image_id = row[4]
+                if image_id is None:
+                    continue
+
+                thumbnail_file = row[8] or row[7]
+
+                events.append(
+                    {
+                        "event_type": row[0],
+                        "timestamp": row[1],
+                        "referrer": row[2] or "Direct / None",
+                        "session_id": row[3],
+                        "image": {
+                            "id": image_id,
+                            "title": row[5] or "Untitled",
+                            "category": row[6],
+                            "thumbnail_url": f"/assets/gallery/{thumbnail_file}",
+                        },
+                    }
+                )
+
+            has_more = len(rows) > limit
+
+            return {"period_days": days, "events": events, "has_more": has_more}
+
+    except Exception as e:
+        logger.error(f"Failed to get recent engagement: {str(e)}", exc_info=e)
+        raise HTTPException(500, "Failed to retrieve recent engagement")
 
 
 @router.get("/top-images")
