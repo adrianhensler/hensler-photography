@@ -227,6 +227,19 @@ async def get_analytics_highlights(
                 "period_days": days,
             }
 
+            logger.info(
+                f"Highlights overview calculated for user {user_id}",
+                extra={"context": {
+                    "user_id": user_id,
+                    "subdomain": subdomain,
+                    "days": days,
+                    "views": views,
+                    "prev_views": prev_views,
+                    "visitors": visitors,
+                    "clicks": clicks
+                }}
+            )
+
             # Top images by clicks to spotlight what people chose to open
             cursor = await db.execute(
                 """
