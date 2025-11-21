@@ -142,6 +142,99 @@ The architecture supports future expansion where the main site will showcase bot
 - Privacy-preserving (no PII collected)
 - Expandable "About Analytics" section with metric explanations
 
+**Settings** (`/manage/settings`):
+- Account profile management
+- Theme preferences
+- Password management
+- Public portfolio settings
+
+### Photographer Management Interface Architecture
+
+**Template System**:
+All `/manage/*` pages use a shared template inheritance system for consistency and maintainability.
+
+**Core Components**:
+- **Base Template**: `api/templates/photographer/base.html`
+  - Provides HTML structure, `<head>` setup, CSS/JS includes
+  - Includes inline theme initialization script (prevents FOUC)
+  - Default dark theme with localStorage persistence
+  - Jinja blocks: `page_title`, `head_scripts`, `styles`, `content`, `scripts`
+
+- **Shared Header**: `api/templates/photographer/_header.html`
+  - Navigation bar with active page detection
+  - Theme toggle (dark/light mode with icon visibility logic)
+  - User dropdown menu (profile, settings, logout)
+  - Admin console link (visible only to admin role)
+  - Requires `request` object for active nav detection
+
+- **Shared Styles**: `api/static/css/manage-shell.css`
+  - Header, navigation, theme toggle, user dropdown styles
+  - Responsive mobile navigation with horizontal scroll
+  - Note: "manage" refers to photographer management area (not admin)
+
+- **Shared JavaScript**: `api/static/js/manage-header.js`
+  - Theme toggle functionality
+  - User dropdown open/close logic
+  - Logout with error handling (alerts user on failure)
+  - Keyboard support (Escape to close dropdown)
+
+**Design System**:
+- **CSS Variables**: Defined in `api/static/css/variables.css`
+  - `--avatar-gradient`: User avatar background (reuses brand gradient)
+  - `--accent`, `--success`, `--warning`, `--error`: UI states
+  - Light/dark theme variants for all colors
+
+**Navigation Order**:
+1. Dashboard (`/manage`)
+2. Gallery (`/manage/gallery`)
+3. Upload (`/manage/upload`)
+4. Analytics (`/manage/analytics`)
+
+**Adding New Management Pages**:
+1. Create template extending `photographer/base.html`:
+   ```html
+   {% extends 'photographer/base.html' %}
+   {% block content %}
+     <div class="container">
+       <!-- Your page content -->
+     </div>
+   {% endblock %}
+   ```
+
+2. Add route to `api/main.py`:
+   ```python
+   @app.get("/manage/your-page")
+   async def photographer_your_page(
+       request: Request,
+       current_user: User = Depends(get_current_user_for_subdomain)
+   ):
+       context = {
+           "request": request,  # Required for header nav detection
+           "title": "Your Page Title",
+           "current_user": current_user
+       }
+       return templates.TemplateResponse(
+           "photographer/your-page.html",
+           context
+       )
+   ```
+
+3. Add navigation link to `api/templates/photographer/_header.html` (lines 10-13):
+   ```html
+   <a href="/manage/your-page" class="{{ 'active' if '/manage/your-page' in path else '' }}">Your Page</a>
+   ```
+
+**Theme System**:
+- Default: Dark theme (`data-theme="dark"`)
+- Persists via localStorage (`theme` key)
+- Inline script in base.html prevents FOUC (Flash of Unstyled Content)
+- Theme toggle icons show/hide based on current theme (CSS visibility rules)
+
+**Mobile Responsiveness**:
+- Navigation uses horizontal scroll on narrow viewports
+- Header collapses to column layout at 768px breakpoint
+- User dropdown menu positioned correctly on all screen sizes
+
 ### Database Schema
 
 ```sql
@@ -352,14 +445,18 @@ CREATE TABLE ai_costs (
 **Production** (requires authentication):
 - Login: `https://adrian.hensler.photography/admin/login`
 - Dashboard: `https://adrian.hensler.photography/manage`
-- Upload: `https://adrian.hensler.photography/manage/upload`
 - Gallery: `https://adrian.hensler.photography/manage/gallery`
+- Upload: `https://adrian.hensler.photography/manage/upload`
+- Analytics: `https://adrian.hensler.photography/manage/analytics`
+- Settings: `https://adrian.hensler.photography/manage/settings`
 
 **Development** (requires authentication):
 - Login: `https://adrian.hensler.photography:8080/admin/login`
 - Dashboard: `https://adrian.hensler.photography:8080/manage`
-- Upload: `https://adrian.hensler.photography:8080/manage/upload`
 - Gallery: `https://adrian.hensler.photography:8080/manage/gallery`
+- Upload: `https://adrian.hensler.photography:8080/manage/upload`
+- Analytics: `https://adrian.hensler.photography:8080/manage/analytics`
+- Settings: `https://adrian.hensler.photography:8080/manage/settings`
 
 **Credentials** (development):
 - Username: `adrian`
