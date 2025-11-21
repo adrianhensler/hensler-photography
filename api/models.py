@@ -103,6 +103,8 @@ class UserResponse(BaseModel):
     display_name: str
     email: str
     role: str
+    subdomain: Optional[str] = None
+    bio: Optional[str] = None
 
     class Config:
         from_attributes = True
