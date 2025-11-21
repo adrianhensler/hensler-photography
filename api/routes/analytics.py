@@ -327,7 +327,7 @@ async def get_analytics_highlights(
                 AND e.timestamp >= ?
                 AND e.event_type IN ('image_impression', 'gallery_click', 'lightbox_open')
                 """,
-                (user_id, since),
+                (user_id, subdomain_pattern, since),
             )
             total_events = (await cursor.fetchone())[0] or 0
 
@@ -345,7 +345,7 @@ async def get_analytics_highlights(
                     ORDER BY count DESC
                     LIMIT 1
                     """,
-                    (user_id, since),
+                    (user_id, subdomain_pattern, since),
                 )
 
                 top_session = await cursor.fetchone()
