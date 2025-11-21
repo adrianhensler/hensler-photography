@@ -6,6 +6,8 @@
     <title>Upload Photos - Hensler Photography</title>
     <link rel="stylesheet" href="/static/css/variables.css">
     <link rel="stylesheet" href="/static/css/admin-common.css">
+    <link rel="stylesheet" href="/static/css/manage-shell.css">
+    <script src="/static/js/manage-header.js" defer></script>
     <style>
 /* Theme Variables */
         :root {
@@ -821,42 +823,7 @@
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <div class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1>Upload Photos</h1>
-                <nav>
-                    <a href="/manage">Dashboard</a>
-                    <a href="/manage/gallery">My Gallery</a>
-                </nav>
-            </div>
-            <div style="display: flex; align-items: center; gap: 1.5rem;">
-                <div class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
-                    <span class="theme-icon">🌙</span>
-                    <div class="theme-toggle-switch"></div>
-                    <span class="theme-icon">☀️</span>
-                </div>
-                <div class="user-dropdown" id="userDropdown">
-                    <button class="user-dropdown-trigger" onclick="toggleUserDropdown(event)">
-                        <div class="avatar">{{ current_user.display_name[0]|upper }}</div>
-                        <span class="user-name">{{ current_user.display_name }}</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="user-dropdown-menu">
-                        <div class="user-dropdown-header">
-                            <div class="name">{{ current_user.display_name }}</div>
-                            <div class="role">{{ current_user.role }}</div>
-                        </div>
-                        <a href="/manage">Dashboard</a>
-                        <a href="/manage/upload">Upload</a>
-                        <a href="/manage/settings">Settings</a>
-                        <div class="user-dropdown-divider"></div>
-                        <button class="danger" onclick="logout()">Sign Out</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'photographer/_header.html' %}
 
     <div class="container">
         <div class="upload-area" id="uploadArea">
@@ -882,59 +849,6 @@
     </div>
 
     <script>
-        // Theme Management
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        }
-
-        // Initialize theme on page load
-        initTheme();
-
-        // User Dropdown Management
-        function toggleUserDropdown(event) {
-            event.stopPropagation();
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.toggle('active');
-        }
-
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('userDropdown');
-            if (dropdown && !dropdown.contains(event.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const dropdown = document.getElementById('userDropdown');
-                if (dropdown) {
-                    dropdown.classList.remove('active');
-                }
-            }
-        });
-
-        async function logout() {
-            try {
-                await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                window.location.href = '/admin/login';
-            } catch (error) {
-                console.error('Logout error:', error);
-                window.location.href = '/admin/login';
-            }
-        }
-
         // Get current user ID from page context
         const CURRENT_USER_ID = {{ current_user.id }};
 

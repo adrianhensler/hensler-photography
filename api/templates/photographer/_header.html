@@ -1,0 +1,49 @@
+{% set path = request.url.path %}
+<header class="manage-header">
+    <div class="manage-brand">
+        <div class="manage-brand__title">Hensler Photography</div>
+        <div class="manage-brand__subtitle">{{ title }}</div>
+    </div>
+
+    <nav class="manage-nav" aria-label="Photographer navigation">
+        <a href="/manage" class="{{ 'active' if path == '/manage' else '' }}">Dashboard</a>
+        <a href="/manage/gallery" class="{{ 'active' if '/manage/gallery' in path else '' }}">Gallery</a>
+        <a href="/manage/analytics" class="{{ 'active' if '/manage/analytics' in path else '' }}">Analytics</a>
+        <a href="/manage/upload" class="{{ 'active' if '/manage/upload' in path else '' }}">Upload</a>
+    </nav>
+
+    <div class="manage-header-actions">
+        <button type="button" class="manage-theme-toggle" data-theme-toggle aria-label="Toggle dark/light mode">
+            <span class="manage-theme-icon">🌙</span>
+            <span class="manage-theme-icon">☀️</span>
+        </button>
+
+        {% if current_user.role == 'admin' %}
+        <a class="manage-admin-link" href="/admin" title="Admin console">
+            <span class="pill">Admin</span>
+            Console
+        </a>
+        {% endif %}
+
+        <div class="manage-user-dropdown" data-user-dropdown>
+            <button type="button" class="manage-user-dropdown-trigger" data-user-dropdown-trigger>
+                <div class="manage-avatar">{{ current_user.display_name[0]|upper }}</div>
+                <span class="manage-user-name">{{ current_user.display_name }}</span>
+                <span class="manage-dropdown-arrow">▼</span>
+            </button>
+            <div class="manage-user-dropdown-menu">
+                <div class="manage-user-dropdown-header">
+                    <div class="manage-name">{{ current_user.display_name }}</div>
+                    <div class="manage-role">{{ current_user.role }}</div>
+                </div>
+                <a href="/manage">Dashboard</a>
+                <a href="/manage/settings">Settings</a>
+                {% if current_user.role == 'admin' %}
+                <a href="/admin" class="admin-inline">Admin Console</a>
+                {% endif %}
+                <div class="manage-user-dropdown-divider"></div>
+                <button type="button" class="danger" data-logout-button>Sign Out</button>
+            </div>
+        </div>
+    </div>
+</header>

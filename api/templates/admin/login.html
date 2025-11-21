@@ -245,7 +245,7 @@
                 if (response.ok && data.success) {
                     // Login successful - redirect based on user role
                     if (data.user && data.user.role === 'admin') {
-                        window.location.href = '/admin';
+                        window.location.href = '/manage';
                     } else {
                         window.location.href = '/manage';
                     }
