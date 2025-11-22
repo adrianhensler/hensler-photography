@@ -20,7 +20,8 @@ hensler.photography {
 
   # Gallery assets (uploaded images from database)
   handle /assets/gallery/* {
-    reverse_proxy api:8000
+    root * /srv
+    file_server
   }
 
   handle /healthz {
@@ -65,7 +66,8 @@ liam.hensler.photography {
 
   # Gallery assets (uploaded images from database)
   handle /assets/gallery/* {
-    reverse_proxy api:8000
+    root * /srv
+    file_server
   }
 
   handle /healthz {
@@ -116,7 +118,8 @@ adrian.hensler.photography {
 
   # Gallery assets (uploaded images from database)
   handle /assets/gallery/* {
-    reverse_proxy api:8000
+    root * /srv
+    file_server
   }
 
   handle /healthz {
