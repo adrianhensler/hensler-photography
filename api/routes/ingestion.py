@@ -467,7 +467,7 @@ async def list_images(
             if with_analytics:
                 analytics_cursor = await db.execute("""
                     SELECT
-                        COUNT(CASE WHEN event_type = 'page_view' THEN 1 END) as views,
+                        COUNT(CASE WHEN event_type = 'image_impression' THEN 1 END) as impressions,
                         COUNT(CASE WHEN event_type = 'gallery_click' THEN 1 END) as clicks,
                         COUNT(CASE WHEN event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
                     FROM image_events
@@ -475,18 +475,21 @@ async def list_images(
                 """, (row[0],))
 
                 analytics_row = await analytics_cursor.fetchone()
-                views = analytics_row[0] or 0
+                impressions = analytics_row[0] or 0
                 clicks = analytics_row[1] or 0
-                click_rate = (clicks / views) if views > 0 else 0
+                click_rate = (clicks / impressions) if impressions > 0 else 0
 
                 # Calculate engagement level (compared to user's average)
                 # This will be calculated later with full portfolio context
                 engagement_level = "medium"  # Default
 
+                lightbox_opens = analytics_row[2] or 0
+
                 image["analytics"] = {
-                    "views": views,
+                    "impressions": impressions,
                     "clicks": clicks,
-                    "lightbox_opens": analytics_row[2] or 0,
+                    "lightbox_opens": lightbox_opens,
+                    "views": lightbox_opens,
                     "click_rate": round(click_rate, 3),
                     "engagement_level": engagement_level
                 }
@@ -496,16 +499,16 @@ async def list_images(
         # Calculate engagement levels if analytics requested
         if with_analytics and images:
             # Calculate average views across all images
-            total_views = sum(img["analytics"]["views"] for img in images)
-            avg_views = total_views / len(images) if len(images) > 0 else 0
+            total_impressions = sum(img["analytics"]["impressions"] for img in images)
+            avg_impressions = total_impressions / len(images) if len(images) > 0 else 0
 
             # Assign engagement levels
             for img in images:
-                views = img["analytics"]["views"]
-                if avg_views > 0:
-                    if views >= avg_views * 1.5:
+                impressions = img["analytics"]["impressions"]
+                if avg_impressions > 0:
+                    if impressions >= avg_impressions * 1.5:
                         img["analytics"]["engagement_level"] = "high"
-                    elif views >= avg_views * 0.75:
+                    elif impressions >= avg_impressions * 0.75:
                         img["analytics"]["engagement_level"] = "medium"
                     else:
                         img["analytics"]["engagement_level"] = "low"

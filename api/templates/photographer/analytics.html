@@ -883,6 +883,8 @@
                 <button class="date-tab" onclick="changeDateRange(90)">90 Days</button>
             </div>
         </div>
+        <div class="section-subtitle" id="overviewRates" style="text-align: center; margin-top: -4px;">
+        </div>
 
         <!-- Analytics Explanation -->
         <div class="analytics-info">
@@ -897,12 +899,13 @@
 
                 <h4>What Each Metric Means</h4>
                 <ul>
-                    <li><strong>Impressions:</strong> Times an image became visible in the viewport (at least 50% visible while scrolling). Shows which images attract attention.</li>
-                    <li><strong>Clicks:</strong> Times a visitor clicked a thumbnail in the gallery grid. Indicates strong interest in viewing the full image.</li>
-                    <li><strong>Views:</strong> Times the full-screen lightbox was opened. Represents deep engagement with your work.</li>
-                    <li><strong>CTR (Click-Through Rate):</strong> Percentage of impressions that resulted in clicks. Industry average: 2-5%, excellent: 10%+. Shows image appeal strength.</li>
-                    <li><strong>View Rate:</strong> Percentage of clicks that opened the lightbox. Usually 95-100%. Low rates may indicate technical issues.</li>
-                    <li><strong>Average Duration:</strong> Mean seconds spent viewing full-screen images. Typical: 2-5s quick look, 5-10s normal interest, 10+s high engagement.</li>
+                    <li><strong>Impressions:</strong> Times an image was actually seen (50%+ visible) in the grid or hero slideshow. Baseline reach for every frame.</li>
+                    <li><strong>Engaged viewers:</strong> Unique sessions that generated impressions, clicks, or lightbox views. Anonymous and session-based.</li>
+                    <li><strong>Clicks:</strong> Thumbnail or hero slideshow clicks that opened the lightbox. Signal intent to dive deeper.</li>
+                    <li><strong>Lightbox views:</strong> Full-screen opens of your images — the closest proxy to appreciating the work.</li>
+                    <li><strong>CTR (Click-Through Rate):</strong> Clicks divided by impressions. 2-5% is typical browsing, 10%+ indicates standout appeal.</li>
+                    <li><strong>View-through rate:</strong> Lightbox views divided by clicks. Should be high; drops suggest friction before the image opens.</li>
+                    <li><strong>Average view time:</strong> Mean seconds spent before closing the lightbox. Longer times = deeper engagement.</li>
                 </ul>
 
                 <h4>Privacy & Data</h4>
@@ -917,35 +920,36 @@
         <!-- Overview Cards -->
         <div class="overview-cards">
             <div class="overview-card">
-                <div class="overview-number" id="overviewViews">--</div>
+                <div class="overview-number" id="overviewImpressions">--</div>
                 <div class="overview-label">
-                    Views
-                    <span class="info-icon" data-tooltip="Total page views across your portfolio. Counts each time someone lands on your gallery page.">ⓘ</span>
+                    Impressions
+                    <span class="info-icon" data-tooltip="Times an image was actually seen (50%+ in view) in the gallery grid or hero slideshow.">ⓘ</span>
                 </div>
-                <div class="overview-trend" id="overviewViewsTrend"></div>
+                <div class="overview-trend" id="overviewImpressionsTrend"></div>
             </div>
             <div class="overview-card">
-                <div class="overview-number" id="overviewVisitors">--</div>
+                <div class="overview-number" id="overviewViewers">--</div>
                 <div class="overview-label">
-                    Visitors
-                    <span class="info-icon" data-tooltip="Unique sessions visiting your portfolio. Tracked by anonymous session IDs - no personal data collected.">ⓘ</span>
+                    Engaged viewers
+                    <span class="info-icon" data-tooltip="Unique sessions that generated impressions, clicks, or lightbox views. Anonymous, session-based only.">ⓘ</span>
                 </div>
-                <div class="overview-trend" id="overviewVisitorsTrend"></div>
+                <div class="overview-trend" id="overviewViewersTrend"></div>
             </div>
             <div class="overview-card">
                 <div class="overview-number" id="overviewClicks">--</div>
                 <div class="overview-label">
                     Clicks
-                    <span class="info-icon" data-tooltip="Total thumbnail clicks in gallery grid. Shows interest in viewing images at full size.">ⓘ</span>
+                    <span class="info-icon" data-tooltip="Thumbnail or hero slideshow clicks that opened the lightbox.">ⓘ</span>
                 </div>
                 <div class="overview-trend" id="overviewClicksTrend"></div>
             </div>
             <div class="overview-card">
-                <div class="overview-number" id="overviewClickRate">--%</div>
+                <div class="overview-number" id="overviewViews">--</div>
                 <div class="overview-label">
-                    Click Rate
-                    <span class="info-icon" data-tooltip="Percentage of page views that resulted in at least one image click. Higher rates indicate engaging galleries.">ⓘ</span>
+                    Lightbox views
+                    <span class="info-icon" data-tooltip="Full-screen opens of your images. Indicates deeper engagement beyond browsing.">ⓘ</span>
                 </div>
+                <div class="overview-trend" id="overviewViewsTrend"></div>
             </div>
         </div>
 
@@ -1080,21 +1084,28 @@
                 const data = await res.json();
 
                 // Check if there's any data
-                if (data.views === 0 && data.clicks === 0) {
+                if (data.impressions === 0 && data.clicks === 0 && data.views === 0) {
                     showEmptyState();
                     return;
                 }
 
                 // Update numbers
-                document.getElementById('overviewViews').textContent = data.views.toLocaleString();
-                document.getElementById('overviewVisitors').textContent = data.visitors.toLocaleString();
+                document.getElementById('overviewImpressions').textContent = data.impressions.toLocaleString();
+                document.getElementById('overviewViewers').textContent = data.viewers.toLocaleString();
                 document.getElementById('overviewClicks').textContent = data.clicks.toLocaleString();
-                document.getElementById('overviewClickRate').textContent = Math.round(data.click_rate * 100) + '%';
+                document.getElementById('overviewViews').textContent = data.views.toLocaleString();
 
                 // Update trends
-                updateTrend('overviewViewsTrend', data.views_trend);
-                updateTrend('overviewVisitorsTrend', data.visitors_trend);
+                updateTrend('overviewImpressionsTrend', data.impressions_trend);
+                updateTrend('overviewViewersTrend', data.viewers_trend);
                 updateTrend('overviewClicksTrend', data.clicks_trend);
+                updateTrend('overviewViewsTrend', data.views_trend);
+
+                const overviewRates = document.getElementById('overviewRates');
+                const ctr = `${Math.round(data.ctr * 100)}% CTR`;
+                const viewThrough = `${Math.round(data.view_rate * 100)}% view-through`;
+                const dwell = data.avg_duration > 0 ? `${data.avg_duration}s avg view time` : 'No dwell-time yet';
+                overviewRates.textContent = `${ctr} • ${viewThrough} • ${dwell}`;
 
             } catch (error) {
                 console.error('Overview load error:', error);
@@ -1127,7 +1138,7 @@
                     chipRow.innerHTML = data.top_images.map(img => `
                         <div class="chip">
                             <span>${img.title}</span>
-                            <span style="color: var(--text-secondary);">${img.analytics.clicks} clicks • ${Math.round(img.analytics.ctr * 100)}% CTR</span>
+                            <span style="color: var(--text-secondary);">${img.analytics.impressions} impressions • ${img.analytics.clicks} clicks • ${Math.round(img.analytics.view_rate * 100)}% view-through</span>
                         </div>
                     `).join('');
                 }
@@ -1138,7 +1149,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
                             <div>
                                 <div style="font-weight: 600; font-size: 1rem;">${data.leading_category.category}</div>
-                                <div class="section-subtitle">${data.leading_category.impressions} impressions • ${data.leading_category.clicks} clicks</div>
+                                <div class="section-subtitle">${data.leading_category.impressions} impressions • ${data.leading_category.clicks} clicks • ${Math.round(data.leading_category.view_rate * 100)}% view-through</div>
                             </div>
                             <div class="event-pill">${Math.round(data.leading_category.ctr * 100)}% CTR</div>
                         </div>
@@ -1165,7 +1176,7 @@
 
         async function loadTimeline() {
             try {
-                const res = await fetch(`/api/analytics/timeline?days=${currentDays}&metric=views`, {
+                const res = await fetch(`/api/analytics/timeline?days=${currentDays}&metric=impressions`, {
                     credentials: 'include'
                 });
 
@@ -1181,7 +1192,7 @@
                         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                     }),
                     datasets: [{
-                        label: 'Views',
+                        label: 'Impressions',
                         data: data.data.map(d => d.count),
                         borderColor: '#06c',
                         backgroundColor: 'rgba(0, 102, 204, 0.1)',
@@ -1364,6 +1375,8 @@
                                 <span>${img.analytics.views} views</span>
                                 <span>•</span>
                                 <span>${Math.round(img.analytics.ctr * 100)}% CTR</span>
+                                <span>•</span>
+                                <span>${Math.round(img.analytics.view_rate * 100)}% view-through</span>
                                 ${img.analytics.avg_duration > 0 ? `<span>•</span><span>${img.analytics.avg_duration}s avg</span>` : ''}
                                 ${img.category ? `<span>•</span><span>${img.category}</span>` : ''}
                             </div>

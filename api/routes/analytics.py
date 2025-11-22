@@ -9,6 +9,7 @@ from api.routes.auth import get_current_user_for_subdomain, User
 from api.database import get_db_connection
 from api.logging_config import get_logger
 from datetime import datetime, timedelta
+import json
 from typing import List, Dict, Any, Optional
 import aiosqlite
 
@@ -50,74 +51,96 @@ async def get_analytics_overview(
     current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """
-    Get analytics overview for photographer dashboard.
+    Get engagement-focused analytics for the photographer dashboard.
 
-    Returns aggregate metrics:
-    - Total views (page_view events)
-    - Unique visitors (distinct sessions)
+    Returns aggregate metrics tied directly to image interactions:
+    - Impressions (image_impression events)
+    - Engaged viewers (distinct sessions that triggered image events)
     - Gallery clicks (gallery_click events)
-    - Lightbox opens (lightbox_open events)
-    - Click-through rate
-    - Trends (comparison to previous period)
+    - Lightbox views (lightbox_open events)
+    - CTR (clicks / impressions) and view-through rate (views / clicks)
+    - Average lightbox dwell time (from lightbox_close metadata)
+    - Trends for key metrics vs. previous period
     """
     user_id = current_user.id
-    subdomain = current_user.subdomain or ""
-    subdomain_pattern = f"%{subdomain}.hensler.photography%"
-    subdomain = current_user.subdomain or ""
-    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
     prev_since = since - timedelta(days=days)  # Previous period for comparison
 
     try:
         async with get_db_connection() as db:
             # Current period metrics
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 SELECT
-                    COUNT(CASE WHEN e.event_type = 'page_view' THEN 1 END) as views,
-                    COUNT(DISTINCT e.session_id) as visitors,
+                    COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
                     COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
-                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
+                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as views,
+                    COUNT(DISTINCT CASE WHEN e.event_type IN ('image_impression','gallery_click','lightbox_open') THEN e.session_id END) as viewers
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL)
-                       OR (e.image_id IS NULL AND e.referrer LIKE ?))
-                AND e.timestamp >= ?
-            """, (user_id, subdomain_pattern, since))
+                WHERE i.user_id = ? AND e.timestamp >= ?
+                """,
+                (user_id, since),
+            )
 
             current = await cursor.fetchone()
 
-            # Previous period metrics for trend calculation
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 SELECT
-                    COUNT(CASE WHEN e.event_type = 'page_view' THEN 1 END) as views,
-                    COUNT(DISTINCT e.session_id) as visitors,
+                    COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
                     COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
-                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
+                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as views,
+                    COUNT(DISTINCT CASE WHEN e.event_type IN ('image_impression','gallery_click','lightbox_open') THEN e.session_id END) as viewers
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL)
-                       OR (e.image_id IS NULL AND e.referrer LIKE ?))
-                AND e.timestamp >= ? AND e.timestamp < ?
-            """, (user_id, subdomain_pattern, prev_since, since))
+                WHERE i.user_id = ? AND e.timestamp >= ? AND e.timestamp < ?
+                """,
+                (user_id, prev_since, since),
+            )
 
             previous = await cursor.fetchone()
 
-            # Calculate metrics
-            views = current[0] or 0
-            visitors = current[1] or 0
-            clicks = current[2] or 0
-            lightbox_opens = current[3] or 0
+            impressions = current[0] or 0
+            clicks = current[1] or 0
+            views = current[2] or 0
+            viewers = current[3] or 0
 
-            prev_views = previous[0] or 0
-            prev_visitors = previous[1] or 0
-            prev_clicks = previous[2] or 0
+            prev_impressions = previous[0] or 0
+            prev_clicks = previous[1] or 0
+            prev_views = previous[2] or 0
+            prev_viewers = previous[3] or 0
 
-            # Calculate click-through rate
-            click_rate = (clicks / views) if views > 0 else 0
+            ctr = (clicks / impressions) if impressions > 0 else 0
+            view_rate = (views / clicks) if clicks > 0 else 0
 
-            views_trend = calc_trend(views, prev_views)
-            visitors_trend = calc_trend(visitors, prev_visitors)
-            clicks_trend = calc_trend(clicks, prev_clicks)
+            # Average lightbox dwell time
+            cursor = await db.execute(
+                """
+                SELECT e.metadata
+                FROM image_events e
+                LEFT JOIN images i ON e.image_id = i.id
+                WHERE i.user_id = ?
+                AND e.timestamp >= ?
+                AND e.event_type = 'lightbox_close'
+                """,
+                (user_id, since),
+            )
+            duration_rows = await cursor.fetchall()
+
+            durations = []
+            for row in duration_rows:
+                if not row[0]:
+                    continue
+                try:
+                    metadata = json.loads(row[0]) if isinstance(row[0], str) else row[0]
+                    duration = metadata.get("duration") if isinstance(metadata, dict) else None
+                    if isinstance(duration, (int, float)) and duration >= 0:
+                        durations.append(duration)
+                except Exception:
+                    continue
+
+            avg_duration = round(sum(durations) / len(durations), 1) if durations else 0
 
             logger.info(
                 f"Analytics overview generated for user {user_id}",
@@ -125,22 +148,25 @@ async def get_analytics_overview(
                     "context": {
                         "user_id": user_id,
                         "days": days,
-                        "views": views,
-                        "visitors": visitors
+                        "impressions": impressions,
+                        "viewers": viewers,
                     }
-                }
+                },
             )
 
             return {
-                "views": views,
-                "views_trend": views_trend,
-                "visitors": visitors,
-                "visitors_trend": visitors_trend,
+                "impressions": impressions,
+                "impressions_trend": calc_trend(impressions, prev_impressions),
                 "clicks": clicks,
-                "clicks_trend": clicks_trend,
-                "lightbox_opens": lightbox_opens,
-                "click_rate": round(click_rate, 3),
-                "period_days": days
+                "clicks_trend": calc_trend(clicks, prev_clicks),
+                "views": views,
+                "views_trend": calc_trend(views, prev_views),
+                "viewers": viewers,
+                "viewers_trend": calc_trend(viewers, prev_viewers),
+                "ctr": round(ctr, 3),
+                "view_rate": round(view_rate, 3),
+                "avg_duration": avg_duration,
+                "period_days": days,
             }
 
     except Exception as e:
@@ -160,10 +186,6 @@ async def get_analytics_highlights(
     session skew to keep insights grounded in collected data.
     """
     user_id = current_user.id
-    subdomain = current_user.subdomain or ""
-    subdomain_pattern = f"%{subdomain}.hensler.photography%"
-    subdomain = current_user.subdomain or ""
-    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
     prev_since = since - timedelta(days=days)
 
@@ -173,16 +195,16 @@ async def get_analytics_highlights(
             cursor = await db.execute(
                 """
                 SELECT
-                    COUNT(CASE WHEN e.event_type = 'page_view' THEN 1 END) as views,
-                    COUNT(DISTINCT e.session_id) as visitors,
+                    COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
                     COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
-                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as lightbox_opens
+                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as views,
+                    COUNT(DISTINCT CASE WHEN e.event_type IN ('image_impression','gallery_click','lightbox_open') THEN e.session_id END) as viewers
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
+                WHERE i.user_id = ?
                 AND e.timestamp >= ?
                 """,
-                (user_id, subdomain_pattern, since),
+                (user_id, since),
             )
 
             current = await cursor.fetchone()
@@ -191,39 +213,73 @@ async def get_analytics_highlights(
             cursor = await db.execute(
                 """
                 SELECT
-                    COUNT(CASE WHEN e.event_type = 'page_view' THEN 1 END) as views,
-                    COUNT(DISTINCT e.session_id) as visitors,
-                    COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks
+                    COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
+                    COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
+                    COUNT(CASE WHEN e.event_type = 'lightbox_open' THEN 1 END) as views,
+                    COUNT(DISTINCT CASE WHEN e.event_type IN ('image_impression','gallery_click','lightbox_open') THEN e.session_id END) as viewers
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
+                WHERE i.user_id = ?
                 AND e.timestamp >= ? AND e.timestamp < ?
                 """,
-                (user_id, subdomain_pattern, prev_since, since),
+                (user_id, prev_since, since),
             )
 
             previous = await cursor.fetchone()
 
-            views = current[0] or 0
-            visitors = current[1] or 0
-            clicks = current[2] or 0
-            lightbox_opens = current[3] or 0
+            impressions = current[0] or 0
+            clicks = current[1] or 0
+            views = current[2] or 0
+            viewers = current[3] or 0
 
-            prev_views = previous[0] or 0
-            prev_visitors = previous[1] or 0
-            prev_clicks = previous[2] or 0
+            prev_impressions = previous[0] or 0
+            prev_clicks = previous[1] or 0
+            prev_views = previous[2] or 0
+            prev_viewers = previous[3] or 0
 
-            click_rate = (clicks / views) if views > 0 else 0
+            click_rate = (clicks / impressions) if impressions > 0 else 0
+            view_rate = (views / clicks) if clicks > 0 else 0
+
+            # Average lightbox dwell time
+            cursor = await db.execute(
+                """
+                SELECT e.metadata
+                FROM image_events e
+                LEFT JOIN images i ON e.image_id = i.id
+                WHERE i.user_id = ?
+                AND e.timestamp >= ?
+                AND e.event_type = 'lightbox_close'
+                """,
+                (user_id, since),
+            )
+            duration_rows = await cursor.fetchall()
+
+            durations = []
+            for row in duration_rows:
+                if not row[0]:
+                    continue
+                try:
+                    metadata = json.loads(row[0]) if isinstance(row[0], str) else row[0]
+                    duration = metadata.get("duration") if isinstance(metadata, dict) else None
+                    if isinstance(duration, (int, float)) and duration >= 0:
+                        durations.append(duration)
+                except Exception:
+                    continue
+
+            avg_duration = round(sum(durations) / len(durations), 1) if durations else 0
 
             overview = {
-                "views": views,
-                "views_trend": calc_trend(views, prev_views),
-                "visitors": visitors,
-                "visitors_trend": calc_trend(visitors, prev_visitors),
+                "impressions": impressions,
+                "impressions_trend": calc_trend(impressions, prev_impressions),
+                "viewers": viewers,
+                "viewers_trend": calc_trend(viewers, prev_viewers),
                 "clicks": clicks,
                 "clicks_trend": calc_trend(clicks, prev_clicks),
-                "lightbox_opens": lightbox_opens,
-                "click_rate": round(click_rate, 3),
+                "views": views,
+                "views_trend": calc_trend(views, prev_views),
+                "ctr": round(click_rate, 3),
+                "view_rate": round(view_rate, 3),
+                "avg_duration": avg_duration,
                 "period_days": days,
             }
 
@@ -336,11 +392,11 @@ async def get_analytics_highlights(
                 """
                 SELECT COUNT(*) FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
+                WHERE i.user_id = ?
                 AND e.timestamp >= ?
                 AND e.event_type IN ('image_impression', 'gallery_click', 'lightbox_open')
                 """,
-                (user_id, subdomain_pattern, since),
+                (user_id, since),
             )
             total_events = (await cursor.fetchone())[0] or 0
 
@@ -351,14 +407,14 @@ async def get_analytics_highlights(
                     SELECT COALESCE(session_id, 'unknown'), COUNT(*) as count
                     FROM image_events e
                     LEFT JOIN images i ON e.image_id = i.id
-                    WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
+                    WHERE i.user_id = ?
                     AND e.timestamp >= ?
                     AND e.event_type IN ('image_impression', 'gallery_click', 'lightbox_open')
                     GROUP BY session_id
                     ORDER BY count DESC
                     LIMIT 1
                     """,
-                    (user_id, subdomain_pattern, since),
+                    (user_id, since),
                 )
 
                 top_session = await cursor.fetchone()
@@ -370,25 +426,30 @@ async def get_analytics_highlights(
                 }
 
             insights = []
-            if views > 0:
+            if impressions > 0:
                 insights.append(
-                    f"{views} views in the last {days} days ({overview['views_trend']}% vs prior period) with a {round(click_rate * 100, 1)}% click rate."
+                    f"{impressions} impressions in the last {days} days ({overview['impressions_trend']}% vs prior) with a {round(click_rate * 100, 1)}% CTR and {round(view_rate * 100, 1)}% view-through."
                 )
 
             if top_images:
                 hero = top_images[0]
                 insights.append(
-                    f"Top image: '{hero['title']}' earned {hero['analytics']['clicks']} clicks and {hero['analytics']['views']} lightbox views."
+                    f"Top image: '{hero['title']}' earned {hero['analytics']['impressions']} impressions, {hero['analytics']['clicks']} clicks, and {hero['analytics']['views']} lightbox views."
                 )
 
             if leading_category:
                 insights.append(
-                    f"Leading theme: {leading_category['category']} with {leading_category['impressions']} impressions and {round(leading_category['ctr'] * 100, 1)}% CTR."
+                    f"Leading theme: {leading_category['category']} with {leading_category['impressions']} impressions, {round(leading_category['ctr'] * 100, 1)}% CTR, and {round(leading_category['view_rate'] * 100, 1)}% view-through."
                 )
 
             if session_skew and session_skew["top_session_share"] >= 0.5:
                 insights.append(
                     f"Traffic is concentrated: your busiest session accounts for {round(session_skew['top_session_share'] * 100, 1)}% of events."
+                )
+
+            if avg_duration > 0:
+                insights.append(
+                    f"Average lightbox dwell time: {avg_duration}s before visitors close the image."
                 )
 
             return {
@@ -408,7 +469,7 @@ async def get_analytics_highlights(
 @router.get("/timeline")
 async def get_analytics_timeline(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
-    metric: str = Query("views", regex="^(views|clicks|lightbox_opens)$", description="Metric to chart"),
+    metric: str = Query("impressions", regex="^(impressions|clicks|views)$", description="Metric to chart"),
     current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """
@@ -417,17 +478,13 @@ async def get_analytics_timeline(
     Returns daily counts for specified metric (views, clicks, or lightbox_opens).
     """
     user_id = current_user.id
-    subdomain = current_user.subdomain or ""
-    subdomain_pattern = f"%{subdomain}.hensler.photography%"
-    subdomain = current_user.subdomain or ""
-    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
 
     # Map metric to event type
     event_type_map = {
-        "views": "page_view",
+        "impressions": "image_impression",
         "clicks": "gallery_click",
-        "lightbox_opens": "lightbox_open"
+        "views": "lightbox_open"
     }
     event_type = event_type_map[metric]
 
@@ -439,12 +496,12 @@ async def get_analytics_timeline(
                     COUNT(*) as count
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
+                WHERE i.user_id = ?
                 AND e.event_type = ?
                 AND e.timestamp >= ?
                 GROUP BY DATE(e.timestamp)
                 ORDER BY date ASC
-            """, (user_id, subdomain_pattern, event_type, since))
+            """, (user_id, event_type, since))
 
             rows = await cursor.fetchall()
 
@@ -907,33 +964,38 @@ async def get_image_analytics(
                 raise HTTPException(403, "Not authorized to view this image's analytics")
 
             # Get aggregate metrics
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 SELECT
-                    COUNT(CASE WHEN event_type = 'page_view' THEN 1 END) as views,
+                    COUNT(CASE WHEN event_type = 'image_impression' THEN 1 END) as impressions,
                     COUNT(CASE WHEN event_type = 'gallery_click' THEN 1 END) as clicks,
-                    COUNT(CASE WHEN event_type = 'lightbox_open' THEN 1 END) as lightbox_opens,
-                    COUNT(DISTINCT session_id) as unique_visitors,
+                    COUNT(CASE WHEN event_type = 'lightbox_open' THEN 1 END) as views,
+                    COUNT(DISTINCT CASE WHEN event_type IN ('image_impression','gallery_click','lightbox_open') THEN session_id END) as unique_visitors,
                     MIN(timestamp) as first_view,
                     MAX(timestamp) as last_view
                 FROM image_events
                 WHERE image_id = ?
                 AND timestamp >= ?
-            """, (image_id, since))
+            """,
+                (image_id, since),
+            )
 
             metrics = await cursor.fetchone()
 
-            views = metrics[0] or 0
+            impressions = metrics[0] or 0
             clicks = metrics[1] or 0
-            click_rate = (clicks / views) if views > 0 else 0
+            views = metrics[2] or 0
+            click_rate = (clicks / impressions) if impressions > 0 else 0
 
             return {
                 "image_id": image_id,
                 "period_days": days,
-                "views": views,
+                "impressions": impressions,
                 "clicks": clicks,
-                "lightbox_opens": metrics[2] or 0,
+                "views": views,
                 "unique_visitors": metrics[3] or 0,
-                "click_rate": round(click_rate, 3),
+                "ctr": round(click_rate, 3),
+                "view_rate": round((views / clicks), 3) if clicks > 0 else 0,
                 "first_view": metrics[4],
                 "last_view": metrics[5]
             }
