@@ -15,6 +15,7 @@ services:
       - ./sites:/srv/sites:ro
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - /opt/prod/gptresearcher/gpt-researcher/outputs:/srv/gptresearcher/outputs:ro
+      - gallery-images:/srv/assets/gallery:ro
       - caddy-data:/data
       - caddy-config:/config
     networks:
