@@ -39,3 +39,15 @@ scripts/*.pid
 
 # Local testing artifacts
 .restic-password
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
