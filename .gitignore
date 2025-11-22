@@ -1,6 +1,6 @@
 # Node modules
 node_modules/
-package-lock.json
+# package-lock.json should be tracked for reproducible builds
 
 # Playwright
 test-results/
