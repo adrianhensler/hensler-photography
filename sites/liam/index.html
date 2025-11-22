@@ -338,6 +338,11 @@
     let currentSlide = 0;
     let slideshowInterval;
     let slideshowPaused = false;
+    let galleryLightbox = null;
+    let lightboxOpenTime = null;
+    let currentLightboxImageId = null;
+    let lightboxListenersAttached = false;
+    const heroImpressions = new Set();
 
     // Set copyright year
     document.getElementById('y').textContent = new Date().getFullYear();
@@ -350,6 +355,8 @@
         const slide = document.createElement('div');
         slide.className = 'slideshow-slide';
         if (index === 0) slide.classList.add('active');
+        slide.dataset.index = index;
+        slide.style.cursor = 'pointer';
 
         const img = document.createElement('img');
         // Use large variant (1200px) for hero slideshow with responsive srcset
@@ -360,11 +367,15 @@
         img.loading = index === 0 ? 'eager' : 'lazy';
 
         slide.appendChild(img);
+        slide.addEventListener('click', () => openSlideLightbox(index));
         container.appendChild(slide);
       });
 
       // Auto-advance slideshow every 5 seconds
       startSlideshow();
+
+      // Track that the hero slot has been seen
+      recordHeroImpression(0);
 
       // Pause on hover
       container.addEventListener('mouseenter', () => {
@@ -393,10 +404,38 @@
 
       slides[currentSlide].classList.add('active');
 
+      recordHeroImpression(currentSlide);
+
       // Reset timer on manual navigation
       if (slideshowInterval) {
         clearInterval(slideshowInterval);
         startSlideshow();
+      }
+    }
+
+    function recordHeroImpression(index) {
+      const imageId = galleryData[index]?.id;
+      if (imageId && !heroImpressions.has(imageId)) {
+        heroImpressions.add(imageId);
+        trackEvent('image_impression', imageId, { surface: 'hero_slideshow' });
+      }
+    }
+
+    function openSlideLightbox(index) {
+      const imageId = galleryData[index]?.id || index;
+      trackEvent('gallery_click', imageId, { surface: 'hero_slideshow' });
+
+      if (galleryLightbox) {
+        currentLightboxImageId = imageId;
+        lightboxOpenTime = Date.now();
+        trackEvent('lightbox_open', imageId);
+        galleryLightbox.openAt(index);
+      } else {
+        // Fallback: click the matching gallery grid item
+        const galleryItems = document.querySelectorAll('.gallery-item');
+        if (galleryItems[index]) {
+          galleryItems[index].click();
+        }
       }
     }
 
@@ -469,7 +508,7 @@
 
       // Initialize GLightbox after gallery is populated
       setTimeout(() => {
-        const lightbox = GLightbox({
+        galleryLightbox = GLightbox({
           selector: '.glightbox',
           touchNavigation: true,
           loop: true,
@@ -479,6 +518,8 @@
           closeButton: true,
           closeOnOutsideClick: true
         });
+
+        addLightboxTracking();
       }, 100);
 
       // Staggered reveal as items scroll into view
@@ -566,34 +607,39 @@
     }
 
     // Track lightbox opens using GLightbox events
-    let lightboxOpenTime = null;
     function addLightboxTracking() {
-      // Wait for GLightbox to be initialized
-      setTimeout(() => {
-        const lightboxElements = document.querySelectorAll('.glightbox');
-        lightboxElements.forEach((element, index) => {
-          element.addEventListener('click', () => {
-            // Track when lightbox opens (not the gallery click, which was already tracked)
-            setTimeout(() => {
-              // Use actual database ID instead of index for accurate analytics
-              const imageId = galleryData[index]?.id || index;
-              trackEvent('lightbox_open', imageId);
-              lightboxOpenTime = Date.now(); // Start duration tracking
-            }, 100);
-          });
-        });
+      if (lightboxListenersAttached || !galleryLightbox) return;
+      lightboxListenersAttached = true;
 
-        // Track lightbox close and duration
-        document.addEventListener('click', (e) => {
-          if (e.target.classList.contains('gclose') || e.target.classList.contains('goverlay')) {
-            if (lightboxOpenTime) {
-              const duration = Math.round((Date.now() - lightboxOpenTime) / 1000); // seconds
-              trackEvent('lightbox_close', null, { duration });
-              lightboxOpenTime = null;
-            }
-          }
+      const lightboxElements = document.querySelectorAll('.glightbox');
+      lightboxElements.forEach((element, index) => {
+        element.addEventListener('click', () => {
+          const imageId = galleryData[index]?.id || index;
+          currentLightboxImageId = imageId;
+          lightboxOpenTime = Date.now();
+          trackEvent('lightbox_open', imageId);
         });
-      }, 200);
+      });
+
+      galleryLightbox.on('slide_changed', ({ current }) => {
+        const slideIndex = current?.index ?? currentSlide ?? 0;
+        const imageId = galleryData[slideIndex]?.id || slideIndex;
+
+        if (imageId !== currentLightboxImageId) {
+          currentLightboxImageId = imageId;
+          lightboxOpenTime = Date.now();
+          trackEvent('lightbox_open', imageId);
+        }
+      });
+
+      galleryLightbox.on('close', () => {
+        if (lightboxOpenTime && currentLightboxImageId !== null) {
+          const duration = Math.round((Date.now() - lightboxOpenTime) / 1000); // seconds
+          trackEvent('lightbox_close', currentLightboxImageId, { duration });
+        }
+        lightboxOpenTime = null;
+        currentLightboxImageId = null;
+      });
     }
 
     // Track image impressions (when images enter viewport)

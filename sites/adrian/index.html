@@ -451,6 +451,10 @@
     // Images loaded dynamically from database API
     let galleryImages = [];
     window.galleryData = [];  // Full image data with titles, captions, etc. (global for shared module)
+    let galleryLightbox = null;
+    let lightboxOpenTime = null;
+    let currentLightboxImageId = null;
+    const heroImpressions = new Set();
 
     // ===== SLIDESHOW LOGIC =====
     let currentSlide = 0;
@@ -474,11 +478,16 @@
         img.loading = index === 0 ? 'eager' : 'lazy';
 
         slide.appendChild(img);
+        slide.style.cursor = 'pointer';
+        slide.addEventListener('click', () => openSlideLightbox(index));
         container.appendChild(slide);
       });
 
       // Auto-advance slideshow every 5 seconds
       startSlideshow();
+
+      // Track first hero impression immediately
+      recordHeroImpression(0);
 
       // Pause on hover
       container.addEventListener('mouseenter', () => {
@@ -507,10 +516,37 @@
 
       slides[currentSlide].classList.add('active');
 
+      recordHeroImpression(currentSlide);
+
       // Reset timer on manual navigation
       if (slideshowInterval) {
         clearInterval(slideshowInterval);
         startSlideshow();
+      }
+    }
+
+    function recordHeroImpression(index) {
+      const imageId = galleryData[index]?.id;
+      if (imageId && !heroImpressions.has(imageId)) {
+        heroImpressions.add(imageId);
+        trackEvent('image_impression', imageId, { surface: 'hero_slideshow' });
+      }
+    }
+
+    function openSlideLightbox(index) {
+      const imageId = galleryData[index]?.id || index;
+      trackEvent('gallery_click', imageId, { surface: 'hero_slideshow' });
+
+      if (galleryLightbox) {
+        currentLightboxImageId = imageId;
+        lightboxOpenTime = Date.now();
+        trackEvent('lightbox_open', imageId);
+        galleryLightbox.openAt(index);
+      } else {
+        const galleryItems = document.querySelectorAll('.gallery-item');
+        if (galleryItems[index]) {
+          galleryItems[index].click();
+        }
       }
     }
 
@@ -583,7 +619,7 @@
 
       // Initialize GLightbox after gallery is populated
       setTimeout(() => {
-        const lightbox = GLightbox({
+        galleryLightbox = GLightbox({
           selector: '.glightbox',
           touchNavigation: true,
           loop: true,
@@ -681,7 +717,6 @@
     }
 
     // Track lightbox opens using GLightbox events
-    let lightboxOpenTime = null;
     function addLightboxTracking() {
       // Wait for GLightbox to be initialized
       setTimeout(() => {
