@@ -46,7 +46,9 @@ def main():
 
             # Create unique index for google_id
             print("Creating unique index on google_id...")
-            cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL")
+            cursor.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL"
+            )
             conn.commit()
             print("✓ Unique index created")
         else:
@@ -61,20 +63,22 @@ def main():
         else:
             print("✓ auth_method column already exists")
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Migration 002 complete!")
-        print("="*60)
+        print("=" * 60)
         print("\nGoogle OAuth is now available.")
         print("\nTo enable:")
         print("1. Create OAuth credentials at: https://console.cloud.google.com/apis/credentials")
-        print("2. Set authorized redirect URI: https://hensler.photography:4100/api/auth/google/callback")
+        print(
+            "2. Set authorized redirect URI: https://hensler.photography:4100/api/auth/google/callback"
+        )
         print("3. Set environment variables:")
         print("   - GOOGLE_CLIENT_ID=your-client-id")
         print("   - GOOGLE_CLIENT_SECRET=your-client-secret")
         print("\nUsers can now sign in with:")
         print("  - Username/password (existing)")
         print("  - Google account (new)")
-        print("="*60)
+        print("=" * 60)
 
     except Exception as e:
         print(f"\nERROR: Migration failed: {e}")

@@ -270,7 +270,7 @@ def run_migrations():
         cursor.execute("PRAGMA table_info(images)")
         columns = [row[1] for row in cursor.fetchall()]
 
-        if 'share_exif' not in columns:
+        if "share_exif" not in columns:
             print("Running migration: Adding share_exif column to images table")
             cursor.execute("ALTER TABLE images ADD COLUMN share_exif BOOLEAN DEFAULT 0")
             print("✓ Migration complete: share_exif column added")
@@ -312,16 +312,25 @@ def get_all_users():
         return cursor.fetchall()
 
 
-def track_event(image_id: int, event_type: str, session_id: str = None,
-                user_agent: str = None, referrer: str = None, ip_hash: str = None):
+def track_event(
+    image_id: int,
+    event_type: str,
+    session_id: str = None,
+    user_agent: str = None,
+    referrer: str = None,
+    ip_hash: str = None,
+):
     """Track an image event"""
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO image_events
             (image_id, event_type, session_id, user_agent, referrer, ip_hash, timestamp)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (image_id, event_type, session_id, user_agent, referrer, ip_hash, datetime.utcnow()))
+        """,
+            (image_id, event_type, session_id, user_agent, referrer, ip_hash, datetime.utcnow()),
+        )
         return cursor.lastrowid
 
 

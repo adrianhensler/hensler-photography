@@ -3,6 +3,7 @@ Claude Vision API integration for AI-powered image analysis
 
 Enhanced with structured error handling for both humans and AI assistants.
 """
+
 import anthropic
 import base64
 import os
@@ -16,7 +17,7 @@ from api.errors import (
     missing_api_key_error,
     invalid_api_key_error,
     rate_limit_error,
-    claude_api_error
+    claude_api_error,
 )
 from api.logging_config import get_logger
 from api.services.image_processor import generate_ai_analysis_image, cleanup_temp_file
@@ -25,7 +26,9 @@ from api.services.image_processor import generate_ai_analysis_image, cleanup_tem
 logger = get_logger(__name__)
 
 
-async def analyze_image(image_path: str, user_id: int = None, filename: str = None, media_type: str = None) -> Tuple[Dict[str, Any], ErrorResponse | None]:
+async def analyze_image(
+    image_path: str, user_id: int = None, filename: str = None, media_type: str = None
+) -> Tuple[Dict[str, Any], ErrorResponse | None]:
     """
     Analyze an image using Claude Vision API.
 
@@ -45,7 +48,7 @@ async def analyze_image(image_path: str, user_id: int = None, filename: str = No
     context = {
         "image_path": image_path,
         "user_id": user_id,
-        "filename": filename or Path(image_path).name
+        "filename": filename or Path(image_path).name,
     }
 
     # Check API key
@@ -54,7 +57,7 @@ async def analyze_image(image_path: str, user_id: int = None, filename: str = No
     if not api_key:
         logger.warning(
             "Claude API key not configured - AI features unavailable",
-            extra={"context": context, "error_code": "AUTH_MISSING_KEY"}
+            extra={"context": context, "error_code": "AUTH_MISSING_KEY"},
         )
 
         fallback = _get_fallback_metadata(image_path)
@@ -73,7 +76,7 @@ async def analyze_image(image_path: str, user_id: int = None, filename: str = No
         if resize_error:
             logger.warning(
                 f"AI image resize failed, using original: {resize_error.error.message}",
-                extra={"context": context}
+                extra={"context": context},
             )
 
         # Track if we created a temp file that needs cleanup
@@ -87,16 +90,23 @@ async def analyze_image(image_path: str, user_id: int = None, filename: str = No
         if not media_type:
             ext = Path(image_path).suffix.lower()
             media_type_map = {
-                '.jpg': 'image/jpeg',
-                '.jpeg': 'image/jpeg',
-                '.png': 'image/png',
-                '.webp': 'image/webp'
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".png": "image/png",
+                ".webp": "image/webp",
             }
-            media_type = media_type_map.get(ext, 'image/jpeg')
+            media_type = media_type_map.get(ext, "image/jpeg")
 
         logger.info(
             f"Analyzing image with Claude Vision API",
-            extra={"context": {**context, "media_type": media_type, "image_size_kb": len(image_data) / 1024, "using_temp_image": needs_cleanup}}
+            extra={
+                "context": {
+                    **context,
+                    "media_type": media_type,
+                    "image_size_kb": len(image_data) / 1024,
+                    "using_temp_image": needs_cleanup,
+                }
+            },
         )
 
         # Initialize Claude client
@@ -141,10 +151,7 @@ Return ONLY valid JSON, no other text."""
                                 "data": image_data,
                             },
                         },
-                        {
-                            "type": "text",
-                            "text": prompt
-                        }
+                        {"type": "text", "text": prompt},
                     ],
                 }
             ],
@@ -158,25 +165,43 @@ Return ONLY valid JSON, no other text."""
         input_cost_per_mtok = 15.00  # $15 per 1M input tokens
         output_cost_per_mtok = 75.00  # $75 per 1M output tokens
 
-        cost_usd = (
-            (input_tokens / 1_000_000) * input_cost_per_mtok +
-            (output_tokens / 1_000_000) * output_cost_per_mtok
-        )
+        cost_usd = (input_tokens / 1_000_000) * input_cost_per_mtok + (
+            output_tokens / 1_000_000
+        ) * output_cost_per_mtok
 
         logger.info(
             f"Claude API call completed: {input_tokens} input tokens, {output_tokens} output tokens, ${cost_usd:.4f}",
-            extra={"context": {**context, "input_tokens": input_tokens, "output_tokens": output_tokens, "cost_usd": cost_usd}}
+            extra={
+                "context": {
+                    **context,
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "cost_usd": cost_usd,
+                }
+            },
         )
 
         # Log cost to database (async, don't block on failure)
         try:
             from api.database import get_db_connection
+
             async with get_db_connection() as db:
-                await db.execute("""
+                await db.execute(
+                    """
                     INSERT INTO ai_costs (
                         user_id, operation, model, input_tokens, output_tokens, cost_usd, image_path
                     ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (user_id, "analyze_image", model_name, input_tokens, output_tokens, cost_usd, image_path))
+                """,
+                    (
+                        user_id,
+                        "analyze_image",
+                        model_name,
+                        input_tokens,
+                        output_tokens,
+                        cost_usd,
+                        image_path,
+                    ),
+                )
                 await db.commit()
         except Exception as e:
             logger.warning(f"Failed to log AI cost: {e}", extra={"context": context})
@@ -198,42 +223,41 @@ Return ONLY valid JSON, no other text."""
                 exc_info=e,
                 extra={
                     "context": {**context, "response_text": response_text[:500]},
-                    "error_code": "PROCESSING_AI_FAILED"
-                }
+                    "error_code": "PROCESSING_AI_FAILED",
+                },
             )
 
             fallback = _get_fallback_metadata(image_path)
             error = claude_api_error(
                 error_message=f"Failed to parse AI response as JSON: {str(e)}",
                 context={**context, "response_preview": response_text[:200]},
-                stack_trace=traceback.format_exc()
+                stack_trace=traceback.format_exc(),
             )
             return fallback, error
 
         # Ensure tags is a list
-        if isinstance(metadata.get('tags'), str):
-            metadata['tags'] = [tag.strip() for tag in metadata['tags'].split(',')]
+        if isinstance(metadata.get("tags"), str):
+            metadata["tags"] = [tag.strip() for tag in metadata["tags"].split(",")]
 
         # Validate required fields
-        required_fields = ['title', 'caption', 'description', 'tags', 'category']
+        required_fields = ["title", "caption", "description", "tags", "category"]
         for field in required_fields:
             if field not in metadata:
                 logger.warning(
-                    f"Claude response missing required field: {field}",
-                    extra={"context": context}
+                    f"Claude response missing required field: {field}", extra={"context": context}
                 )
-                metadata[field] = "" if field != 'tags' else []
+                metadata[field] = "" if field != "tags" else []
 
         logger.info(
             f"Successfully analyzed image with Claude Vision",
             extra={
                 "context": {
                     **context,
-                    "title": metadata.get('title'),
-                    "category": metadata.get('category'),
-                    "tag_count": len(metadata.get('tags', []))
+                    "title": metadata.get("title"),
+                    "category": metadata.get("category"),
+                    "tag_count": len(metadata.get("tags", [])),
                 }
-            }
+            },
         )
 
         return metadata, None  # Success!
@@ -242,7 +266,7 @@ Return ONLY valid JSON, no other text."""
         logger.error(
             f"Claude API authentication failed: {e}",
             exc_info=e,
-            extra={"context": context, "error_code": "AUTH_INVALID_KEY"}
+            extra={"context": context, "error_code": "AUTH_INVALID_KEY"},
         )
 
         fallback = _get_fallback_metadata(image_path)
@@ -252,7 +276,7 @@ Return ONLY valid JSON, no other text."""
     except anthropic.RateLimitError as e:
         logger.warning(
             f"Claude API rate limit exceeded: {e}",
-            extra={"context": context, "error_code": "RATE_CLAUDE_LIMIT"}
+            extra={"context": context, "error_code": "RATE_CLAUDE_LIMIT"},
         )
 
         fallback = _get_fallback_metadata(image_path)
@@ -263,14 +287,12 @@ Return ONLY valid JSON, no other text."""
         logger.error(
             f"Claude API error: {e}",
             exc_info=e,
-            extra={"context": context, "error_code": "EXTERNAL_CLAUDE_ERROR"}
+            extra={"context": context, "error_code": "EXTERNAL_CLAUDE_ERROR"},
         )
 
         fallback = _get_fallback_metadata(image_path)
         error = claude_api_error(
-            error_message=str(e),
-            context=context,
-            stack_trace=traceback.format_exc()
+            error_message=str(e), context=context, stack_trace=traceback.format_exc()
         )
         return fallback, error
 
@@ -278,14 +300,14 @@ Return ONLY valid JSON, no other text."""
         logger.error(
             f"Unexpected error during image analysis: {e}",
             exc_info=e,
-            extra={"context": context, "error_code": "PROCESSING_AI_FAILED"}
+            extra={"context": context, "error_code": "PROCESSING_AI_FAILED"},
         )
 
         fallback = _get_fallback_metadata(image_path)
         error = claude_api_error(
             error_message=f"Unexpected error: {str(e)}",
             context=context,
-            stack_trace=traceback.format_exc()
+            stack_trace=traceback.format_exc(),
         )
         return fallback, error
 
@@ -298,9 +320,9 @@ Return ONLY valid JSON, no other text."""
 def _get_fallback_metadata(image_path: str) -> Dict[str, Any]:
     """Generate basic fallback metadata from filename"""
     return {
-        "title": Path(image_path).stem.replace('_', ' ').replace('-', ' ').title(),
+        "title": Path(image_path).stem.replace("_", " ").replace("-", " ").title(),
         "caption": "AI analysis unavailable",
         "description": "",
         "tags": [],
-        "category": "uncategorized"
+        "category": "uncategorized",
     }

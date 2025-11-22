@@ -63,7 +63,7 @@ async def log_audit_event(
     resource_id: Optional[int] = None,
     old_value: Optional[Any] = None,
     new_value: Optional[Any] = None,
-    request: Optional[Request] = None
+    request: Optional[Request] = None,
 ) -> int:
     """
     Log an audit event to the database.
@@ -123,8 +123,8 @@ async def log_audit_event(
                     new_value_str,
                     ip_address,
                     user_agent,
-                    datetime.utcnow()
-                )
+                    datetime.utcnow(),
+                ),
             )
             await db.commit()
             audit_id = cursor.lastrowid
@@ -138,9 +138,9 @@ async def log_audit_event(
                     "action": action,
                     "resource_type": resource_type,
                     "resource_id": resource_id,
-                    "ip_address": ip_address
+                    "ip_address": ip_address,
                 }
-            }
+            },
         )
 
         return audit_id
@@ -154,15 +154,16 @@ async def log_audit_event(
                     "user_id": user_id,
                     "action": action,
                     "resource_type": resource_type,
-                    "resource_id": resource_id
+                    "resource_id": resource_id,
                 }
-            }
+            },
         )
         # Don't fail the main operation if audit logging fails
         return -1
 
 
 # Convenience functions for common audit events
+
 
 async def audit_login(user_id: int, username: str, request: Request) -> int:
     """Log successful user login"""
@@ -172,7 +173,7 @@ async def audit_login(user_id: int, username: str, request: Request) -> int:
         resource_type="user",
         resource_id=user_id,
         new_value={"username": username, "timestamp": datetime.utcnow().isoformat()},
-        request=request
+        request=request,
     )
 
 
@@ -184,7 +185,7 @@ async def audit_logout(user_id: int, username: str, request: Request) -> int:
         resource_type="user",
         resource_id=user_id,
         new_value={"username": username, "timestamp": datetime.utcnow().isoformat()},
-        request=request
+        request=request,
     )
 
 
@@ -196,16 +197,12 @@ async def audit_password_change(user_id: int, username: str, request: Request) -
         resource_type="user",
         resource_id=user_id,
         new_value={"username": username, "timestamp": datetime.utcnow().isoformat()},
-        request=request
+        request=request,
     )
 
 
 async def audit_user_create(
-    admin_user_id: int,
-    new_user_id: int,
-    new_username: str,
-    new_user_role: str,
-    request: Request
+    admin_user_id: int, new_user_id: int, new_username: str, new_user_role: str, request: Request
 ) -> int:
     """Log new user creation"""
     return await log_audit_event(
@@ -213,12 +210,8 @@ async def audit_user_create(
         action="user.create",
         resource_type="user",
         resource_id=new_user_id,
-        new_value={
-            "username": new_username,
-            "role": new_user_role,
-            "created_by": admin_user_id
-        },
-        request=request
+        new_value={"username": new_username, "role": new_user_role, "created_by": admin_user_id},
+        request=request,
     )
 
 
@@ -230,15 +223,12 @@ async def audit_image_upload(user_id: int, image_id: int, filename: str, request
         resource_type="image",
         resource_id=image_id,
         new_value={"filename": filename, "image_id": image_id},
-        request=request
+        request=request,
     )
 
 
 async def audit_image_delete(
-    user_id: int,
-    image_id: int,
-    image_data: dict,
-    request: Request
+    user_id: int, image_id: int, image_data: dict, request: Request
 ) -> int:
     """Log image deletion"""
     return await log_audit_event(
@@ -247,11 +237,13 @@ async def audit_image_delete(
         resource_type="image",
         resource_id=image_id,
         old_value=image_data,
-        request=request
+        request=request,
     )
 
 
-async def audit_image_publish(user_id: int, image_id: int, published: bool, request: Request) -> int:
+async def audit_image_publish(
+    user_id: int, image_id: int, published: bool, request: Request
+) -> int:
     """Log image publish/unpublish"""
     action = "image.publish" if published else "image.unpublish"
     return await log_audit_event(
@@ -260,16 +252,12 @@ async def audit_image_publish(user_id: int, image_id: int, published: bool, requ
         resource_type="image",
         resource_id=image_id,
         new_value={"published": published},
-        request=request
+        request=request,
     )
 
 
 async def audit_image_update(
-    user_id: int,
-    image_id: int,
-    old_metadata: dict,
-    new_metadata: dict,
-    request: Request
+    user_id: int, image_id: int, old_metadata: dict, new_metadata: dict, request: Request
 ) -> int:
     """Log image metadata update"""
     return await log_audit_event(
@@ -279,7 +267,7 @@ async def audit_image_update(
         resource_id=image_id,
         old_value=old_metadata,
         new_value=new_metadata,
-        request=request
+        request=request,
     )
 
 
@@ -289,7 +277,7 @@ async def get_audit_logs(
     resource_type: Optional[str] = None,
     resource_id: Optional[int] = None,
     limit: int = 100,
-    offset: int = 0
+    offset: int = 0,
 ) -> list:
     """
     Query audit logs with filters.
@@ -338,17 +326,19 @@ async def get_audit_logs(
 
     logs = []
     for row in rows:
-        logs.append({
-            "id": row[0],
-            "user_id": row[1],
-            "action": row[2],
-            "resource_type": row[3],
-            "resource_id": row[4],
-            "old_value": row[5],
-            "new_value": row[6],
-            "ip_address": row[7],
-            "user_agent": row[8],
-            "timestamp": row[9]
-        })
+        logs.append(
+            {
+                "id": row[0],
+                "user_id": row[1],
+                "action": row[2],
+                "resource_type": row[3],
+                "resource_id": row[4],
+                "old_value": row[5],
+                "new_value": row[6],
+                "ip_address": row[7],
+                "user_agent": row[8],
+                "timestamp": row[9],
+            }
+        )
 
     return logs

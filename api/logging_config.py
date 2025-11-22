@@ -32,7 +32,7 @@ class JSONFormatter(logging.Formatter):
             log_data["exception"] = {
                 "type": record.exc_info[0].__name__,
                 "message": str(record.exc_info[1]),
-                "traceback": self.formatException(record.exc_info)
+                "traceback": self.formatException(record.exc_info),
             }
 
         # Add extra fields from LogRecord
@@ -69,9 +69,7 @@ class ContextLogger(logging.LoggerAdapter):
 
 
 def setup_logging(
-    log_level: str = "INFO",
-    log_file: Path = None,
-    json_format: bool = True
+    log_level: str = "INFO", log_file: Path = None, json_format: bool = True
 ) -> logging.Logger:
     """
     Configure structured logging for the application.
@@ -101,8 +99,7 @@ def setup_logging(
         # Human-readable format for local development
         console_handler.setFormatter(
             logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S"
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
             )
         )
 
@@ -136,12 +133,13 @@ def get_logger(name: str, context: Dict[str, Any] = None) -> ContextLogger:
 
 # Convenience functions for logging with context
 
+
 def log_error(
     logger: logging.Logger,
     message: str,
     error: Exception = None,
     error_code: str = None,
-    context: Dict[str, Any] = None
+    context: Dict[str, Any] = None,
 ):
     """
     Log an error with structured context.
@@ -161,10 +159,7 @@ def log_error(
 
 
 def log_warning(
-    logger: logging.Logger,
-    message: str,
-    error_code: str = None,
-    context: Dict[str, Any] = None
+    logger: logging.Logger, message: str, error_code: str = None, context: Dict[str, Any] = None
 ):
     """
     Log a warning with structured context.
@@ -182,11 +177,7 @@ def log_warning(
     logger.warning(message, extra=extra)
 
 
-def log_info(
-    logger: logging.Logger,
-    message: str,
-    context: Dict[str, Any] = None
-):
+def log_info(logger: logging.Logger, message: str, context: Dict[str, Any] = None):
     """
     Log info with structured context.
 
@@ -200,6 +191,5 @@ def log_info(
 
 # Initialize logging on import
 _root_logger = setup_logging(
-    log_level="INFO",
-    json_format=True  # Always use JSON in production for AI readability
+    log_level="INFO", json_format=True  # Always use JSON in production for AI readability
 )

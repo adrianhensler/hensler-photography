@@ -45,7 +45,8 @@ async def test_db():
     # Initialize schema
     async with get_db_connection() as db:
         # Users table
-        await db.execute("""
+        await db.execute(
+            """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
@@ -58,10 +59,12 @@ async def test_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_login TIMESTAMP
             )
-        """)
+        """
+        )
 
         # Images table
-        await db.execute("""
+        await db.execute(
+            """
             CREATE TABLE IF NOT EXISTS images (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
@@ -82,34 +85,45 @@ async def test_db():
                 FOREIGN KEY (user_id) REFERENCES users(id),
                 UNIQUE(user_id, slug)
             )
-        """)
+        """
+        )
 
         # Seed test users
         adrian_hash = hash_password("adrian123")
         liam_hash = hash_password("liam123")
 
-        await db.execute("""
+        await db.execute(
+            """
             INSERT INTO users (id, username, email, password_hash, role, subdomain, display_name)
             VALUES (1, 'adrian', 'adrian@example.com', ?, 'admin', 'adrian', 'Adrian Hensler')
-        """, (adrian_hash,))
+        """,
+            (adrian_hash,),
+        )
 
-        await db.execute("""
+        await db.execute(
+            """
             INSERT INTO users (id, username, email, password_hash, role, subdomain, display_name)
             VALUES (2, 'liam', 'liam@example.com', ?, 'photographer', 'liam', 'Liam Hensler')
-        """, (liam_hash,))
+        """,
+            (liam_hash,),
+        )
 
         # Seed test images
         # Adrian's image
-        await db.execute("""
+        await db.execute(
+            """
             INSERT INTO images (id, user_id, filename, slug, title, published, width, height, aspect_ratio)
             VALUES (1, 1, 'adrian_test_image.jpg', 'adrian-test', 'Adrian Test Image', 1, 1024, 768, 1.33)
-        """)
+        """
+        )
 
         # Liam's image
-        await db.execute("""
+        await db.execute(
+            """
             INSERT INTO images (id, user_id, filename, slug, title, published, width, height, aspect_ratio)
             VALUES (2, 2, 'liam_test_image.jpg', 'liam-test', 'Liam Test Image', 1, 1024, 768, 1.33)
-        """)
+        """
+        )
 
         await db.commit()
 
@@ -130,12 +144,13 @@ async def client(test_db):
 def adrian_token():
     """Generate authentication token for Adrian (admin role)"""
     from api.routes.auth import User
+
     adrian_user = User(
         id=1,
         username="adrian",
         display_name="Adrian Hensler",
         email="adrian@example.com",
-        role="admin"
+        role="admin",
     )
     return create_access_token(adrian_user)
 
@@ -144,12 +159,13 @@ def adrian_token():
 def liam_token():
     """Generate authentication token for Liam (photographer role)"""
     from api.routes.auth import User
+
     liam_user = User(
         id=2,
         username="liam",
         display_name="Liam Hensler",
         email="liam@example.com",
-        role="photographer"
+        role="photographer",
     )
     return create_access_token(liam_user)
 

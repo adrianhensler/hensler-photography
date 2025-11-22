@@ -42,13 +42,15 @@ def get_subdomain_filter(subdomain: Optional[str]) -> str:
 
     Filters both image-specific events (by user_id) and site-level events (by referrer subdomain).
     """
-    return "((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))"
+    return (
+        "((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))"
+    )
 
 
 @router.get("/overview")
 async def get_analytics_overview(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
-    current_user: User = Depends(get_current_user_for_subdomain)
+    current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
     Get engagement-focused analytics for the photographer dashboard.
@@ -177,7 +179,7 @@ async def get_analytics_overview(
 @router.get("/highlights")
 async def get_analytics_highlights(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
-    current_user: User = Depends(get_current_user_for_subdomain)
+    current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
     Provide a concise, fact-based performance summary.
@@ -285,15 +287,15 @@ async def get_analytics_highlights(
 
             logger.info(
                 f"Highlights overview calculated for user {user_id}",
-                extra={"context": {
-                    "user_id": user_id,
-                    "subdomain": subdomain,
-                    "days": days,
-                    "views": views,
-                    "prev_views": prev_views,
-                    "visitors": visitors,
-                    "clicks": clicks
-                }}
+                extra={
+                    "context": {
+                        "user_id": user_id,
+                        "days": days,
+                        "impressions": impressions,
+                        "viewers": viewers,
+                        "clicks": clicks,
+                    }
+                },
             )
 
             # Top images by clicks to spotlight what people chose to open
@@ -469,8 +471,10 @@ async def get_analytics_highlights(
 @router.get("/timeline")
 async def get_analytics_timeline(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
-    metric: str = Query("impressions", regex="^(impressions|clicks|views)$", description="Metric to chart"),
-    current_user: User = Depends(get_current_user_for_subdomain)
+    metric: str = Query(
+        "impressions", regex="^(impressions|clicks|views)$", description="Metric to chart"
+    ),
+    current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
     Get time-series analytics data for charts.
@@ -484,13 +488,14 @@ async def get_analytics_timeline(
     event_type_map = {
         "impressions": "image_impression",
         "clicks": "gallery_click",
-        "views": "lightbox_open"
+        "views": "lightbox_open",
     }
     event_type = event_type_map[metric]
 
     try:
         async with get_db_connection() as db:
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 SELECT
                     DATE(e.timestamp) as date,
                     COUNT(*) as count
@@ -501,7 +506,9 @@ async def get_analytics_timeline(
                 AND e.timestamp >= ?
                 GROUP BY DATE(e.timestamp)
                 ORDER BY date ASC
-            """, (user_id, event_type, since))
+            """,
+                (user_id, event_type, since),
+            )
 
             rows = await cursor.fetchall()
 
@@ -516,17 +523,10 @@ async def get_analytics_timeline(
             while current_date <= end_date:
                 date_str = current_date.isoformat()
                 count = data_by_date.get(date_str, 0)
-                timeline.append({
-                    "date": date_str,
-                    "count": count
-                })
+                timeline.append({"date": date_str, "count": count})
                 current_date += timedelta(days=1)
 
-            return {
-                "metric": metric,
-                "period_days": days,
-                "data": timeline
-            }
+            return {"metric": metric, "period_days": days, "data": timeline}
 
     except Exception as e:
         logger.error(f"Failed to get analytics timeline: {str(e)}", exc_info=e)
@@ -617,8 +617,10 @@ async def get_recent_engagement(
 async def get_top_images(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
     limit: int = Query(10, ge=1, le=50, description="Number of top images to return"),
-    metric: str = Query("impressions", regex="^(impressions|clicks|views)$", description="Metric to rank by"),
-    current_user: User = Depends(get_current_user_for_subdomain)
+    metric: str = Query(
+        "impressions", regex="^(impressions|clicks|views)$", description="Metric to rank by"
+    ),
+    current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
     Get top performing images ranked by engagement.
@@ -637,7 +639,7 @@ async def get_top_images(
     event_type_map = {
         "impressions": "image_impression",
         "clicks": "gallery_click",
-        "views": "lightbox_open"
+        "views": "lightbox_open",
     }
     event_type = event_type_map[metric]
 
@@ -645,7 +647,8 @@ async def get_top_images(
         async with get_db_connection() as db:
             # Get top images with engagement metrics
             # Use thumbnail variant (400px WebP) instead of full-size original
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 SELECT
                     i.id,
                     i.title,
@@ -666,7 +669,9 @@ async def get_top_images(
                 GROUP BY i.id
                 ORDER BY COUNT(CASE WHEN e.event_type = ? THEN 1 END) DESC
                 LIMIT ?
-            """, (since, user_id, event_type, limit))
+            """,
+                (since, user_id, event_type, limit),
+            )
 
             rows = await cursor.fetchall()
 
@@ -685,22 +690,26 @@ async def get_top_images(
                 view_rate = (views / clicks) if clicks > 0 else 0
 
                 # Get average duration from metadata
-                duration_cursor = await db.execute("""
+                duration_cursor = await db.execute(
+                    """
                     SELECT metadata FROM image_events
                     WHERE image_id = ?
                     AND event_type = 'lightbox_close'
                     AND timestamp >= ?
                     AND metadata IS NOT NULL
-                """, (row[0], since))
+                """,
+                    (row[0], since),
+                )
 
                 duration_rows = await duration_cursor.fetchall()
                 durations = []
                 for dr in duration_rows:
                     try:
                         import json
+
                         meta = json.loads(dr[0])
-                        if 'duration' in meta:
-                            durations.append(meta['duration'])
+                        if "duration" in meta:
+                            durations.append(meta["duration"])
                     except:
                         pass
 
@@ -709,27 +718,25 @@ async def get_top_images(
                 # Use thumbnail variant (400px WebP) if available, fallback to original
                 thumbnail_file = row[5] or row[4]  # thumbnail_filename or original filename
 
-                top_images.append({
-                    "id": row[0],
-                    "title": row[1] or "Untitled",
-                    "caption": row[2],
-                    "category": row[3],
-                    "thumbnail_url": f"/assets/gallery/{thumbnail_file}",
-                    "analytics": {
-                        "impressions": impressions,
-                        "clicks": clicks,
-                        "views": views,
-                        "ctr": round(ctr, 3),
-                        "view_rate": round(view_rate, 3),
-                        "avg_duration": round(avg_duration, 1)
+                top_images.append(
+                    {
+                        "id": row[0],
+                        "title": row[1] or "Untitled",
+                        "caption": row[2],
+                        "category": row[3],
+                        "thumbnail_url": f"/assets/gallery/{thumbnail_file}",
+                        "analytics": {
+                            "impressions": impressions,
+                            "clicks": clicks,
+                            "views": views,
+                            "ctr": round(ctr, 3),
+                            "view_rate": round(view_rate, 3),
+                            "avg_duration": round(avg_duration, 1),
+                        },
                     }
-                })
+                )
 
-            return {
-                "metric": metric,
-                "period_days": days,
-                "images": top_images
-            }
+            return {"metric": metric, "period_days": days, "images": top_images}
 
     except Exception as e:
         logger.error(f"Failed to get top images: {str(e)}", exc_info=e)
@@ -740,7 +747,7 @@ async def get_top_images(
 async def get_referrer_breakdown(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
     limit: int = Query(10, ge=1, le=50, description="Number of top referrers to return"),
-    current_user: User = Depends(get_current_user_for_subdomain)
+    current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
     Get traffic source breakdown (referrers).
@@ -754,7 +761,8 @@ async def get_referrer_breakdown(
 
     try:
         async with get_db_connection() as db:
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 SELECT
                     CASE
                         WHEN e.referrer IS NULL OR e.referrer = '' THEN 'Direct / None'
@@ -768,7 +776,9 @@ async def get_referrer_breakdown(
                 GROUP BY referrer_group
                 ORDER BY count DESC
                 LIMIT ?
-            """, (user_id, subdomain_pattern, since, limit))
+            """,
+                (user_id, subdomain_pattern, since, limit),
+            )
 
             rows = await cursor.fetchall()
 
@@ -780,17 +790,11 @@ async def get_referrer_breakdown(
                 count = row[1]
                 percentage = (count / total * 100) if total > 0 else 0
 
-                referrers.append({
-                    "referrer": row[0],
-                    "count": count,
-                    "percentage": round(percentage, 1)
-                })
+                referrers.append(
+                    {"referrer": row[0], "count": count, "percentage": round(percentage, 1)}
+                )
 
-            return {
-                "period_days": days,
-                "total_events": total,
-                "referrers": referrers
-            }
+            return {"period_days": days, "total_events": total, "referrers": referrers}
 
     except Exception as e:
         logger.error(f"Failed to get referrer breakdown: {str(e)}", exc_info=e)
@@ -800,7 +804,7 @@ async def get_referrer_breakdown(
 @router.get("/category-performance")
 async def get_category_performance(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
-    current_user: User = Depends(get_current_user_for_subdomain)
+    current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
     Get engagement metrics broken down by image category.
@@ -814,7 +818,8 @@ async def get_category_performance(
 
     try:
         async with get_db_connection() as db:
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 SELECT
                     i.category,
                     COUNT(DISTINCT i.id) as image_count,
@@ -828,7 +833,9 @@ async def get_category_performance(
                 AND i.category IS NOT NULL
                 GROUP BY i.category
                 ORDER BY impressions DESC
-            """, (since, user_id))
+            """,
+                (since, user_id),
+            )
 
             rows = await cursor.fetchall()
 
@@ -842,20 +849,19 @@ async def get_category_performance(
                 ctr = (clicks / impressions) if impressions > 0 else 0
                 view_rate = (views / clicks) if clicks > 0 else 0
 
-                categories.append({
-                    "category": row[0],
-                    "image_count": row[1],
-                    "impressions": impressions,
-                    "clicks": clicks,
-                    "views": views,
-                    "ctr": round(ctr, 3),
-                    "view_rate": round(view_rate, 3)
-                })
+                categories.append(
+                    {
+                        "category": row[0],
+                        "image_count": row[1],
+                        "impressions": impressions,
+                        "clicks": clicks,
+                        "views": views,
+                        "ctr": round(ctr, 3),
+                        "view_rate": round(view_rate, 3),
+                    }
+                )
 
-            return {
-                "period_days": days,
-                "categories": categories
-            }
+            return {"period_days": days, "categories": categories}
 
     except Exception as e:
         logger.error(f"Failed to get category performance: {str(e)}", exc_info=e)
@@ -865,7 +871,7 @@ async def get_category_performance(
 @router.get("/scroll-depth")
 async def get_scroll_depth(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
-    current_user: User = Depends(get_current_user_for_subdomain)
+    current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
     Get scroll depth distribution.
@@ -879,13 +885,16 @@ async def get_scroll_depth(
 
     try:
         async with get_db_connection() as db:
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 SELECT metadata FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
                 WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.event_type = 'scroll_depth'
                 AND e.timestamp >= ?
-            """, (user_id, subdomain_pattern, since))
+            """,
+                (user_id, subdomain_pattern, since),
+            )
 
             rows = await cursor.fetchall()
 
@@ -895,37 +904,35 @@ async def get_scroll_depth(
                 if row[0]:
                     try:
                         import json
+
                         meta = json.loads(row[0])
-                        depth = meta.get('depth')
+                        depth = meta.get("depth")
                         if depth in depth_counts:
                             depth_counts[depth] += 1
                     except:
                         pass
 
             # Get total sessions for percentage calculation
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 SELECT COUNT(DISTINCT session_id) FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
                 WHERE ((i.user_id = ? AND e.image_id IS NOT NULL) OR (e.image_id IS NULL AND e.referrer LIKE ?))
                 AND e.timestamp >= ?
-            """, (user_id, subdomain_pattern, since))
+            """,
+                (user_id, subdomain_pattern, since),
+            )
 
             total_sessions = (await cursor.fetchone())[0]
 
             milestones = []
             for depth, count in sorted(depth_counts.items()):
                 percentage = (count / total_sessions * 100) if total_sessions > 0 else 0
-                milestones.append({
-                    "depth": depth,
-                    "sessions": count,
-                    "percentage": round(percentage, 1)
-                })
+                milestones.append(
+                    {"depth": depth, "sessions": count, "percentage": round(percentage, 1)}
+                )
 
-            return {
-                "period_days": days,
-                "total_sessions": total_sessions,
-                "milestones": milestones
-            }
+            return {"period_days": days, "total_sessions": total_sessions, "milestones": milestones}
 
     except Exception as e:
         logger.error(f"Failed to get scroll depth: {str(e)}", exc_info=e)
@@ -936,7 +943,7 @@ async def get_scroll_depth(
 async def get_image_analytics(
     image_id: int,
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
-    current_user: User = Depends(get_current_user_for_subdomain)
+    current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
     Get detailed analytics for a specific image.
@@ -951,10 +958,7 @@ async def get_image_analytics(
     try:
         async with get_db_connection() as db:
             # Verify image ownership
-            cursor = await db.execute(
-                "SELECT user_id FROM images WHERE id = ?",
-                (image_id,)
-            )
+            cursor = await db.execute("SELECT user_id FROM images WHERE id = ?", (image_id,))
             row = await cursor.fetchone()
 
             if not row:
@@ -997,7 +1001,7 @@ async def get_image_analytics(
                 "ctr": round(click_rate, 3),
                 "view_rate": round((views / clicks), 3) if clicks > 0 else 0,
                 "first_view": metrics[4],
-                "last_view": metrics[5]
+                "last_view": metrics[5],
             }
 
     except HTTPException:

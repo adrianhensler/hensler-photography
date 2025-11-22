@@ -49,6 +49,7 @@ class ErrorCode(str, Enum):
 
 class ErrorSeverity(str, Enum):
     """Error severity levels"""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -69,7 +70,7 @@ class ErrorResponse:
         retry: bool = False,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
         context: Optional[Dict[str, Any]] = None,
-        stack_trace: Optional[str] = None
+        stack_trace: Optional[str] = None,
     ):
         self.code = code
         self.message = message
@@ -92,12 +93,9 @@ class ErrorResponse:
                 "message": self.message,
                 "user_message": self.user_message,
                 "timestamp": self.timestamp,
-                "details": {
-                    "severity": self.severity.value,
-                    "retry": self.retry
-                },
-                "context": self.context
-            }
+                "details": {"severity": self.severity.value, "retry": self.retry},
+                "context": self.context,
+            },
         }
 
         if self.suggestion:
@@ -119,11 +117,12 @@ class ErrorResponse:
             "error_code": self.code.value,
             "message": self.message,
             "context": self.context,
-            "stack_trace": self.stack_trace
+            "stack_trace": self.stack_trace,
         }
 
 
 # Common error constructors
+
 
 def missing_api_key_error(context: Optional[Dict[str, Any]] = None) -> ErrorResponse:
     """Error when ANTHROPIC_API_KEY is not configured"""
@@ -136,7 +135,7 @@ def missing_api_key_error(context: Optional[Dict[str, Any]] = None) -> ErrorResp
         docs_url="https://docs.anthropic.com/api/getting-started",
         retry=False,
         severity=ErrorSeverity.WARNING,
-        context=context
+        context=context,
     )
 
 
@@ -151,11 +150,13 @@ def invalid_api_key_error(context: Optional[Dict[str, Any]] = None) -> ErrorResp
         docs_url="https://docs.anthropic.com/api/getting-started",
         retry=False,
         severity=ErrorSeverity.ERROR,
-        context=context
+        context=context,
     )
 
 
-def rate_limit_error(retry_after: int = 60, context: Optional[Dict[str, Any]] = None) -> ErrorResponse:
+def rate_limit_error(
+    retry_after: int = 60, context: Optional[Dict[str, Any]] = None
+) -> ErrorResponse:
     """Error when Claude API rate limit is hit"""
     return ErrorResponse(
         code=ErrorCode.RATE_CLAUDE_LIMIT,
@@ -166,11 +167,13 @@ def rate_limit_error(retry_after: int = 60, context: Optional[Dict[str, Any]] = 
         docs_url="https://docs.anthropic.com/api/rate-limits",
         retry=True,
         severity=ErrorSeverity.WARNING,
-        context={**(context or {}), "retry_after_seconds": retry_after}
+        context={**(context or {}), "retry_after_seconds": retry_after},
     )
 
 
-def file_too_large_error(file_size: int, max_size: int, filename: str, context: Optional[Dict[str, Any]] = None) -> ErrorResponse:
+def file_too_large_error(
+    file_size: int, max_size: int, filename: str, context: Optional[Dict[str, Any]] = None
+) -> ErrorResponse:
     """Error when uploaded file exceeds size limit"""
     file_size_mb = file_size / (1024 * 1024)
     max_size_mb = max_size / (1024 * 1024)
@@ -183,11 +186,18 @@ def file_too_large_error(file_size: int, max_size: int, filename: str, context: 
         suggestion=f"Compress your image or reduce resolution to get under {max_size_mb:.1f}MB",
         retry=False,
         severity=ErrorSeverity.ERROR,
-        context={**(context or {}), "file_size_bytes": file_size, "max_size_bytes": max_size, "filename": filename}
+        context={
+            **(context or {}),
+            "file_size_bytes": file_size,
+            "max_size_bytes": max_size,
+            "filename": filename,
+        },
     )
 
 
-def invalid_file_type_error(filename: str, file_type: str, allowed_types: list, context: Optional[Dict[str, Any]] = None) -> ErrorResponse:
+def invalid_file_type_error(
+    filename: str, file_type: str, allowed_types: list, context: Optional[Dict[str, Any]] = None
+) -> ErrorResponse:
     """Error when file type is not allowed"""
     return ErrorResponse(
         code=ErrorCode.VALIDATION_INVALID_TYPE,
@@ -197,7 +207,12 @@ def invalid_file_type_error(filename: str, file_type: str, allowed_types: list, 
         suggestion=f"Allowed types: {', '.join(allowed_types)}",
         retry=False,
         severity=ErrorSeverity.ERROR,
-        context={**(context or {}), "filename": filename, "file_type": file_type, "allowed_types": allowed_types}
+        context={
+            **(context or {}),
+            "filename": filename,
+            "file_type": file_type,
+            "allowed_types": allowed_types,
+        },
     )
 
 
@@ -211,11 +226,17 @@ def corrupt_image_error(filename: str, context: Optional[Dict[str, Any]] = None)
         suggestion="Try re-saving the image in a standard format (JPEG or PNG) and uploading again",
         retry=False,
         severity=ErrorSeverity.ERROR,
-        context={**(context or {}), "filename": filename}
+        context={**(context or {}), "filename": filename},
     )
 
 
-def image_processing_error(filename: str, step: str, error_message: str, context: Optional[Dict[str, Any]] = None, stack_trace: Optional[str] = None) -> ErrorResponse:
+def image_processing_error(
+    filename: str,
+    step: str,
+    error_message: str,
+    context: Optional[Dict[str, Any]] = None,
+    stack_trace: Optional[str] = None,
+) -> ErrorResponse:
     """Error during image processing"""
     return ErrorResponse(
         code=ErrorCode.PROCESSING_IMAGE_FAILED,
@@ -226,11 +247,16 @@ def image_processing_error(filename: str, step: str, error_message: str, context
         retry=False,
         severity=ErrorSeverity.ERROR,
         context={**(context or {}), "filename": filename, "step": step, "error": error_message},
-        stack_trace=stack_trace
+        stack_trace=stack_trace,
     )
 
 
-def database_error(operation: str, error_message: str, context: Optional[Dict[str, Any]] = None, stack_trace: Optional[str] = None) -> ErrorResponse:
+def database_error(
+    operation: str,
+    error_message: str,
+    context: Optional[Dict[str, Any]] = None,
+    stack_trace: Optional[str] = None,
+) -> ErrorResponse:
     """Database operation error"""
     return ErrorResponse(
         code=ErrorCode.DATABASE_CONNECTION_FAILED,
@@ -241,11 +267,13 @@ def database_error(operation: str, error_message: str, context: Optional[Dict[st
         retry=True,
         severity=ErrorSeverity.CRITICAL,
         context={**(context or {}), "operation": operation, "error": error_message},
-        stack_trace=stack_trace
+        stack_trace=stack_trace,
     )
 
 
-def not_found_error(resource_type: str, resource_id: Any, context: Optional[Dict[str, Any]] = None) -> ErrorResponse:
+def not_found_error(
+    resource_type: str, resource_id: Any, context: Optional[Dict[str, Any]] = None
+) -> ErrorResponse:
     """Resource not found error"""
     return ErrorResponse(
         code=ErrorCode.DATABASE_NOT_FOUND,
@@ -255,11 +283,17 @@ def not_found_error(resource_type: str, resource_id: Any, context: Optional[Dict
         suggestion=f"Verify the {resource_type.lower()} ID is correct",
         retry=False,
         severity=ErrorSeverity.ERROR,
-        context={**(context or {}), "resource_type": resource_type, "resource_id": str(resource_id)}
+        context={
+            **(context or {}),
+            "resource_type": resource_type,
+            "resource_id": str(resource_id),
+        },
     )
 
 
-def claude_api_error(error_message: str, context: Optional[Dict[str, Any]] = None, stack_trace: Optional[str] = None) -> ErrorResponse:
+def claude_api_error(
+    error_message: str, context: Optional[Dict[str, Any]] = None, stack_trace: Optional[str] = None
+) -> ErrorResponse:
     """Claude API general error"""
     return ErrorResponse(
         code=ErrorCode.EXTERNAL_CLAUDE_ERROR,
@@ -271,11 +305,13 @@ def claude_api_error(error_message: str, context: Optional[Dict[str, Any]] = Non
         retry=True,
         severity=ErrorSeverity.WARNING,
         context=context,
-        stack_trace=stack_trace
+        stack_trace=stack_trace,
     )
 
 
-def internal_error(error_message: str, context: Optional[Dict[str, Any]] = None, stack_trace: Optional[str] = None) -> ErrorResponse:
+def internal_error(
+    error_message: str, context: Optional[Dict[str, Any]] = None, stack_trace: Optional[str] = None
+) -> ErrorResponse:
     """Generic internal server error"""
     return ErrorResponse(
         code=ErrorCode.INTERNAL_ERROR,
@@ -286,5 +322,5 @@ def internal_error(error_message: str, context: Optional[Dict[str, Any]] = None,
         retry=True,
         severity=ErrorSeverity.ERROR,
         context=context,
-        stack_trace=stack_trace
+        stack_trace=stack_trace,
     )

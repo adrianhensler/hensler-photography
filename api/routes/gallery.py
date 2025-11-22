@@ -48,7 +48,8 @@ async def get_published_gallery(user_id: int):
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
-        cursor = await db.execute("""
+        cursor = await db.execute(
+            """
             SELECT
                 i.id, i.filename, i.slug, i.title, i.caption, i.tags, i.category,
                 i.width, i.height, i.aspect_ratio, i.share_exif,
@@ -67,7 +68,9 @@ async def get_published_gallery(user_id: int):
                 AND large.format = 'webp' AND large.size = 'large'
             WHERE i.user_id = ? AND i.published = 1
             ORDER BY i.sort_order ASC, i.created_at DESC
-        """, (user_id,))
+        """,
+            (user_id,),
+        )
 
         rows = await cursor.fetchall()
 
@@ -97,36 +100,34 @@ async def get_published_gallery(user_id: int):
                     "shutter_speed": row[16],
                     "iso": row[17],
                     "date_taken": row[18],
-                    "location": row[19]
+                    "location": row[19],
                 }
 
-            images.append({
-                "id": row[0],
-                "filename": original_filename,
-                "slug": row[2],
-                "title": row[3],
-                "caption": row[4],
-                "tags": row[5],
-                "category": row[6],
-                "width": row[7],
-                "height": row[8],
-                "aspect_ratio": row[9],
-                "share_exif": bool(row[10]),
-                "exif": exif_data,
-                # Original full-resolution image
-                "image_url": original_url,
-                # Optimized WebP variants (400px, 800px, 1200px)
-                "thumbnail_url": thumbnail_url,      # 400px for grid
-                "medium_url": medium_url,            # 800px for tablets
-                "large_url": large_url,              # 1200px for lightbox
-                "created_at": row[20]
-            })
+            images.append(
+                {
+                    "id": row[0],
+                    "filename": original_filename,
+                    "slug": row[2],
+                    "title": row[3],
+                    "caption": row[4],
+                    "tags": row[5],
+                    "category": row[6],
+                    "width": row[7],
+                    "height": row[8],
+                    "aspect_ratio": row[9],
+                    "share_exif": bool(row[10]),
+                    "exif": exif_data,
+                    # Original full-resolution image
+                    "image_url": original_url,
+                    # Optimized WebP variants (400px, 800px, 1200px)
+                    "thumbnail_url": thumbnail_url,  # 400px for grid
+                    "medium_url": medium_url,  # 800px for tablets
+                    "large_url": large_url,  # 1200px for lightbox
+                    "created_at": row[20],
+                }
+            )
 
-        return {
-            "images": images,
-            "total": len(images),
-            "user_id": user_id
-        }
+        return {"images": images, "total": len(images), "user_id": user_id}
 
 
 @router.get("/published/{slug}")
@@ -147,7 +148,8 @@ async def get_published_image(user_id: int, slug: str):
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
-        cursor = await db.execute("""
+        cursor = await db.execute(
+            """
             SELECT
                 id, filename, slug, title, caption, description, tags, category,
                 width, height, aspect_ratio, share_exif,
@@ -156,14 +158,16 @@ async def get_published_image(user_id: int, slug: str):
                 created_at
             FROM images
             WHERE user_id = ? AND slug = ? AND published = 1
-        """, (user_id, slug))
+        """,
+            (user_id, slug),
+        )
 
         row = await cursor.fetchone()
 
         if not row:
             raise HTTPException(
                 status_code=404,
-                detail=f"Published image with slug '{slug}' not found for user {user_id}"
+                detail=f"Published image with slug '{slug}' not found for user {user_id}",
             )
 
         # Construct image URLs from filename
@@ -181,7 +185,7 @@ async def get_published_image(user_id: int, slug: str):
                 "shutter_speed": row[17],
                 "iso": row[18],
                 "date_taken": row[19],
-                "location": row[20]
+                "location": row[20],
             }
 
         return {
@@ -200,5 +204,5 @@ async def get_published_image(user_id: int, slug: str):
             "image_url": base_url,
             "thumbnail_url": base_url,
             "exif": exif_data,
-            "created_at": row[21]
+            "created_at": row[21],
         }

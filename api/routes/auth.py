@@ -31,6 +31,7 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY", "INSECURE_DEV_KEY_CHANGE_IN_PRODUCTION"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
+
 # Validate JWT secret key on module load
 def _validate_jwt_secret():
     """Validate that JWT secret key is properly configured"""
@@ -62,14 +63,23 @@ def _validate_jwt_secret():
             "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
         )
 
+
 # Run validation on module import
 _validate_jwt_secret()
 
 
 # User model (simple dict for now)
 class User:
-    def __init__(self, id: int, username: str, display_name: str, email: str, role: str,
-                 subdomain: Optional[str] = None, bio: Optional[str] = None):
+    def __init__(
+        self,
+        id: int,
+        username: str,
+        display_name: str,
+        email: str,
+        role: str,
+        subdomain: Optional[str] = None,
+        bio: Optional[str] = None,
+    ):
         self.id = id
         self.username = username
         self.display_name = display_name
@@ -94,61 +104,50 @@ def validate_password(password: str) -> None:
     Raises HTTPException if validation fails.
     """
     if len(password) < 12:
-        raise HTTPException(
-            400,
-            "Password must be at least 12 characters long"
-        )
+        raise HTTPException(400, "Password must be at least 12 characters long")
 
-    if not re.search(r'[A-Z]', password):
-        raise HTTPException(
-            400,
-            "Password must contain at least one uppercase letter"
-        )
+    if not re.search(r"[A-Z]", password):
+        raise HTTPException(400, "Password must contain at least one uppercase letter")
 
-    if not re.search(r'[a-z]', password):
-        raise HTTPException(
-            400,
-            "Password must contain at least one lowercase letter"
-        )
+    if not re.search(r"[a-z]", password):
+        raise HTTPException(400, "Password must contain at least one lowercase letter")
 
-    if not re.search(r'\d', password):
-        raise HTTPException(
-            400,
-            "Password must contain at least one number"
-        )
+    if not re.search(r"\d", password):
+        raise HTTPException(400, "Password must contain at least one number")
 
     if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;~`]', password):
         raise HTTPException(
-            400,
-            "Password must contain at least one special character (!@#$%^&* etc.)"
+            400, "Password must contain at least one special character (!@#$%^&* etc.)"
         )
 
     # Check for common weak passwords
     common_passwords = {
-        'Password123!', 'Welcome123!', 'Admin123!', 'Qwerty123!',
-        'Letmein123!', 'Password1234!', 'Admin1234!', 'Test1234!'
+        "Password123!",
+        "Welcome123!",
+        "Admin123!",
+        "Qwerty123!",
+        "Letmein123!",
+        "Password1234!",
+        "Admin1234!",
+        "Test1234!",
     }
     if password in common_passwords:
         raise HTTPException(
-            400,
-            "This password is too common. Please choose a more unique password."
+            400, "This password is too common. Please choose a more unique password."
         )
 
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
-    password_bytes = password.encode('utf-8')
+    password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt(rounds=12)
-    return bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+    return bcrypt.hashpw(password_bytes, salt).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
     try:
-        return bcrypt.checkpw(
-            plain_password.encode('utf-8'),
-            hashed_password.encode('utf-8')
-        )
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
     except Exception as e:
         logger.error(f"Password verification failed: {e}")
         return False
@@ -165,22 +164,25 @@ async def get_user_by_username(username: str) -> Optional[User]:
             FROM users
             WHERE username = ?
             """,
-            (username,)
+            (username,),
         )
         row = await cursor.fetchone()
 
         if not row:
             return None
 
-        return User(
-            id=row[0],
-            username=row[1],
-            display_name=row[2] or row[1],  # Fallback to username
-            email=row[3],
-            role=row[4],
-            subdomain=row[6],
-            bio=row[7]
-        ), row[5]  # Return user and password_hash
+        return (
+            User(
+                id=row[0],
+                username=row[1],
+                display_name=row[2] or row[1],  # Fallback to username
+                email=row[3],
+                role=row[4],
+                subdomain=row[6],
+                bio=row[7],
+            ),
+            row[5],
+        )  # Return user and password_hash
 
 
 async def get_user_by_id(user_id: int) -> Optional[User]:
@@ -193,7 +195,7 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
             FROM users
             WHERE id = ?
             """,
-            (user_id,)
+            (user_id,),
         )
         row = await cursor.fetchone()
 
@@ -207,7 +209,7 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
             email=row[3],
             role=row[4],
             subdomain=row[5],
-            bio=row[6]
+            bio=row[6],
         )
 
 
@@ -215,12 +217,7 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
 def create_access_token(user: User) -> str:
     """Create a JWT access token for a user"""
     expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    to_encode = {
-        "user_id": user.id,
-        "username": user.username,
-        "role": user.role,
-        "exp": expire
-    }
+    to_encode = {"user_id": user.id, "username": user.username, "role": user.role, "exp": expire}
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -236,12 +233,12 @@ async def get_current_user(request: Request) -> User:
     if not token:
         logger.warning(
             "Authentication failed: No session token",
-            extra={"context": {"path": str(request.url.path)}}
+            extra={"context": {"path": str(request.url.path)}},
         )
         raise HTTPException(
             status_code=401,
             detail="Not authenticated. Please log in.",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     try:
@@ -262,11 +259,10 @@ async def get_current_user(request: Request) -> User:
     except JWTError as e:
         logger.warning(
             f"Authentication failed: Invalid JWT token: {e}",
-            extra={"context": {"path": str(request.url.path)}}
+            extra={"context": {"path": str(request.url.path)}},
         )
         raise HTTPException(
-            status_code=401,
-            detail="Invalid or expired authentication token. Please log in again."
+            status_code=401, detail="Invalid or expired authentication token. Please log in again."
         )
 
 
@@ -296,21 +292,21 @@ async def get_current_user_for_subdomain(request: Request) -> User:
 
     # Extract subdomain from request hostname
     hostname = request.url.hostname or ""
-    subdomain = hostname.split('.')[0] if '.' in hostname else None
+    subdomain = hostname.split(".")[0] if "." in hostname else None
 
     # Admin role can access any subdomain
-    if user.role == 'admin':
+    if user.role == "admin":
         return user
 
     # Photographers can only access their own subdomain
     if user.subdomain != subdomain:
         logger.warning(
             f"Subdomain access denied: {user.username} (subdomain={user.subdomain}) tried to access {hostname}",
-            extra={"context": {"user_id": user.id, "requested_subdomain": subdomain}}
+            extra={"context": {"user_id": user.id, "requested_subdomain": subdomain}},
         )
         raise HTTPException(
             status_code=403,
-            detail=f"Access denied. You can only access {user.subdomain}.hensler.photography"
+            detail=f"Access denied. You can only access {user.subdomain}.hensler.photography",
         )
 
     return user
@@ -318,13 +314,11 @@ async def get_current_user_for_subdomain(request: Request) -> User:
 
 # Authentication routes
 
+
 @router.post("/login")
 @limiter.limit(RATE_LIMITS["auth_login"])
 async def login(
-    request: Request,
-    response: Response,
-    username: str = Form(...),
-    password: str = Form(...)
+    request: Request, response: Response, username: str = Form(...), password: str = Form(...)
 ):
     """
     Authenticate user with username and password.
@@ -359,18 +353,12 @@ async def login(
         httponly=True,
         secure=os.getenv("ENVIRONMENT") == "production",  # HTTPS only in production
         samesite="lax",
-        max_age=ACCESS_TOKEN_EXPIRE_HOURS * 3600  # seconds
+        max_age=ACCESS_TOKEN_EXPIRE_HOURS * 3600,  # seconds
     )
 
     logger.info(
         f"Login successful: {username} (role={user.role})",
-        extra={
-            "context": {
-                "user_id": user.id,
-                "username": username,
-                "role": user.role
-            }
-        }
+        extra={"context": {"user_id": user.id, "username": username, "role": user.role}},
     )
 
     # Audit log: successful login
@@ -383,16 +371,14 @@ async def login(
             "username": user.username,
             "display_name": user.display_name,
             "email": user.email,
-            "role": user.role
-        }
+            "role": user.role,
+        },
     }
 
 
 @router.post("/logout")
 async def logout(
-    request: Request,
-    response: Response,
-    current_user: User = Depends(get_current_user)
+    request: Request, response: Response, current_user: User = Depends(get_current_user)
 ):
     """
     Log out the current user by clearing the session cookie.
@@ -417,15 +403,13 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "username": current_user.username,
         "display_name": current_user.display_name,
         "email": current_user.email,
-        "role": current_user.role
+        "role": current_user.role,
     }
 
 
 @router.post("/register", response_model=dict)
 async def register(
-    request: Request,
-    user_data: UserCreate,
-    current_user: User = Depends(get_current_user)
+    request: Request, user_data: UserCreate, current_user: User = Depends(get_current_user)
 ):
     """
     Create a new user account (admin only).
@@ -452,7 +436,13 @@ async def register(
                 INSERT INTO users (username, email, display_name, role, password_hash)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (user_data.username, user_data.email, user_data.display_name, user_data.role, password_hash)
+                (
+                    user_data.username,
+                    user_data.email,
+                    user_data.display_name,
+                    user_data.role,
+                    password_hash,
+                ),
             )
             await db.commit()
             new_user_id = cursor.lastrowid
@@ -463,18 +453,14 @@ async def register(
                 "context": {
                     "created_by": current_user.username,
                     "new_user": user_data.username,
-                    "role": user_data.role
+                    "role": user_data.role,
                 }
-            }
+            },
         )
 
         # Audit log: user creation
         await audit_user_create(
-            current_user.id,
-            new_user_id,
-            user_data.username,
-            user_data.role,
-            request
+            current_user.id, new_user_id, user_data.username, user_data.role, request
         )
 
         return {
@@ -484,8 +470,8 @@ async def register(
                 "username": user_data.username,
                 "email": user_data.email,
                 "display_name": user_data.display_name,
-                "role": user_data.role
-            }
+                "role": user_data.role,
+            },
         }
 
     except aiosqlite.IntegrityError as e:
@@ -495,9 +481,7 @@ async def register(
 
 @router.post("/change-password")
 async def change_password(
-    request: Request,
-    password_data: PasswordChange,
-    current_user: User = Depends(get_current_user)
+    request: Request, password_data: PasswordChange, current_user: User = Depends(get_current_user)
 ):
     """
     Change the current user's password.
@@ -527,20 +511,16 @@ async def change_password(
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         await db.execute(
-            "UPDATE users SET password_hash = ? WHERE id = ?",
-            (new_password_hash, current_user.id)
+            "UPDATE users SET password_hash = ? WHERE id = ?", (new_password_hash, current_user.id)
         )
         await db.commit()
 
     logger.info(
         f"Password changed for user: {current_user.username}",
-        extra={"context": {"user_id": current_user.id}}
+        extra={"context": {"user_id": current_user.id}},
     )
 
     # Audit log: password change
     await audit_password_change(current_user.id, current_user.username, request)
 
-    return {
-        "success": True,
-        "message": "Password changed successfully"
-    }
+    return {"success": True, "message": "Password changed successfully"}

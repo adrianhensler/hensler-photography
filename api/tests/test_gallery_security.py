@@ -27,10 +27,7 @@ class TestMultiTenancyIsolation:
 
     @pytest.mark.asyncio
     async def test_photographer_cannot_edit_other_users_images(
-        self,
-        client,
-        auth_headers_liam,
-        auth_headers_adrian
+        self, client, auth_headers_liam, auth_headers_adrian
     ):
         """
         CRITICAL SECURITY TEST: Verify photographers cannot edit each other's images
@@ -56,7 +53,7 @@ class TestMultiTenancyIsolation:
             json={
                 "title": "Hacked by Liam!",
                 "caption": "Liam should not be able to edit this",
-            }
+            },
         )
 
         # EXPECTED: 403 Forbidden (Liam doesn't own this image)
@@ -69,8 +66,7 @@ class TestMultiTenancyIsolation:
 
         # Verify Adrian's image was NOT modified
         response = await client.get(
-            f"/api/photographer/images/{adrian_image_id}",
-            headers=auth_headers_adrian
+            f"/api/photographer/images/{adrian_image_id}", headers=auth_headers_adrian
         )
         assert response.status_code == 200
         data = response.json()
@@ -79,9 +75,7 @@ class TestMultiTenancyIsolation:
 
     @pytest.mark.asyncio
     async def test_photographer_cannot_delete_other_users_images(
-        self,
-        client: AsyncClient,
-        auth_headers_liam
+        self, client: AsyncClient, auth_headers_liam
     ):
         """
         CRITICAL SECURITY TEST: Verify photographers cannot delete each other's images
@@ -92,8 +86,7 @@ class TestMultiTenancyIsolation:
 
         # Liam tries to delete Adrian's image
         response = await client.delete(
-            f"/api/photographer/images/{adrian_image_id}",
-            headers=auth_headers_liam
+            f"/api/photographer/images/{adrian_image_id}", headers=auth_headers_liam
         )
 
         # EXPECTED: 403 Forbidden
@@ -104,9 +97,7 @@ class TestMultiTenancyIsolation:
 
     @pytest.mark.asyncio
     async def test_photographer_cannot_publish_other_users_images(
-        self,
-        client: AsyncClient,
-        auth_headers_liam
+        self, client: AsyncClient, auth_headers_liam
     ):
         """
         SECURITY TEST: Verify photographers cannot publish each other's images
@@ -121,20 +112,17 @@ class TestMultiTenancyIsolation:
         response = await client.patch(
             f"/api/photographer/images/{adrian_image_id}/publish",
             headers=auth_headers_liam,
-            json={"published": False}
+            json={"published": False},
         )
 
         # EXPECTED: 403 Forbidden
-        assert response.status_code in [403, 404], (
-            f"Security Bug: Liam was able to change Adrian's publish status"
-        )
+        assert response.status_code in [
+            403,
+            404,
+        ], f"Security Bug: Liam was able to change Adrian's publish status"
 
     @pytest.mark.asyncio
-    async def test_photographer_can_edit_own_images(
-        self,
-        client: AsyncClient,
-        auth_headers_liam
-    ):
+    async def test_photographer_can_edit_own_images(self, client: AsyncClient, auth_headers_liam):
         """
         POSITIVE TEST: Verify photographers CAN edit their own images
 
@@ -149,13 +137,13 @@ class TestMultiTenancyIsolation:
             json={
                 "title": "Updated by Liam",
                 "caption": "This should work",
-            }
+            },
         )
 
         # EXPECTED: 200 OK
-        assert response.status_code == 200, (
-            f"Liam should be able to edit his own image, got {response.status_code}"
-        )
+        assert (
+            response.status_code == 200
+        ), f"Liam should be able to edit his own image, got {response.status_code}"
 
         # Verify update succeeded
         data = response.json()
@@ -163,9 +151,7 @@ class TestMultiTenancyIsolation:
 
     @pytest.mark.asyncio
     async def test_gallery_api_only_returns_own_images(
-        self,
-        client: AsyncClient,
-        auth_headers_liam
+        self, client: AsyncClient, auth_headers_liam
     ):
         """
         DATA ISOLATION TEST: Verify gallery API filters by user_id
@@ -174,19 +160,16 @@ class TestMultiTenancyIsolation:
         they should never appear in the gallery response.
         """
         # Request Liam's gallery
-        response = await client.get(
-            "/api/gallery/published?user_id=2",
-            headers=auth_headers_liam
-        )
+        response = await client.get("/api/gallery/published?user_id=2", headers=auth_headers_liam)
 
         assert response.status_code == 200
         data = response.json()
 
         # Verify all images belong to Liam (user_id=2)
         for image in data.get("images", []):
-            assert image["id"] == 2, (
-                f"Liam's gallery contains image {image['id']} which doesn't belong to him"
-            )
+            assert (
+                image["id"] == 2
+            ), f"Liam's gallery contains image {image['id']} which doesn't belong to him"
 
         # Verify Adrian's image (id=1) is NOT in Liam's gallery
         image_ids = [img["id"] for img in data.get("images", [])]
@@ -201,16 +184,10 @@ class TestAuthorizationEdgeCases:
     """
 
     @pytest.mark.asyncio
-    async def test_cannot_edit_nonexistent_image(
-        self,
-        client: AsyncClient,
-        auth_headers_liam
-    ):
+    async def test_cannot_edit_nonexistent_image(self, client: AsyncClient, auth_headers_liam):
         """Verify proper error handling for nonexistent images"""
         response = await client.put(
-            "/api/photographer/images/99999",
-            headers=auth_headers_liam,
-            json={"title": "Test"}
+            "/api/photographer/images/99999", headers=auth_headers_liam, json={"title": "Test"}
         )
 
         # Should return 404, not 500 or 403
@@ -221,7 +198,7 @@ class TestAuthorizationEdgeCases:
         """Verify unauthenticated requests are rejected"""
         response = await client.put(
             "/api/photographer/images/1",
-            json={"title": "Test"}
+            json={"title": "Test"},
             # No Authorization header
         )
 

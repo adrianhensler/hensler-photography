@@ -19,12 +19,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import bcrypt
 
+
 # Password hashing function
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
-    password_bytes = password.encode('utf-8')
+    password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt(rounds=12)
-    return bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+    return bcrypt.hashpw(password_bytes, salt).decode("utf-8")
+
 
 # Database path
 DATABASE_PATH = os.getenv("DATABASE_PATH", "/app/hensler_photography.db")
@@ -33,7 +35,7 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "/app/hensler_photography.db")
 # Note: bcrypt has 72-byte limit, keep passwords reasonable length
 INITIAL_PASSWORDS = {
     "adrian": "Admin2024!",  # Admin user
-    "liam": "Photo2024!"     # Photographer user
+    "liam": "Photo2024!",  # Photographer user
 }
 
 
@@ -94,21 +96,20 @@ def main():
 
             # Update database
             cursor.execute(
-                "UPDATE users SET password_hash = ? WHERE id = ?",
-                (password_hash, user_id)
+                "UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id)
             )
             print(f"  ✓ {username}: Password set (TEMPORARY - change on first login!)")
 
         conn.commit()
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Migration 001 complete!")
-        print("="*60)
+        print("=" * 60)
         print("\nIMPORTANT: Initial passwords set:")
         for username, password in INITIAL_PASSWORDS.items():
             print(f"  {username}: {password}")
         print("\n⚠️  CHANGE THESE PASSWORDS IMMEDIATELY ON FIRST LOGIN!")
-        print("="*60)
+        print("=" * 60)
 
     except Exception as e:
         print(f"\nERROR: Migration failed: {e}")

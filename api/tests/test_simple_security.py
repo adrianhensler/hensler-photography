@@ -35,14 +35,14 @@ async def test_photographer_cannot_edit_other_users_images():
             username="adrian",
             display_name="Adrian Hensler",
             email="adrian@example.com",
-            role="admin"
+            role="admin",
         )
         liam_user = User(
             id=2,
             username="liam",
             display_name="Liam Hensler",
             email="liam@example.com",
-            role="photographer"
+            role="photographer",
         )
 
         adrian_token = create_access_token(adrian_user)
@@ -58,7 +58,7 @@ async def test_photographer_cannot_edit_other_users_images():
             json={
                 "title": "Hacked by Liam!",
                 "caption": "This should not work!",
-            }
+            },
         )
 
         # EXPECTED: 403 or 404 (Liam doesn't own this image)

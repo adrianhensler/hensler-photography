@@ -34,7 +34,7 @@ logger = get_logger(__name__)
 app = FastAPI(
     title="Hensler Photography API",
     description="Backend API for photography portfolio management",
-    version="2.0.0"
+    version="2.0.0",
 )
 
 # Add rate limiter to app state
@@ -60,6 +60,7 @@ app.add_middleware(
 
 # Global Exception Handlers
 
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Handle FastAPI HTTP exceptions with structured error response"""
@@ -72,9 +73,9 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "context": {
                 "path": str(request.url.path),
                 "method": request.method,
-                "status_code": exc.status_code
+                "status_code": exc.status_code,
             }
-        }
+        },
     )
 
     # Special handling: Redirect browser requests to login page on 401
@@ -85,7 +86,9 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
         # Check if requesting a protected page (not the login page itself)
         path = str(request.url.path)
-        is_protected_page = (path.startswith("/admin") or path.startswith("/manage")) and path not in ["/admin/login", "/manage/login"]
+        is_protected_page = (
+            path.startswith("/admin") or path.startswith("/manage")
+        ) and path not in ["/admin/login", "/manage/login"]
 
         if is_browser and is_protected_page:
             logger.info(f"Redirecting unauthenticated browser request to login: {path}")
@@ -100,12 +103,9 @@ async def http_exception_handler(request: Request, exc: HTTPException):
                 "code": f"HTTP_{exc.status_code}",
                 "message": exc.detail,
                 "user_message": exc.detail,
-                "details": {
-                    "severity": "error",
-                    "retry": False
-                }
-            }
-        }
+                "details": {"severity": "error", "retry": False},
+            },
+        },
     )
 
 
@@ -123,9 +123,9 @@ async def general_exception_handler(request: Request, exc: Exception):
             "context": {
                 "path": str(request.url.path),
                 "method": request.method,
-                "exception_type": type(exc).__name__
+                "exception_type": type(exc).__name__,
             }
-        }
+        },
     )
 
     # Create structured error response
@@ -134,15 +134,12 @@ async def general_exception_handler(request: Request, exc: Exception):
         context={
             "path": str(request.url.path),
             "method": request.method,
-            "exception_type": type(exc).__name__
+            "exception_type": type(exc).__name__,
         },
-        stack_trace=stack_trace
+        stack_trace=stack_trace,
     )
 
-    return JSONResponse(
-        status_code=error.http_status,
-        content=error.to_dict()
-    )
+    return JSONResponse(status_code=error.http_status, content=error.to_dict())
 
 
 # Mount static files and templates
@@ -150,11 +147,13 @@ app.mount("/static", StaticFiles(directory="api/static"), name="static")
 app.mount("/assets/gallery", StaticFiles(directory="/app/assets/gallery"), name="gallery")
 templates = Jinja2Templates(directory="api/templates")
 
+
 # Health check endpoint
 @app.get("/healthz")
 async def health_check():
     """Health check endpoint for monitoring"""
     return {"status": "ok", "service": "api"}
+
 
 # Root endpoint
 @app.get("/")
@@ -164,12 +163,7 @@ async def root():
         "service": "Hensler Photography API",
         "version": "2.0.0",
         "status": "running",
-        "endpoints": {
-            "docs": "/docs",
-            "admin": "/admin",
-            "api": "/api",
-            "health": "/api/health"
-        }
+        "endpoints": {"docs": "/docs", "admin": "/admin", "api": "/api", "health": "/api/health"},
     }
 
 
@@ -196,7 +190,7 @@ async def health_check_detailed():
         "timestamp": time.time(),
         "services": {},
         "warnings": [],
-        "errors": []
+        "errors": [],
     }
 
     # Check database
@@ -208,14 +202,11 @@ async def health_check_detailed():
             health_status["services"]["database"] = {
                 "status": "healthy",
                 "latency_ms": round(latency, 2),
-                "path": str(DATABASE_PATH)
+                "path": str(DATABASE_PATH),
             }
     except Exception as e:
         health_status["status"] = "unhealthy"
-        health_status["services"]["database"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        health_status["services"]["database"] = {"status": "unhealthy", "error": str(e)}
         health_status["errors"].append(f"Database connection failed: {str(e)}")
 
     # Check Claude API configuration
@@ -224,13 +215,13 @@ async def health_check_detailed():
         health_status["status"] = "degraded"
         health_status["services"]["claude_api"] = {
             "status": "unavailable",
-            "error": "API key not configured"
+            "error": "API key not configured",
         }
         health_status["warnings"].append("ANTHROPIC_API_KEY not set - AI features disabled")
     else:
         health_status["services"]["claude_api"] = {
             "status": "configured",
-            "note": "API key is set (not tested)"
+            "note": "API key is set (not tested)",
         }
 
     # Check storage
@@ -258,22 +249,23 @@ async def health_check_detailed():
             "free_gb": round(free_gb, 2),
             "total_gb": round(total_gb, 2),
             "used_percent": round(used_percent, 1),
-            "gallery_path": str(gallery_path)
+            "gallery_path": str(gallery_path),
         }
     except Exception as e:
         health_status["status"] = "unhealthy"
-        health_status["services"]["storage"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        health_status["services"]["storage"] = {"status": "unhealthy", "error": str(e)}
         health_status["errors"].append(f"Storage check failed: {str(e)}")
 
     # Overall status summary
     health_status["summary"] = {
         "total_services": len(health_status["services"]),
-        "healthy_services": sum(1 for s in health_status["services"].values() if s.get("status") in ["healthy", "configured"]),
+        "healthy_services": sum(
+            1
+            for s in health_status["services"].values()
+            if s.get("status") in ["healthy", "configured"]
+        ),
         "total_warnings": len(health_status["warnings"]),
-        "total_errors": len(health_status["errors"])
+        "total_errors": len(health_status["errors"]),
     }
 
     return health_status
@@ -285,158 +277,102 @@ async def admin_login(request: Request):
     """Admin login page"""
     context = {"request": request}
     context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "admin/login.html",
-        context
-    )
+    return templates.TemplateResponse("admin/login.html", context)
+
 
 @app.get("/manage/login")
 async def manage_login(request: Request):
     """Photographer login page (same as admin login)"""
     context = {"request": request}
     context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "admin/login.html",
-        context
-    )
+    return templates.TemplateResponse("admin/login.html", context)
+
 
 # Import auth dependencies
 from api.routes.auth import get_current_user, get_current_user_for_subdomain, User
 from fastapi import Depends
 
+
 # Photographer dashboard (protected - subdomain validated)
 @app.get("/manage")
 async def photographer_dashboard(
-    request: Request,
-    current_user: User = Depends(get_current_user_for_subdomain)
+    request: Request, current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """Photographer dashboard (authenticated users)"""
-    context = {
-        "request": request,
-        "title": "Dashboard",
-        "current_user": current_user
-    }
+    context = {"request": request, "title": "Dashboard", "current_user": current_user}
     context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "photographer/dashboard.html",
-        context
-    )
+    return templates.TemplateResponse("photographer/dashboard.html", context)
+
 
 # Photographer upload page (protected)
 @app.get("/manage/upload")
 async def photographer_upload(
-    request: Request,
-    current_user: User = Depends(get_current_user_for_subdomain)
+    request: Request, current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """Photographer upload interface (authenticated users)"""
-    context = {
-        "request": request,
-        "title": "Upload Photos",
-        "current_user": current_user
-    }
+    context = {"request": request, "title": "Upload Photos", "current_user": current_user}
     context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "photographer/upload.html",
-        context
-    )
+    return templates.TemplateResponse("photographer/upload.html", context)
+
 
 # Photographer gallery management page (protected)
 @app.get("/manage/gallery")
 async def photographer_gallery(
-    request: Request,
-    current_user: User = Depends(get_current_user_for_subdomain)
+    request: Request, current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """Photographer gallery management interface (authenticated users)"""
-    context = {
-        "request": request,
-        "title": "My Gallery",
-        "current_user": current_user
-    }
+    context = {"request": request, "title": "My Gallery", "current_user": current_user}
     context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "photographer/gallery.html",
-        context
-    )
+    return templates.TemplateResponse("photographer/gallery.html", context)
+
 
 # Photographer analytics page (protected)
 @app.get("/manage/analytics")
 async def photographer_analytics(
-    request: Request,
-    current_user: User = Depends(get_current_user_for_subdomain)
+    request: Request, current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """Photographer analytics dashboard (authenticated users)"""
-    context = {
-        "request": request,
-        "title": "Portfolio Analytics",
-        "current_user": current_user
-    }
+    context = {"request": request, "title": "Portfolio Analytics", "current_user": current_user}
     context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "photographer/analytics.html",
-        context
-    )
+    return templates.TemplateResponse("photographer/analytics.html", context)
+
 
 # Photographer settings page (protected)
 @app.get("/manage/settings")
 async def photographer_settings(
-    request: Request,
-    current_user: User = Depends(get_current_user_for_subdomain)
+    request: Request, current_user: User = Depends(get_current_user_for_subdomain)
 ):
     """Photographer account settings (authenticated users)"""
-    context = {
-        "request": request,
-        "title": "Settings",
-        "current_user": current_user
-    }
+    context = {"request": request, "title": "Settings", "current_user": current_user}
     context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "photographer/settings.html",
-        context
-    )
+    return templates.TemplateResponse("photographer/settings.html", context)
+
 
 # Admin dashboard (protected)
 @app.get("/admin")
-async def admin_dashboard(
-    request: Request,
-    current_user: User = Depends(get_current_user)
-):
+async def admin_dashboard(request: Request, current_user: User = Depends(get_current_user)):
     """Admin dashboard UI (authenticated users only)"""
     # Check admin role
     if current_user.role != "admin":
         raise HTTPException(403, "Admin access required")
 
-    context = {
-        "request": request,
-        "title": "Admin Dashboard",
-        "current_user": current_user
-    }
+    context = {"request": request, "title": "Admin Dashboard", "current_user": current_user}
     context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "admin/dashboard.html",
-        context
-    )
+    return templates.TemplateResponse("admin/dashboard.html", context)
+
 
 # Admin upload page (protected)
 @app.get("/admin/upload")
-async def admin_upload(
-    request: Request,
-    current_user: User = Depends(get_current_user)
-):
+async def admin_upload(request: Request, current_user: User = Depends(get_current_user)):
     """Admin upload interface (authenticated users only)"""
     # Check admin role
     if current_user.role != "admin":
         raise HTTPException(403, "Admin access required")
 
-    context = {
-        "request": request,
-        "title": "Upload Photos",
-        "current_user": current_user
-    }
+    context = {"request": request, "title": "Upload Photos", "current_user": current_user}
     context = add_csrf_token_to_context(request, context)
-    return templates.TemplateResponse(
-        "admin/upload.html",
-        context
-    )
+    return templates.TemplateResponse("admin/upload.html", context)
+
 
 # Admin gallery removed - photographers use /manage/gallery instead
 
@@ -452,6 +388,7 @@ app.include_router(auth_router)
 app.include_router(gallery_router)
 app.include_router(photographer_router)
 app.include_router(analytics_router)
+
 
 # Track endpoint (public - for frontend JavaScript)
 @app.post("/api/track")
@@ -484,19 +421,22 @@ async def track_event(request: Request, event: TrackingEvent):
     # Store event in database
     try:
         async with get_db_connection() as db:
-            cursor = await db.execute("""
+            cursor = await db.execute(
+                """
                 INSERT INTO image_events
                 (image_id, event_type, user_agent, referrer, ip_hash, session_id, metadata, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """, (
-                event.image_id,
-                event.event_type,
-                user_agent,
-                referrer,
-                ip_hash,
-                event.session_id,
-                event.metadata
-            ))
+            """,
+                (
+                    event.image_id,
+                    event.event_type,
+                    user_agent,
+                    referrer,
+                    ip_hash,
+                    event.session_id,
+                    event.metadata,
+                ),
+            )
             await db.commit()
             event_id = cursor.lastrowid
 
@@ -507,23 +447,19 @@ async def track_event(request: Request, event: TrackingEvent):
                         "event_id": event_id,
                         "event_type": event.event_type,
                         "image_id": event.image_id,
-                        "session_id": event.session_id
+                        "session_id": event.session_id,
                     }
-                }
+                },
             )
 
-            return {
-                "success": True,
-                "event_id": event_id
-            }
+            return {"success": True, "event_id": event_id}
     except Exception as e:
         logger.error(f"Failed to track event: {str(e)}", exc_info=e)
         # Don't fail the request - analytics shouldn't break user experience
-        return {
-            "success": False,
-            "error": "Failed to track event"
-        }
+        return {"success": False, "error": "Failed to track event"}
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

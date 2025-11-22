@@ -12,7 +12,7 @@ from slowapi.util import get_remote_address
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["100/minute"],  # Default: 100 requests per minute per IP
-    storage_uri="memory://"  # Use in-memory storage (simple, fast)
+    storage_uri="memory://",  # Use in-memory storage (simple, fast)
 )
 
 # Rate limit presets for different endpoint types

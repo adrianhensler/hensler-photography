@@ -31,32 +31,20 @@ async def verify_image_ownership(image_id: int, user_id: int) -> None:
         HTTPException: 404 if image doesn't exist or doesn't belong to user
     """
     async with get_db_connection() as db:
-        cursor = await db.execute(
-            "SELECT user_id FROM images WHERE id = ?",
-            (image_id,)
-        )
+        cursor = await db.execute("SELECT user_id FROM images WHERE id = ?", (image_id,))
         row = await cursor.fetchone()
 
         if not row:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Image {image_id} not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Image {image_id} not found")
 
         if row[0] != user_id:
             # Image exists but belongs to another user
             # Return 404 (not 403) to avoid leaking image existence
-            raise HTTPException(
-                status_code=404,
-                detail=f"Image {image_id} not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Image {image_id} not found")
 
 
 @router.get("/images/{image_id}")
-async def get_image(
-    image_id: int,
-    current_user: dict = Depends(get_current_user)
-):
+async def get_image(image_id: int, current_user: dict = Depends(get_current_user)):
     """
     Get a single image by ID (photographer's own images only).
 
@@ -68,7 +56,8 @@ async def get_image(
     await verify_image_ownership(image_id, user_id)
 
     async with get_db_connection() as db:
-        cursor = await db.execute("""
+        cursor = await db.execute(
+            """
             SELECT
                 id, filename, slug, title, caption, tags, category,
                 width, height, aspect_ratio, published, share_exif,
@@ -77,7 +66,9 @@ async def get_image(
                 sort_order, created_at, updated_at
             FROM images
             WHERE id = ? AND user_id = ?
-        """, (image_id, user_id))
+        """,
+            (image_id, user_id),
+        )
 
         row = await cursor.fetchone()
 
@@ -110,7 +101,7 @@ async def get_image(
             },
             "sort_order": row[21],
             "created_at": row[22],
-            "updated_at": row[23]
+            "updated_at": row[23],
         }
 
 
@@ -121,7 +112,7 @@ async def update_image(
     caption: Optional[str] = None,
     tags: Optional[str] = None,
     category: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Update image metadata (photographer's own images only).
@@ -163,11 +154,14 @@ async def update_image(
     params.extend([image_id, user_id])
 
     async with get_db_connection() as db:
-        await db.execute(f"""
+        await db.execute(
+            f"""
             UPDATE images
             SET {', '.join(updates)}
             WHERE id = ? AND user_id = ?
-        """, tuple(params))
+        """,
+            tuple(params),
+        )
         await db.commit()
 
     # Return updated image
@@ -175,10 +169,7 @@ async def update_image(
 
 
 @router.delete("/images/{image_id}")
-async def delete_image(
-    image_id: int,
-    current_user: dict = Depends(get_current_user)
-):
+async def delete_image(image_id: int, current_user: dict = Depends(get_current_user)):
     """
     Delete an image (photographer's own images only).
 
@@ -191,10 +182,7 @@ async def delete_image(
 
     async with get_db_connection() as db:
         # Delete the image record
-        await db.execute(
-            "DELETE FROM images WHERE id = ? AND user_id = ?",
-            (image_id, user_id)
-        )
+        await db.execute("DELETE FROM images WHERE id = ? AND user_id = ?", (image_id, user_id))
         await db.commit()
 
     # TODO: Also delete physical image files from /app/assets/gallery/
@@ -204,9 +192,7 @@ async def delete_image(
 
 @router.patch("/images/{image_id}/publish")
 async def toggle_publish(
-    image_id: int,
-    published: bool,
-    current_user: dict = Depends(get_current_user)
+    image_id: int, published: bool, current_user: dict = Depends(get_current_user)
 ):
     """
     Publish or unpublish an image (photographer's own images only).
@@ -219,11 +205,14 @@ async def toggle_publish(
     await verify_image_ownership(image_id, user_id)
 
     async with get_db_connection() as db:
-        await db.execute("""
+        await db.execute(
+            """
             UPDATE images
             SET published = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ? AND user_id = ?
-        """, (1 if published else 0, image_id, user_id))
+        """,
+            (1 if published else 0, image_id, user_id),
+        )
         await db.commit()
 
     status = "published" if published else "unpublished"
@@ -232,8 +221,7 @@ async def toggle_publish(
 
 @router.get("/images")
 async def list_images(
-    current_user: dict = Depends(get_current_user),
-    published: Optional[bool] = None
+    current_user: dict = Depends(get_current_user), published: Optional[bool] = None
 ):
     """
     List all images for the authenticated photographer.
@@ -263,21 +251,19 @@ async def list_images(
 
         images = []
         for row in rows:
-            images.append({
-                "id": row[0],
-                "filename": row[1],
-                "slug": row[2],
-                "title": row[3],
-                "caption": row[4],
-                "published": bool(row[5]),
-                "width": row[6],
-                "height": row[7],
-                "aspect_ratio": row[8],
-                "created_at": row[9]
-            })
+            images.append(
+                {
+                    "id": row[0],
+                    "filename": row[1],
+                    "slug": row[2],
+                    "title": row[3],
+                    "caption": row[4],
+                    "published": bool(row[5]),
+                    "width": row[6],
+                    "height": row[7],
+                    "aspect_ratio": row[8],
+                    "created_at": row[9],
+                }
+            )
 
-        return {
-            "images": images,
-            "total": len(images),
-            "user_id": user_id
-        }
+        return {"images": images, "total": len(images), "user_id": user_id}

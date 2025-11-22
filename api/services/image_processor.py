@@ -3,6 +3,7 @@ Image processing: Generate WebP variants at multiple sizes
 
 Enhanced with structured error handling and logging.
 """
+
 from PIL import Image
 from pathlib import Path
 import traceback
@@ -17,7 +18,9 @@ import os
 logger = get_logger(__name__)
 
 
-def generate_variants(original_path: str, original_filename: str, context: Dict[str, Any] = None) -> Tuple[List[Dict], ErrorResponse | None]:
+def generate_variants(
+    original_path: str, original_filename: str, context: Dict[str, Any] = None
+) -> Tuple[List[Dict], ErrorResponse | None]:
     """
     Generate WebP variants at multiple sizes.
 
@@ -32,36 +35,25 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
         - If error: ([], ErrorResponse)
     """
     context = context or {}
-    context.update({
-        "original_path": original_path,
-        "original_filename": original_filename
-    })
+    context.update({"original_path": original_path, "original_filename": original_filename})
 
     variants = []
-    sizes = {
-        "large": 1200,
-        "medium": 800,
-        "thumbnail": 400
-    }
+    sizes = {"large": 1200, "medium": 800, "thumbnail": 400}
 
     try:
         logger.info(
-            f"Generating image variants for {original_filename}",
-            extra={"context": context}
+            f"Generating image variants for {original_filename}", extra={"context": context}
         )
 
         img = Image.open(original_path)
 
         # Convert RGBA to RGB if needed (for JPEG compatibility)
-        if img.mode in ('RGBA', 'LA', 'P'):
-            logger.info(
-                f"Converting image mode from {img.mode} to RGB",
-                extra={"context": context}
-            )
-            background = Image.new('RGB', img.size, (255, 255, 255))
-            if img.mode == 'P':
-                img = img.convert('RGBA')
-            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+        if img.mode in ("RGBA", "LA", "P"):
+            logger.info(f"Converting image mode from {img.mode} to RGB", extra={"context": context})
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            background.paste(img, mask=img.split()[-1] if img.mode == "RGBA" else None)
             img = background
 
         original_width, original_height = img.size
@@ -69,7 +61,7 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
 
         logger.info(
             f"Original image dimensions: {original_width}x{original_height}",
-            extra={"context": {**context, "width": original_width, "height": original_height}}
+            extra={"context": {**context, "width": original_width, "height": original_height}},
         )
 
         base_name = Path(original_filename).stem
@@ -81,7 +73,13 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
                 if original_width <= target_width and size_name != "thumbnail":
                     logger.info(
                         f"Skipping {size_name} variant (original is smaller than target)",
-                        extra={"context": {**context, "size_name": size_name, "target_width": target_width}}
+                        extra={
+                            "context": {
+                                **context,
+                                "size_name": size_name,
+                                "target_width": target_width,
+                            }
+                        },
                     )
                     continue
 
@@ -96,12 +94,7 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
                 variant_filename = f"{base_name}_{size_name}.webp"
                 variant_path = output_dir / variant_filename
 
-                resized.save(
-                    variant_path,
-                    format="WEBP",
-                    quality=85,
-                    method=6  # Best compression
-                )
+                resized.save(variant_path, format="WEBP", quality=85, method=6)  # Best compression
 
                 # Get file size
                 file_size = variant_path.stat().st_size
@@ -112,14 +105,14 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
                     "filename": variant_filename,
                     "width": new_width,
                     "height": new_height,
-                    "file_size": file_size
+                    "file_size": file_size,
                 }
 
                 variants.append(variant_info)
 
                 logger.info(
                     f"Generated {size_name} variant: {variant_filename} ({file_size} bytes)",
-                    extra={"context": {**context, "variant": variant_info}}
+                    extra={"context": {**context, "variant": variant_info}},
                 )
 
             except Exception as e:
@@ -127,7 +120,7 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
                 logger.warning(
                     f"Failed to generate {size_name} variant: {e}",
                     exc_info=e,
-                    extra={"context": {**context, "size_name": size_name}}
+                    extra={"context": {**context, "size_name": size_name}},
                 )
                 # Continue with other variants
 
@@ -135,21 +128,20 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
             # If no variants were generated, that's a problem
             error_msg = "No variants were successfully generated"
             logger.error(
-                error_msg,
-                extra={"context": context, "error_code": "PROCESSING_VARIANT_FAILED"}
+                error_msg, extra={"context": context, "error_code": "PROCESSING_VARIANT_FAILED"}
             )
 
             error = image_processing_error(
                 filename=original_filename,
                 step="variant_generation",
                 error_message=error_msg,
-                context=context
+                context=context,
             )
             return [], error
 
         logger.info(
             f"Successfully generated {len(variants)} variants",
-            extra={"context": {**context, "variant_count": len(variants)}}
+            extra={"context": {**context, "variant_count": len(variants)}},
         )
 
         return variants, None  # Success!
@@ -158,7 +150,7 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
         logger.error(
             f"Image file not found: {original_path}",
             exc_info=e,
-            extra={"context": context, "error_code": "VALIDATION_CORRUPT_IMAGE"}
+            extra={"context": context, "error_code": "VALIDATION_CORRUPT_IMAGE"},
         )
 
         error = image_processing_error(
@@ -166,7 +158,7 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
             step="file_open",
             error_message=f"Image file not found: {original_path}",
             context=context,
-            stack_trace=traceback.format_exc()
+            stack_trace=traceback.format_exc(),
         )
         return [], error
 
@@ -175,7 +167,7 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
         logger.error(
             f"Failed to open image (possibly corrupt): {e}",
             exc_info=e,
-            extra={"context": context, "error_code": "VALIDATION_CORRUPT_IMAGE"}
+            extra={"context": context, "error_code": "VALIDATION_CORRUPT_IMAGE"},
         )
 
         error = image_processing_error(
@@ -183,7 +175,7 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
             step="file_open",
             error_message=f"Image file is corrupt or unreadable: {str(e)}",
             context=context,
-            stack_trace=traceback.format_exc()
+            stack_trace=traceback.format_exc(),
         )
         return [], error
 
@@ -191,7 +183,7 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
         logger.error(
             f"Unexpected error during image processing: {e}",
             exc_info=e,
-            extra={"context": context, "error_code": "PROCESSING_IMAGE_FAILED"}
+            extra={"context": context, "error_code": "PROCESSING_IMAGE_FAILED"},
         )
 
         error = image_processing_error(
@@ -199,12 +191,14 @@ def generate_variants(original_path: str, original_filename: str, context: Dict[
             step="variant_generation",
             error_message=str(e),
             context=context,
-            stack_trace=traceback.format_exc()
+            stack_trace=traceback.format_exc(),
         )
         return [], error
 
 
-def generate_ai_analysis_image(original_path: str, context: Dict[str, Any] = None) -> Tuple[str, ErrorResponse | None]:
+def generate_ai_analysis_image(
+    original_path: str, context: Dict[str, Any] = None
+) -> Tuple[str, ErrorResponse | None]:
     """
     Generate a temporary resized image for AI analysis (Claude Vision API).
 
@@ -235,7 +229,7 @@ def generate_ai_analysis_image(original_path: str, context: Dict[str, Any] = Non
         if original_width <= MAX_DIMENSION and original_height <= MAX_DIMENSION:
             logger.info(
                 f"Image dimensions ({original_width}x{original_height}) within AI limit, using original",
-                extra={"context": {**context, "width": original_width, "height": original_height}}
+                extra={"context": {**context, "width": original_width, "height": original_height}},
             )
             return original_path, None
 
@@ -251,15 +245,21 @@ def generate_ai_analysis_image(original_path: str, context: Dict[str, Any] = Non
 
         logger.info(
             f"Resizing image for AI analysis: {original_width}x{original_height} → {new_width}x{new_height}",
-            extra={"context": {**context, "original_dims": f"{original_width}x{original_height}", "new_dims": f"{new_width}x{new_height}"}}
+            extra={
+                "context": {
+                    **context,
+                    "original_dims": f"{original_width}x{original_height}",
+                    "new_dims": f"{new_width}x{new_height}",
+                }
+            },
         )
 
         # Convert RGBA to RGB if needed
-        if img.mode in ('RGBA', 'LA', 'P'):
-            background = Image.new('RGB', img.size, (255, 255, 255))
-            if img.mode == 'P':
-                img = img.convert('RGBA')
-            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+        if img.mode in ("RGBA", "LA", "P"):
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            background.paste(img, mask=img.split()[-1] if img.mode == "RGBA" else None)
             img = background
 
         # Resize image
@@ -267,7 +267,7 @@ def generate_ai_analysis_image(original_path: str, context: Dict[str, Any] = Non
 
         # Save to temporary file
         base_name = Path(original_path).stem
-        temp_fd, temp_path = tempfile.mkstemp(suffix='_ai_temp.jpg', prefix=f"{base_name}_")
+        temp_fd, temp_path = tempfile.mkstemp(suffix="_ai_temp.jpg", prefix=f"{base_name}_")
         os.close(temp_fd)  # Close file descriptor, we'll write with PIL
 
         resized.save(temp_path, format="JPEG", quality=90, optimize=True)
@@ -275,7 +275,13 @@ def generate_ai_analysis_image(original_path: str, context: Dict[str, Any] = Non
         temp_size = os.path.getsize(temp_path)
         logger.info(
             f"Created temporary AI analysis image: {temp_path} ({temp_size} bytes)",
-            extra={"context": {**context, "temp_path": temp_path, "temp_size_mb": round(temp_size / 1024 / 1024, 2)}}
+            extra={
+                "context": {
+                    **context,
+                    "temp_path": temp_path,
+                    "temp_size_mb": round(temp_size / 1024 / 1024, 2),
+                }
+            },
         )
 
         return temp_path, None
@@ -284,7 +290,7 @@ def generate_ai_analysis_image(original_path: str, context: Dict[str, Any] = Non
         logger.error(
             f"Failed to generate AI analysis image: {e}",
             exc_info=e,
-            extra={"context": context, "error_code": "PROCESSING_AI_RESIZE_FAILED"}
+            extra={"context": context, "error_code": "PROCESSING_AI_RESIZE_FAILED"},
         )
 
         error = image_processing_error(
@@ -292,7 +298,7 @@ def generate_ai_analysis_image(original_path: str, context: Dict[str, Any] = Non
             step="ai_resize",
             error_message=str(e),
             context=context,
-            stack_trace=traceback.format_exc()
+            stack_trace=traceback.format_exc(),
         )
 
         # Return original path so caller can still try (will likely hit 5MB limit)
@@ -314,7 +320,7 @@ def cleanup_temp_file(file_path: str, context: Dict[str, Any] = None) -> None:
             os.remove(file_path)
             logger.debug(
                 f"Cleaned up temporary AI analysis file: {file_path}",
-                extra={"context": {**context, "temp_path": file_path}}
+                extra={"context": {**context, "temp_path": file_path}},
             )
     except FileNotFoundError:
         # Already deleted, that's fine
@@ -323,5 +329,5 @@ def cleanup_temp_file(file_path: str, context: Dict[str, Any] = None) -> None:
         # Log but don't raise - cleanup failure shouldn't break the flow
         logger.warning(
             f"Failed to cleanup temporary file: {e}",
-            extra={"context": {**context, "temp_path": file_path}}
+            extra={"context": {**context, "temp_path": file_path}},
         )

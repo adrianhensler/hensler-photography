@@ -130,16 +130,11 @@ async def verify_csrf_token(request: Request, csrf_token: str = None) -> str:
     if not token:
         logger.warning(
             "CSRF token missing",
-            extra={
-                "context": {
-                    "path": str(request.url.path),
-                    "method": request.method
-                }
-            }
+            extra={"context": {"path": str(request.url.path), "method": request.method}},
         )
         raise HTTPException(
             status_code=403,
-            detail="CSRF token missing. This request cannot be processed for security reasons."
+            detail="CSRF token missing. This request cannot be processed for security reasons.",
         )
 
     # Validate token
@@ -147,16 +142,11 @@ async def verify_csrf_token(request: Request, csrf_token: str = None) -> str:
     if not validate_csrf_token(token):
         logger.warning(
             "CSRF token invalid",
-            extra={
-                "context": {
-                    "path": str(request.url.path),
-                    "method": request.method
-                }
-            }
+            extra={"context": {"path": str(request.url.path), "method": request.method}},
         )
         raise HTTPException(
             status_code=403,
-            detail="CSRF token invalid or expired. Please refresh the page and try again."
+            detail="CSRF token invalid or expired. Please refresh the page and try again.",
         )
 
     return token

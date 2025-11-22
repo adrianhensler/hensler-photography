@@ -40,8 +40,7 @@ async def set_user_password(username: str, password: str) -> bool:
     # Update database
     async with aiosqlite.connect(DATABASE_PATH) as db:
         cursor = await db.execute(
-            "UPDATE users SET password_hash = ? WHERE username = ?",
-            (password_hash, username)
+            "UPDATE users SET password_hash = ? WHERE username = ?", (password_hash, username)
         )
         await db.commit()
 
@@ -76,7 +75,7 @@ async def create_user(username: str, display_name: str, password: str) -> bool:
             await db.execute(
                 """INSERT INTO users (username, display_name, password_hash, role)
                    VALUES (?, ?, ?, 'photographer')""",
-                (username.lower(), display_name, password_hash)
+                (username.lower(), display_name, password_hash),
             )
             await db.commit()
             print(f"✓ User '{username}' created successfully")
@@ -103,10 +102,14 @@ async def list_users():
             print("No users found in database")
             return
 
-        print(f"\n{'Username':<15} {'Display Name':<20} {'Role':<15} {'Password':<10} {'Created':<20}")
+        print(
+            f"\n{'Username':<15} {'Display Name':<20} {'Role':<15} {'Password':<10} {'Created':<20}"
+        )
         print("-" * 85)
         for row in rows:
-            print(f"{row['username']:<15} {row['display_name']:<20} {row['role']:<15} {row['has_password']:<10} {row['created_at']:<20}")
+            print(
+                f"{row['username']:<15} {row['display_name']:<20} {row['role']:<15} {row['has_password']:<10} {row['created_at']:<20}"
+            )
         print()
 
 

@@ -353,5 +353,3 @@ can simply roll out own and have full control.  Just needs to be bare bones to s
   6. Where to work?
     - /opt/dev/hensler_photography (recommended)?
     - Or separate project directory?
-
-

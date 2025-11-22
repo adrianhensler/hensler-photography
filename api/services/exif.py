@@ -3,6 +3,7 @@ EXIF metadata extraction from images
 
 Enhanced with structured logging for diagnostics.
 """
+
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
 import piexif
@@ -51,20 +52,28 @@ def extract_exif(image_path: str) -> dict:
 
         # Decode bytes to strings
         if camera_make and isinstance(camera_make, bytes):
-            camera_make = camera_make.decode('utf-8', errors='ignore').strip()
+            camera_make = camera_make.decode("utf-8", errors="ignore").strip()
         if camera_model and isinstance(camera_model, bytes):
-            camera_model = camera_model.decode('utf-8', errors='ignore').strip()
+            camera_model = camera_model.decode("utf-8", errors="ignore").strip()
         if lens and isinstance(lens, bytes):
-            lens = lens.decode('utf-8', errors='ignore').strip()
+            lens = lens.decode("utf-8", errors="ignore").strip()
 
         # Extract exposure settings
         focal_length = get_exif("Exif", piexif.ExifIFD.FocalLength)
         if focal_length:
-            focal_length = f"{focal_length[0] / focal_length[1]:.0f}mm" if isinstance(focal_length, tuple) else f"{focal_length}mm"
+            focal_length = (
+                f"{focal_length[0] / focal_length[1]:.0f}mm"
+                if isinstance(focal_length, tuple)
+                else f"{focal_length}mm"
+            )
 
         aperture = get_exif("Exif", piexif.ExifIFD.FNumber)
         if aperture:
-            aperture = f"f/{aperture[0] / aperture[1]:.1f}" if isinstance(aperture, tuple) else f"f/{aperture}"
+            aperture = (
+                f"f/{aperture[0] / aperture[1]:.1f}"
+                if isinstance(aperture, tuple)
+                else f"f/{aperture}"
+            )
 
         shutter_speed = get_exif("Exif", piexif.ExifIFD.ExposureTime)
         if shutter_speed:
@@ -80,7 +89,7 @@ def extract_exif(image_path: str) -> dict:
         date_taken = get_exif("Exif", piexif.ExifIFD.DateTimeOriginal)
         if date_taken and isinstance(date_taken, bytes):
             try:
-                date_taken = date_taken.decode('utf-8')
+                date_taken = date_taken.decode("utf-8")
                 # Parse "2024:10:15 14:30:22" format
                 date_taken = datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S").isoformat()
             except:
@@ -107,9 +116,9 @@ def extract_exif(image_path: str) -> dict:
                     lat_dec = to_degrees(lat)
                     lon_dec = to_degrees(lon)
 
-                    if lat_ref == b'S':
+                    if lat_ref == b"S":
                         lat_dec = -lat_dec
-                    if lon_ref == b'W':
+                    if lon_ref == b"W":
                         lon_dec = -lon_dec
 
                     location = f"{lat_dec:.6f}, {lon_dec:.6f}"
@@ -118,7 +127,7 @@ def extract_exif(image_path: str) -> dict:
 
         # Build combined camera string
         camera_parts = [camera_make, camera_model]
-        camera = ' '.join(filter(None, camera_parts)) if any(camera_parts) else None
+        camera = " ".join(filter(None, camera_parts)) if any(camera_parts) else None
 
         result = {
             "camera_make": camera_make,
@@ -133,14 +142,20 @@ def extract_exif(image_path: str) -> dict:
             "location": location,
             "width": width,
             "height": height,
-            "aspect_ratio": aspect_ratio
+            "aspect_ratio": aspect_ratio,
         }
 
         # Log successful extraction
         has_camera_data = camera_make or camera_model
         logger.info(
             f"EXIF extraction {'successful' if has_camera_data else 'complete (no camera data)'}",
-            extra={"context": {**context, "has_camera_data": has_camera_data, "has_gps": location is not None}}
+            extra={
+                "context": {
+                    **context,
+                    "has_camera_data": has_camera_data,
+                    "has_gps": location is not None,
+                }
+            },
         )
 
         return result
@@ -149,7 +164,7 @@ def extract_exif(image_path: str) -> dict:
         logger.warning(
             f"EXIF extraction failed: {e}",
             exc_info=e,
-            extra={"context": context, "error_code": "PROCESSING_EXIF_FAILED"}
+            extra={"context": context, "error_code": "PROCESSING_EXIF_FAILED"},
         )
 
         # Fallback: at least return dimensions
@@ -170,10 +185,14 @@ def extract_exif(image_path: str) -> dict:
                 "location": None,
                 "width": width,
                 "height": height,
-                "aspect_ratio": round(width / height, 2)
+                "aspect_ratio": round(width / height, 2),
             }
         except Exception as e:
-            logger.error(f"Failed to extract even basic dimensions: {e}", exc_info=e, extra={"context": context})
+            logger.error(
+                f"Failed to extract even basic dimensions: {e}",
+                exc_info=e,
+                extra={"context": context},
+            )
             return {
                 "camera_make": None,
                 "camera_model": None,
@@ -187,5 +206,5 @@ def extract_exif(image_path: str) -> dict:
                 "location": None,
                 "width": None,
                 "height": None,
-                "aspect_ratio": None
+                "aspect_ratio": None,
             }
