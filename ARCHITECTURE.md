@@ -95,12 +95,17 @@ Multi-photographer portfolio management system with AI-powered image analysis, m
 ├── Caddyfile                          # Production routing (ports 80/443)
 ├── docker-compose.yml                 # Production containers
 ├── ARCHITECTURE.md                    # This file
-├── ROADMAP.md                         # Sprint timeline and features
-├── TODO.md                            # Current task list
 ├── CLAUDE.md                          # Claude Code project instructions
 ├── DEVELOPMENT.md                     # Development best practices
 ├── BACKUP.md                          # Backup and recovery procedures
-└── CHANGELOG.md                       # Version history
+├── CHANGELOG.md                       # Version history
+└── docs/                              # Organized documentation
+    ├── planning/                      # Roadmaps, TODOs, session notes
+    │   ├── ROADMAP.md
+    │   └── TODO.md
+    ├── reviews/                       # Historical code/design reviews
+    ├── setup/                         # One-time setup guides
+    └── guides/                        # Implementation guides
 
 /opt/prod/hensler_photography/         # Production environment (mirrors dev)
 ```
@@ -1267,12 +1272,13 @@ See **CHANGELOG.md** for detailed version history and release notes.
 ## References
 
 - **CLAUDE.md**: Instructions for Claude Code AI assistant
-- **ROADMAP.md**: Sprint timeline and feature roadmap
-- **TODO.md**: Current task list and Sprint 4 plan
+- **docs/planning/ROADMAP.md**: Sprint timeline and feature roadmap
+- **docs/planning/TODO.md**: Current task list and future plans
 - **DEVELOPMENT.md**: Development best practices and workflow
 - **CHANGELOG.md**: Version history and release notes
 - **BACKUP.md**: Backup and recovery procedures
 - **sites/adrian/README.md**: Adrian's site maintenance guide
+- **docs/reviews/**: Historical code/design reviews (archived)
 
 ---
 

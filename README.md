@@ -602,7 +602,11 @@ print(f'Total variants: {cursor.fetchone()[0]}')
 
 ## License
 
-Private project - All rights reserved.
+Copyright © 2025 Adrian Hensler. All rights reserved.
+
+**Repository**: https://github.com/adrianhensler/hensler-photography (public for collaboration)
+
+While the code is publicly visible for transparency and collaboration, all rights are reserved. Commercial use, redistribution, or derivative works require explicit permission.
 
 ---
 
@@ -630,7 +634,7 @@ Private project - All rights reserved.
 - AVIF format support (even smaller than WebP)
 - CDN integration (if scaling beyond single server)
 
-See **[ROADMAP.md](ROADMAP.md)** for detailed future plans.
+See **[docs/planning/ROADMAP.md](docs/planning/ROADMAP.md)** for detailed future plans.
 
 ---
 

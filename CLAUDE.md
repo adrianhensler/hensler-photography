@@ -587,16 +587,30 @@ npx playwright test --debug tests/sites.spec.js
 ```
 
 ### Production Deployment
+
+> **⚠️ IMPORTANT**: Direct pushes to main are blocked by branch protection (enabled Nov 2025).
+> All changes must go through Pull Requests with passing CI tests.
+
 ```bash
 # All work happens on VPS in /opt/dev/
 cd /opt/dev/hensler_photography
 
-# Make changes, test on port 8080, commit to git
+# Make changes, test on port 8080
+docker compose -p hensler_test up -d
+
+# Create feature branch (required - direct push to main blocked)
+git checkout -b feature/my-improvement
 git add .
 git commit -m "Description"
-git push origin main
+git push origin feature/my-improvement
 
-# Deploy to production: Pull changes in prod directory
+# Create Pull Request on GitHub
+gh pr create --title "..." --body "..."
+
+# After PR approved and merged (or use --admin to bypass):
+# gh pr merge <number> --squash --admin
+
+# Deploy to production: Pull merged changes
 cd /opt/prod/hensler_photography
 git pull origin main
 docker compose restart
@@ -820,14 +834,20 @@ cd /opt/prod/hensler_photography && docker compose restart
 # Check status
 git status
 
+# Create feature branch
+git checkout -b feature/gallery-updates
+
 # Add and commit
 git add sites/adrian/
 git commit -m "Add new gallery images"
 
-# Push to GitHub
-git push origin main
+# Push feature branch
+git push origin feature/gallery-updates
 
-# Pull in production
+# Create PR
+gh pr create --title "Add new gallery images" --body "Description"
+
+# After PR merged, pull in production
 cd /opt/prod/hensler_photography && git pull origin main
 ```
 

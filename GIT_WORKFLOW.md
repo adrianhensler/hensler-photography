@@ -27,7 +27,10 @@ If production has commits that GitHub doesn't, or vice versa, we have a problem.
 
 ## Recommended Workflows
 
-### **Option 1: Feature Branch Workflow** (Best for significant changes)
+> **⚠️ Branch Protection Active**: As of Nov 23 2025, direct pushes to main are blocked.
+> All changes require Pull Requests. See deprecated "Option 2" below for details.
+
+### **Feature Branch Workflow** (Required for all changes)
 
 ```bash
 # 1. Start from clean main
@@ -63,41 +66,50 @@ docker compose restart
 - ✅ Work is backed up on GitHub immediately
 - ✅ Can review changes before they go live
 - ✅ Never lose work
+- ✅ CI tests catch issues automatically
+- ✅ Branch protection prevents broken code in production
 
-**When to use**: Any non-trivial change (new features, refactoring, optimizations)
+**When to use**: All changes (required by branch protection)
 
 ---
 
-### **Option 2: Direct Commit to Main** (For tiny fixes only)
+### **~~Option 2: Direct Commit to Main~~** ❌ DEPRECATED
+
+> **Status**: ❌ **No longer possible** - Main branch is protected (as of PR #8, Nov 23 2025)
+>
+> **What changed**: GitHub branch protection rules now require:
+> - All changes go through Pull Requests
+> - CI tests must pass before merge
+> - Direct pushes to main are blocked (even for admins)
+
+**For tiny fixes**, use feature branches with fast PR workflow:
 
 ```bash
-# 1. Make small change
-# ... edit file ...
-
-# 2. Commit AND push immediately
+# Even for typos, create a branch
+git checkout -b fix/typo-in-header
 git add .
 git commit -m "Fix typo in header"
-git push origin main
+git push origin fix/typo-in-header
 
-# 3. Restart if needed
-docker compose restart
+# Create PR (fast for tiny changes)
+gh pr create --title "Fix typo in header" --body "Quick fix"
+
+# Merge via GitHub UI or use --admin to bypass review:
+gh pr merge --squash --admin
 ```
 
-**Benefits**:
-- ✅ Fast for tiny changes
-- ✅ Change is on GitHub immediately
+**Why this is good**:
+- ✅ CI tests catch issues before production
+- ✅ Git history stays clean (no broken commits)
+- ✅ Can't accidentally push broken code
+- ✅ Rollback is easier (revert the PR merge)
+- ✅ No risk of divergent branches
 
-**Risks**:
-- ⚠️ If you forget to push, causes divergence
-- ⚠️ No review before going live
-
-**When to use**: Only for trivial changes (typos, minor CSS tweaks, config adjustments)
-
-**Rule**: If you commit, you MUST push immediately. Never commit without pushing.
+**When to use**: All changes, including typos and tiny fixes
 
 ---
 
-### **Option 3: No Commit (Fastest for experiments)**
+### **Experimental Changes (No Commit Workflow)**
 
 ```bash
 # 1. Make change directly
@@ -106,7 +118,7 @@ docker compose restart
 # 2. Restart to test
 docker compose restart
 
-# 3. If it works, commit via Option 1 or 2
+# 3. If it works, commit via feature branch workflow (see above)
 # 4. If it doesn't work:
 git restore <file>  # Undo changes
 ```
