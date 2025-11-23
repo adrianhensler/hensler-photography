@@ -427,11 +427,15 @@ git pull origin main
 git tag -a v2.1.0 -m "Description of release"
 git push origin v2.1.0
 
-# 3. Create GitHub release manually
-gh release create v2.1.0 --title "v2.1.0" --notes-file CHANGELOG.md
+# 3. GitHub Actions automatically creates release
+# (Triggered by tag push above via .github/workflows/release.yml)
+# Release includes changelog excerpt from CHANGELOG.md
 
 # View releases
 gh release list
+
+# Manual override (if workflow fails):
+# gh release create v2.1.0 --title "v2.1.0" --notes-file CHANGELOG.md
 ```
 
 **Current Version**: v2.0.0 (Nov 13, 2025) - API-driven gallery with analytics
