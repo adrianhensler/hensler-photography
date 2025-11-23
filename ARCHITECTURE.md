@@ -1278,4 +1278,5 @@ See **CHANGELOG.md** for detailed version history and release notes.
 
 **Last Updated**: 2025-11-02
 **Maintained By**: Adrian Hensler
-**License**: Private (not open source)
+**Repository**: Public (https://github.com/adrianhensler/hensler-photography)
+**License**: All Rights Reserved (consider adding LICENSE file to specify terms)
