@@ -98,7 +98,7 @@ async def analyze_image(
             media_type = media_type_map.get(ext, "image/jpeg")
 
         logger.info(
-            f"Analyzing image with Claude Vision API",
+            "Analyzing image with Claude Vision API",
             extra={
                 "context": {
                     **context,
@@ -249,7 +249,7 @@ Return ONLY valid JSON, no other text."""
                 metadata[field] = "" if field != "tags" else []
 
         logger.info(
-            f"Successfully analyzed image with Claude Vision",
+            "Successfully analyzed image with Claude Vision",
             extra={
                 "context": {
                     **context,

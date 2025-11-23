@@ -41,7 +41,7 @@ INITIAL_PASSWORDS = {
 
 def main():
     """Run migration"""
-    print(f"Running migration 001: Add password_hash column")
+    print("Running migration 001: Add password_hash column")
     print(f"Database: {DATABASE_PATH}")
 
     # Check if database exists

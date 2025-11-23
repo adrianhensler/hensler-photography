@@ -6,18 +6,14 @@ Enhanced with structured error handling for AI and human users.
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
-import os
-import shutil
 import traceback
 from datetime import datetime
 from pathlib import Path
 import hashlib
 
 from api.errors import (
-    ErrorResponse,
     file_too_large_error,
     invalid_file_type_error,
-    corrupt_image_error,
     database_error,
     not_found_error,
 )

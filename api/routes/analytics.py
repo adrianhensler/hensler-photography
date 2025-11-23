@@ -11,7 +11,6 @@ from api.logging_config import get_logger
 from datetime import datetime, timedelta
 import json
 from typing import List, Dict, Any, Optional
-import aiosqlite
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -65,6 +64,8 @@ async def get_analytics_overview(
     - Trends for key metrics vs. previous period
     """
     user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
     prev_since = since - timedelta(days=days)  # Previous period for comparison
 
@@ -188,6 +189,8 @@ async def get_analytics_highlights(
     session skew to keep insights grounded in collected data.
     """
     user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
     prev_since = since - timedelta(days=days)
 
@@ -482,6 +485,8 @@ async def get_analytics_timeline(
     Returns daily counts for specified metric (views, clicks, or lightbox_opens).
     """
     user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
 
     # Map metric to event type
@@ -710,7 +715,7 @@ async def get_top_images(
                         meta = json.loads(dr[0])
                         if "duration" in meta:
                             durations.append(meta["duration"])
-                    except:
+                    except (json.JSONDecodeError, TypeError, KeyError):
                         pass
 
                 avg_duration = sum(durations) / len(durations) if durations else 0
@@ -909,7 +914,7 @@ async def get_scroll_depth(
                         depth = meta.get("depth")
                         if depth in depth_counts:
                             depth_counts[depth] += 1
-                    except:
+                    except (json.JSONDecodeError, TypeError, KeyError):
                         pass
 
             # Get total sessions for percentage calculation

@@ -5,7 +5,6 @@ Provides JWT-based authentication with httpOnly cookies for secure session manag
 """
 
 from fastapi import APIRouter, Request, Response, HTTPException, Depends, Form
-from fastapi.responses import JSONResponse
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 import os
@@ -17,7 +16,7 @@ from typing import Optional
 from api.database import DATABASE_PATH
 from api.logging_config import get_logger
 from api.rate_limit import limiter, RATE_LIMITS
-from api.models import UserCreate, UserLogin, PasswordChange, UserResponse
+from api.models import UserCreate, PasswordChange
 from api.audit import audit_login, audit_logout, audit_password_change, audit_user_create
 
 # Initialize logger

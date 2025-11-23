@@ -119,7 +119,7 @@ class TestMultiTenancyIsolation:
         assert response.status_code in [
             403,
             404,
-        ], f"Security Bug: Liam was able to change Adrian's publish status"
+        ], "Security Bug: Liam was able to change Adrian's publish status"
 
     @pytest.mark.asyncio
     async def test_photographer_can_edit_own_images(self, client: AsyncClient, auth_headers_liam):

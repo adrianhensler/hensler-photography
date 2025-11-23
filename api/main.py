@@ -21,7 +21,7 @@ import traceback
 from pathlib import Path
 
 # Import error handling and logging
-from api.errors import ErrorResponse, internal_error
+from api.errors import internal_error
 from api.logging_config import get_logger
 from api.rate_limit import limiter
 from api.csrf import add_csrf_token_to_context

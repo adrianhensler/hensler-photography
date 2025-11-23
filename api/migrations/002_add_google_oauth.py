@@ -20,7 +20,7 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "/app/hensler_photography.db")
 
 def main():
     """Run migration"""
-    print(f"Running migration 002: Add Google OAuth support")
+    print("Running migration 002: Add Google OAuth support")
     print(f"Database: {DATABASE_PATH}")
 
     # Check if database exists

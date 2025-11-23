@@ -30,13 +30,6 @@ async def test_photographer_cannot_edit_other_users_images():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
 
         # Create authentication tokens
-        adrian_user = User(
-            id=1,
-            username="adrian",
-            display_name="Adrian Hensler",
-            email="adrian@example.com",
-            role="admin",
-        )
         liam_user = User(
             id=2,
             username="liam",
@@ -45,7 +38,6 @@ async def test_photographer_cannot_edit_other_users_images():
             role="photographer",
         )
 
-        adrian_token = create_access_token(adrian_user)
         liam_token = create_access_token(liam_user)
 
         # Adrian's image (id=1, user_id=1) exists in test database

@@ -11,7 +11,6 @@ Usage:
 import asyncio
 import sys
 import aiosqlite
-from pathlib import Path
 
 # Import from our auth module
 from api.routes.auth import hash_password, validate_password

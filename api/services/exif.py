@@ -5,7 +5,6 @@ Enhanced with structured logging for diagnostics.
 """
 
 from PIL import Image
-from PIL.ExifTags import TAGS, GPSTAGS
 import piexif
 from datetime import datetime
 from pathlib import Path
@@ -42,7 +41,7 @@ def extract_exif(image_path: str) -> dict:
         def get_exif(ifd, key):
             try:
                 return exif_dict[ifd].get(key)
-            except:
+            except (KeyError, TypeError):
                 return None
 
         # Extract camera info
@@ -92,7 +91,7 @@ def extract_exif(image_path: str) -> dict:
                 date_taken = date_taken.decode("utf-8")
                 # Parse "2024:10:15 14:30:22" format
                 date_taken = datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S").isoformat()
-            except:
+            except (UnicodeDecodeError, ValueError):
                 date_taken = None
 
         # Extract GPS location
@@ -122,7 +121,7 @@ def extract_exif(image_path: str) -> dict:
                         lon_dec = -lon_dec
 
                     location = f"{lat_dec:.6f}, {lon_dec:.6f}"
-            except:
+            except (KeyError, TypeError, ValueError, ZeroDivisionError):
                 pass
 
         # Build combined camera string
@@ -171,7 +170,7 @@ def extract_exif(image_path: str) -> dict:
         try:
             img = Image.open(image_path)
             width, height = img.size
-            logger.info(f"Returning fallback EXIF (dimensions only)", extra={"context": context})
+            logger.info("Returning fallback EXIF (dimensions only)", extra={"context": context})
             return {
                 "camera_make": None,
                 "camera_model": None,

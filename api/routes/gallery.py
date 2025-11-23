@@ -5,7 +5,6 @@ These endpoints serve published images to the public static sites.
 """
 
 from fastapi import APIRouter, HTTPException
-from typing import Optional
 
 router = APIRouter(prefix="/api/gallery", tags=["gallery"])
 
