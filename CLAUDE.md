@@ -546,7 +546,7 @@ Development and production are now properly isolated:
 └── dev/hensler_photography/     # Development (port 8080)
 ```
 
-**See MIGRATION_GUIDE.md for setup instructions.**
+**See docs/setup/MIGRATION_GUIDE.md for setup instructions.**
 
 ### Testing on VPS (Port 8080)
 The testing environment runs in `/opt/dev/hensler_photography` and is fully isolated from production.
