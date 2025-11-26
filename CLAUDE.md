@@ -546,7 +546,7 @@ Development and production are now properly isolated:
 └── dev/hensler_photography/     # Development (port 8080)
 ```
 
-**See MIGRATION_GUIDE.md for setup instructions.**
+**See docs/setup/MIGRATION_GUIDE.md for setup instructions.**
 
 ### Testing on VPS (Port 8080)
 The testing environment runs in `/opt/dev/hensler_photography` and is fully isolated from production.
@@ -729,6 +729,18 @@ This project includes specialized agents for web development:
 - No frameworks, performance-focused approach
 - Accessibility and responsive design specialist
 - Use for: Implementing designs, CSS architecture, animations
+
+**expert-code-reviewer** (`.claude/agents/expert-code-reviewer.md`)
+- Expert software engineer with 15+ years experience
+- Reviews code quality, security, architecture, and product strategy
+- Evaluates backend (FastAPI, Python), frontend (HTML/CSS/JS), and DevOps (Docker)
+- Use for: Code quality audits, security reviews, architecture feedback
+
+**product-marketing-critic** (`.claude/agents/product-marketing-critic.md`)
+- Product marketing strategist and business analyst
+- Specializes in SaaS products and creative tools
+- Analyzes product-market fit, competitive positioning, value proposition
+- Use for: Product strategy, feature prioritization, go-to-market planning
 
 ### How to Invoke Subagents
 

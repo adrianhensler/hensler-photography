@@ -7,7 +7,7 @@ Modern photography portfolio system with API-driven galleries, backend image man
 **Public Portfolio Sites** (Port 80/443):
 - **hensler.photography** — Main landing page (Coming Soon)
 - **liam.hensler.photography** — Liam's portfolio (ready for API integration)
-- **adrian.hensler.photography** — Adrian's portfolio (✓ API-driven, 21 published images)
+- **adrian.hensler.photography** — Adrian's portfolio (✓ API-driven with dynamic gallery)
 
 **Backend Management System** (Port 443):
 - Image upload with AI metadata generation (Claude Vision API)
@@ -36,7 +36,7 @@ Comprehensive guides for development, deployment, and maintenance:
 ### Operational Guides
 - **[WORKFLOW.md](WORKFLOW.md)** - Deployment procedures and checklists
 - **[BACKUP.md](BACKUP.md)** - Backup and restore procedures with restic
-- **[REVERT.md](REVERT.md)** - Rollback procedures (git, backups, emergency)
+- **[REVERT.md](docs/guides/REVERT.md)** - Rollback procedures (git, backups, emergency)
 - **[TESTING.md](TESTING.md)** - Playwright testing guide
 
 ### Design Work
@@ -51,7 +51,7 @@ Comprehensive guides for development, deployment, and maintenance:
 ### Prerequisites
 - Docker and Docker Compose installed
 - Git
-- Node.js 18+ (for tests)
+- GitHub CLI (`gh`) for creating pull requests
 
 ### Development Environment
 
@@ -61,9 +61,6 @@ Work in `/opt/dev/hensler_photography` (isolated from production):
 cd /opt/dev/hensler_photography
 
 # Start both web and API services on port 8080
-npm run dev
-
-# Or use docker compose directly
 docker compose -p hensler_test -f docker-compose.local.yml up -d
 ```
 
@@ -94,9 +91,6 @@ docker compose -p hensler_test exec api python -m api.cli set-password adrian
 ### Stop Development Environment
 
 ```bash
-npm run dev:stop
-
-# Or manually
 docker compose -p hensler_test -f docker-compose.local.yml down
 ```
 
@@ -106,33 +100,9 @@ docker compose -p hensler_test -f docker-compose.local.yml down
 
 ### Development
 ```bash
-npm run dev              # Start test server (port 8080 with /admin + /manage routes)
+npm run dev              # Start test server (port 8080)
 npm run dev:stop         # Stop test server
 npm run dev:logs         # View test server logs
-npm run dev:restart      # Restart test server
-```
-
-### Backend Commands
-```bash
-# Initialize database (creates schema + seed data)
-docker compose -p hensler_test exec api python -m api.database
-
-# Set user password
-docker compose -p hensler_test exec api python -m api.cli set-password adrian
-
-# Check database contents
-docker compose -p hensler_test exec api python -c "
-from api.database import get_db
-conn = get_db().__enter__()
-cursor = conn.execute('SELECT id, title, published FROM images WHERE user_id = 1')
-for row in cursor.fetchall(): print(dict(row))
-"
-
-# View API logs
-docker compose -p hensler_test logs api --tail 50
-
-# Restart API only
-docker compose -p hensler_test restart api
 ```
 
 ### Testing
@@ -159,6 +129,37 @@ npm run health           # Check all sites (dev + production)
 ```bash
 npm run backup           # Run manual backup
 npm run backup:list      # List available backup snapshots
+```
+
+### Manual Docker Commands
+
+**Development**:
+```bash
+# Start test server
+cd /opt/dev/hensler_photography
+docker compose -p hensler_test -f docker-compose.local.yml up -d
+
+# Initialize database
+docker compose -p hensler_test exec api python -m api.database
+
+# Set user password
+docker compose -p hensler_test exec api python -m api.cli set-password adrian
+
+# View API logs
+docker compose -p hensler_test logs api --tail 50
+```
+
+**Production**:
+```bash
+# Start production
+cd /opt/prod/hensler_photography
+docker compose up -d
+
+# Restart production
+docker compose restart
+
+# View logs
+docker compose logs -f
 ```
 
 ---
@@ -259,25 +260,34 @@ curl -I https://adrian.hensler.photography/healthz
 
 ### Standard Deployment Workflow
 
+> **⚠️ Note**: Direct pushes to main are blocked by branch protection. All changes go through Pull Requests.
+
 After making changes in `/opt/dev/hensler_photography`:
 
 ```bash
 # 1. Test locally on port 8080
 cd /opt/dev/hensler_photography
-npm run dev
+docker compose -p hensler_test -f docker-compose.local.yml up -d
 # Browse to http://localhost:8080/adrian and https://adrian.hensler.photography:8080/manage
 
-# 2. Commit and push changes
+# 2. Create feature branch and commit
+git checkout -b feature/my-improvement
 git add .
 git commit -m "Description of changes"
-git push origin main
+git push origin feature/my-improvement
 
-# 3. Deploy to production
+# 3. Create Pull Request
+gh pr create --title "My improvement" --body "Description of changes"
+
+# 4. Merge PR (requires admin privileges or approval)
+gh pr merge <PR_NUMBER> --squash --admin
+
+# 5. Deploy to production
 cd /opt/prod/hensler_photography
 git pull origin main
 docker compose restart  # Graceful restart, preserves TLS certs
 
-# 4. Verify production
+# 6. Verify production
 curl -I https://adrian.hensler.photography/healthz
 ```
 
@@ -404,40 +414,33 @@ Privacy-preserving engagement metrics:
 
 ---
 
-## Automated Workflows
-
-### GitHub Actions
-
-**Automated Testing** (`.github/workflows/test.yml`):
-- Runs on every push and pull request
-- Starts test server, runs Playwright tests
-- Uploads screenshots and test reports as artifacts
-- Blocks merging if tests fail
-
-**Automated Releases** (`.github/workflows/release.yml`):
-- Triggers when you push a version tag (e.g., `v2.0.0`)
-- Extracts changelog from CHANGELOG.md
-- Creates GitHub release with notes
-- Makes releases immutable for security
-
-### Version Management
+## Version Management
 
 Create releases using semantic versioning (see [CHANGELOG.md](CHANGELOG.md)):
 
 ```bash
 # 1. Update CHANGELOG.md with changes
 
-# 2. Create and push tag
+# 2. Create and push tag (after PR merged)
+git checkout main
+git pull origin main
 git tag -a v2.1.0 -m "Description of release"
 git push origin v2.1.0
 
 # 3. GitHub Actions automatically creates release
+# (Triggered by tag push above via .github/workflows/release.yml)
+# Release includes changelog excerpt from CHANGELOG.md
 
 # View releases
 gh release list
+
+# Manual override (if workflow fails):
+# gh release create v2.1.0 --title "v2.1.0" --notes-file CHANGELOG.md
 ```
 
 **Current Version**: v2.0.0 (Nov 13, 2025) - API-driven gallery with analytics
+
+**Note**: GitHub Actions workflows exist (`.github/workflows/`) and run automatically on every push/PR, but tests are currently failing. Manual testing and deployment recommended until tests are fixed.
 
 ---
 
@@ -578,11 +581,10 @@ print(f'Total variants: {cursor.fetchone()[0]}')
 ### Development Workflow
 
 1. **Work in development**: `/opt/dev/hensler_photography`
-2. **Start test server**: `npm run dev` (port 8080 with /admin + /manage routes)
+2. **Start test server**: `docker compose -p hensler_test -f docker-compose.local.yml up -d`
 3. **Make changes**: Edit code, test locally
-4. **Run tests**: `npm test` (Playwright)
-5. **Commit**: Clear, descriptive commit messages
-6. **Deploy**: Pull in `/opt/prod/` and restart
+4. **Create PR**: Feature branch → pull request → merge
+5. **Deploy**: Pull in `/opt/prod/` and restart
 
 ### Code Style
 
@@ -612,6 +614,8 @@ While the code is publicly visible for transparency and collaboration, all right
 
 ## Current Status (v2.0.0)
 
+**Last Updated**: 2025-11-23
+
 ### ✅ Complete
 - Backend infrastructure (FastAPI, SQLite, Docker)
 - Image upload with AI metadata generation
@@ -620,21 +624,25 @@ While the code is publicly visible for transparency and collaboration, all right
 - Gallery management (publish/unpublish, featured, alt-text editing)
 - Analytics system (6 event types, dashboard)
 - WebP optimization (10-20x faster page loads)
-- Public gallery API integration (Adrian's site)
+- Public gallery API integration (Adrian's site with 34 published images)
 - EXIF extraction and editing
 - Authentication and authorization
 - Performance optimization (90-99% size reduction)
 - User preferences (AI style selection in `/manage/settings`)
+- Main landing page (directory hub linking to photographer portfolios)
+- Documentation organization (docs/ structure with guides, planning, reviews)
+- Public repository with branch protection
+- Pre-commit hooks and code quality automation
 
 ### 🚧 In Progress
 - Backup system implementation (documented, not deployed)
+- Liam's site content (backend ready, awaiting images)
 
 ### 📋 Planned
 - **Per-upload AI style override** - Allow selecting style during upload (currently uses user profile default)
-- Liam's site API integration (backend ready, frontend pending)
-- Main landing page design and implementation
 - E-commerce features (print sales, products, orders)
 - Advanced search/filtering on public site
+- Password reset self-service workflow
 - AVIF format support (even smaller than WebP)
 - CDN integration (if scaling beyond single server)
 
