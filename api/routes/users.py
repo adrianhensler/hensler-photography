@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 class UserUpdate(BaseModel):
     """Model for updating user profile"""
+
     display_name: Optional[str] = Field(None, max_length=200)
     bio: Optional[str] = Field(None, max_length=1000)
     ai_style: Optional[str] = Field(None, pattern="^(technical|artistic|documentary|balanced)$")
@@ -39,8 +40,7 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
 
 @router.patch("/me")
 async def update_current_user_profile(
-    updates: UserUpdate,
-    current_user: User = Depends(get_current_user)
+    updates: UserUpdate, current_user: User = Depends(get_current_user)
 ):
     """Update current user's profile"""
     # Convert to dict, exclude None values
@@ -66,10 +66,7 @@ async def update_current_user_profile(
 
     logger.info(
         f"User profile updated: {current_user.username}",
-        extra={"context": {"user_id": current_user.id, "updated_fields": list(update_dict.keys())}}
+        extra={"context": {"user_id": current_user.id, "updated_fields": list(update_dict.keys())}},
     )
 
-    return {
-        "success": True,
-        "updated_fields": list(update_dict.keys())
-    }
+    return {"success": True, "updated_fields": list(update_dict.keys())}
