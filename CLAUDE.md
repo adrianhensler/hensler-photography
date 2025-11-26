@@ -730,6 +730,18 @@ This project includes specialized agents for web development:
 - Accessibility and responsive design specialist
 - Use for: Implementing designs, CSS architecture, animations
 
+**expert-code-reviewer** (`.claude/agents/expert-code-reviewer.md`)
+- Expert software engineer with 15+ years experience
+- Reviews code quality, security, architecture, and product strategy
+- Evaluates backend (FastAPI, Python), frontend (HTML/CSS/JS), and DevOps (Docker)
+- Use for: Code quality audits, security reviews, architecture feedback
+
+**product-marketing-critic** (`.claude/agents/product-marketing-critic.md`)
+- Product marketing strategist and business analyst
+- Specializes in SaaS products and creative tools
+- Analyzes product-market fit, competitive positioning, value proposition
+- Use for: Product strategy, feature prioritization, go-to-market planning
+
 ### How to Invoke Subagents
 
 **Explicit invocation:**
