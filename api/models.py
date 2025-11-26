@@ -116,6 +116,7 @@ class ImageMetadataUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=200, description="Image title")
     caption: Optional[str] = Field(None, max_length=1000, description="Image caption/description")
     description: Optional[str] = Field(None, max_length=2000, description="Detailed description")
+    alt_text: Optional[str] = Field(None, max_length=500, description="Alt text for accessibility (screen readers)")
     tags: Optional[str] = Field(None, max_length=500, description="Comma-separated tags")
     category: Optional[str] = Field(None, max_length=100, description="Image category")
     location: Optional[str] = Field(

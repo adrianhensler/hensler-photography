@@ -145,17 +145,30 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
         from api.database import get_db_connection
         from slugify import slugify
 
-        # Step 1: Extract EXIF data (never fails, always returns something)
+        # Step 1: Get user's AI style preference
+        async with get_db_connection() as db:
+            cursor = await db.execute(
+                "SELECT ai_style FROM users WHERE id = ?",
+                (user_id,)
+            )
+            row = await cursor.fetchone()
+            ai_style = row[0] if row and row[0] else "balanced"
+
+        context["ai_style"] = ai_style
+        logger.info(f"Using AI style: {ai_style}", extra={"context": context})
+
+        # Step 2: Extract EXIF data (never fails, always returns something)
         logger.info("Extracting EXIF metadata", extra={"context": context})
         exif_data = extract_exif(str(file_path))
 
-        # Step 2: Analyze image with Claude Vision (may fail gracefully)
+        # Step 3: Analyze image with Claude Vision (may fail gracefully)
         logger.info("Analyzing image with Claude Vision", extra={"context": context})
         ai_metadata, ai_error = await analyze_image(
             str(file_path),
             user_id=user_id,
             filename=original_filename,
             media_type=actual_media_type,  # Use detected format, not browser's claim
+            style=ai_style,  # Use user's preferred AI analysis style
         )
 
         if ai_error:
@@ -202,13 +215,13 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
                     """
                         INSERT INTO images (
                             user_id, filename, slug, original_filename,
-                            title, caption, description, tags, category,
+                            title, caption, description, alt_text, tags, category,
                             camera_make, camera_model, lens,
                             focal_length, aperture, shutter_speed, iso,
                             date_taken, location,
                             width, height, aspect_ratio, file_size,
                             published, featured, available_for_sale
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         user_id,
@@ -218,6 +231,7 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
                         ai_metadata.get("title", ""),
                         ai_metadata.get("caption", ""),
                         ai_metadata.get("description", ""),
+                        ai_metadata.get("caption", ""),  # Auto-populate alt_text from caption for accessibility
                         (
                             ",".join(ai_metadata.get("tags", []))
                             if isinstance(ai_metadata.get("tags"), list)

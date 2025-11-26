@@ -78,6 +78,7 @@ class User:
         role: str,
         subdomain: Optional[str] = None,
         bio: Optional[str] = None,
+        ai_style: Optional[str] = None,
     ):
         self.id = id
         self.username = username
@@ -86,6 +87,7 @@ class User:
         self.role = role
         self.subdomain = subdomain
         self.bio = bio
+        self.ai_style = ai_style or "balanced"
 
 
 # Password validation and hashing functions
@@ -190,7 +192,7 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
         await db.execute("PRAGMA foreign_keys = ON")
         cursor = await db.execute(
             """
-            SELECT id, username, display_name, email, role, subdomain, bio
+            SELECT id, username, display_name, email, role, subdomain, bio, ai_style
             FROM users
             WHERE id = ?
             """,
@@ -209,6 +211,7 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
             role=row[4],
             subdomain=row[5],
             bio=row[6],
+            ai_style=row[7],
         )
 
 

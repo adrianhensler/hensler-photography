@@ -619,13 +619,16 @@ While the code is publicly visible for transparency and collaboration, all right
 ### ✅ Complete
 - Backend infrastructure (FastAPI, SQLite, Docker)
 - Image upload with AI metadata generation
-- Gallery management (publish/unpublish, featured)
+- **AI metadata customization** - 4 preset styles (Technical, Artistic, Documentary, Balanced)
+- **Alt-text accessibility** - Auto-populated, editable, used on public sites
+- Gallery management (publish/unpublish, featured, alt-text editing)
 - Analytics system (6 event types, dashboard)
 - WebP optimization (10-20x faster page loads)
 - Public gallery API integration (Adrian's site with 34 published images)
 - EXIF extraction and editing
 - Authentication and authorization
 - Performance optimization (90-99% size reduction)
+- User preferences (AI style selection in `/manage/settings`)
 - Main landing page (directory hub linking to photographer portfolios)
 - Documentation organization (docs/ structure with guides, planning, reviews)
 - Public repository with branch protection
@@ -636,6 +639,7 @@ While the code is publicly visible for transparency and collaboration, all right
 - Liam's site content (backend ready, awaiting images)
 
 ### 📋 Planned
+- **Per-upload AI style override** - Allow selecting style during upload (currently uses user profile default)
 - E-commerce features (print sales, products, orders)
 - Advanced search/filtering on public site
 - Password reset self-service workflow
