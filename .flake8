@@ -1,0 +1,21 @@
+[flake8]
+max-line-length = 100
+exclude = 
+    .git,
+    __pycache__,
+    migrations,
+    .venv,
+    venv
+
+# Ignore long lines in prose/data files (AI prompts, SQL, tests)
+per-file-ignores =
+    api/services/claude_vision.py:E501
+    api/errors.py:E501
+    api/cli_utils.py:E501
+    api/routes/analytics.py:E501,F841
+    api/services/image_processor.py:E501
+    api/tests/*.py:E501
+    api/migrations/*.py:E402,E501
+    api/models.py:E501
+    api/main.py:E402
+    api/csrf.py:F401

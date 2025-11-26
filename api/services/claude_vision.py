@@ -58,7 +58,6 @@ Guidelines:
 - Write in a grounded, technical tone focused on photographic craft
 
 Return ONLY valid JSON, no other text.""",
-
         "artistic": """You are an expert photography curator analyzing this image for a fine art gallery.
 
 Provide a JSON response with the following fields:
@@ -80,7 +79,6 @@ Guidelines:
 - Write in a sophisticated, gallery-quality tone that elevates the artistic vision
 
 Return ONLY valid JSON, no other text.""",
-
         "documentary": """You are a documentary photography expert analyzing this image for journalistic or educational purposes.
 
 Provide a JSON response with the following fields:
@@ -102,7 +100,6 @@ Guidelines:
 - Write in a neutral, journalistic tone focused on accuracy and information
 
 Return ONLY valid JSON, no other text.""",
-
         "balanced": """You are an experienced photography expert analyzing this image for a professional portfolio.
 
 Provide a JSON response with the following fields:
@@ -123,7 +120,7 @@ Guidelines:
 - Tags should include: subject matter, mood, technical aspects, compositional elements, time of day
 - Write in a professional tone that respects both craft and creativity
 
-Return ONLY valid JSON, no other text."""
+Return ONLY valid JSON, no other text.""",
     }
 
     # Default to balanced if invalid style provided
@@ -135,7 +132,7 @@ async def analyze_image(
     user_id: int = None,
     filename: str = None,
     media_type: str = None,
-    style: str = "balanced"
+    style: str = "balanced",
 ) -> Tuple[Dict[str, Any], ErrorResponse | None]:
     """
     Analyze an image using Claude Vision API.
@@ -224,10 +221,7 @@ async def analyze_image(
         # Get analysis prompt based on photographer's style preference
         prompt = get_analysis_prompt(style)
 
-        logger.info(
-            f"Using AI style: {style}",
-            extra={"context": {**context, "ai_style": style}}
-        )
+        logger.info(f"Using AI style: {style}", extra={"context": {**context, "ai_style": style}})
 
         # Call Claude Vision API
         model_name = "claude-3-opus-20240229"

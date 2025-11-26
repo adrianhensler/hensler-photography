@@ -123,13 +123,20 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
 
                 # If format doesn't match extension, log as warning (will notify user)
                 if actual_media_type != file.content_type:
-                    warning_msg = f"Format mismatch: uploaded as {file.content_type}, actual format is {actual_media_type}"
+                    warning_msg = (
+                        f"Format mismatch: uploaded as {file.content_type}, "
+                        f"actual format is {actual_media_type}"
+                    )
                     logger.warning(warning_msg, extra={"context": context})
                     warnings.append(
                         {
                             "code": "FORMAT_MISMATCH",
                             "message": warning_msg,
-                            "user_message": f"File format corrected: detected {actual_format.upper()} (browser reported {file.content_type})",
+                            "user_message": (
+                                f"File format corrected: detected "
+                                f"{actual_format.upper()} "
+                                f"(browser reported {file.content_type})"
+                            ),
                         }
                     )
         except Exception as e:
@@ -147,10 +154,7 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
 
         # Step 1: Get user's AI style preference
         async with get_db_connection() as db:
-            cursor = await db.execute(
-                "SELECT ai_style FROM users WHERE id = ?",
-                (user_id,)
-            )
+            cursor = await db.execute("SELECT ai_style FROM users WHERE id = ?", (user_id,))
             row = await cursor.fetchone()
             ai_style = row[0] if row and row[0] else "balanced"
 
@@ -221,7 +225,10 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
                             date_taken, location,
                             width, height, aspect_ratio, file_size,
                             published, featured, available_for_sale
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ) VALUES (
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                        )
                     """,
                     (
                         user_id,
@@ -231,7 +238,9 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
                         ai_metadata.get("title", ""),
                         ai_metadata.get("caption", ""),
                         ai_metadata.get("description", ""),
-                        ai_metadata.get("caption", ""),  # Auto-populate alt_text from caption for accessibility
+                        ai_metadata.get(
+                            "caption", ""
+                        ),  # Auto-populate alt_text from caption for accessibility
                         (
                             ",".join(ai_metadata.get("tags", []))
                             if isinstance(ai_metadata.get("tags"), list)
@@ -307,7 +316,9 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
         # Format EXIF for display - include all fields for UI
         exif_display = {
             # Combined legacy fields for backward compatibility
-            "camera": f"{exif_data.get('camera_make', '')} {exif_data.get('camera_model', '')}".strip()
+            "camera": (
+                f"{exif_data.get('camera_make', '')} " f"{exif_data.get('camera_model', '')}"
+            ).strip()
             or None,
             "lens": exif_data.get("lens") or None,
             "focal_length": exif_data.get("focal_length") or None,
@@ -823,7 +834,10 @@ async def reextract_exif(image_id: int):
                 "success": True,
                 "image_id": image_id,
                 "exif": {
-                    "camera": f"{exif_data.get('camera_make', '')} {exif_data.get('camera_model', '')}".strip()
+                    "camera": (
+                        f"{exif_data.get('camera_make', '')} "
+                        f"{exif_data.get('camera_model', '')}"
+                    ).strip()
                     or None,
                     "lens": exif_data.get("lens"),
                     "focal_length": exif_data.get("focal_length"),

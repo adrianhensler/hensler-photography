@@ -426,7 +426,8 @@ async def track_event(request: Request, event: TrackingEvent):
             cursor = await db.execute(
                 """
                 INSERT INTO image_events
-                (image_id, event_type, user_agent, referrer, ip_hash, session_id, metadata, timestamp)
+                (image_id, event_type, user_agent, referrer, ip_hash,
+                 session_id, metadata, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             """,
                 (

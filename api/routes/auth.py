@@ -303,7 +303,8 @@ async def get_current_user_for_subdomain(request: Request) -> User:
     # Photographers can only access their own subdomain
     if user.subdomain != subdomain:
         logger.warning(
-            f"Subdomain access denied: {user.username} (subdomain={user.subdomain}) tried to access {hostname}",
+            f"Subdomain access denied: {user.username} "
+            f"(subdomain={user.subdomain}) tried to access {hostname}",
             extra={"context": {"user_id": user.id, "requested_subdomain": subdomain}},
         )
         raise HTTPException(
