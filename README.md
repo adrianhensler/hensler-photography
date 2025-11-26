@@ -614,25 +614,31 @@ While the code is publicly visible for transparency and collaboration, all right
 
 ## Current Status (v2.0.0)
 
+**Last Updated**: 2025-11-23
+
 ### ✅ Complete
 - Backend infrastructure (FastAPI, SQLite, Docker)
 - Image upload with AI metadata generation
 - Gallery management (publish/unpublish, featured)
 - Analytics system (6 event types, dashboard)
 - WebP optimization (10-20x faster page loads)
-- Public gallery API integration (Adrian's site)
+- Public gallery API integration (Adrian's site with 34 published images)
 - EXIF extraction and editing
 - Authentication and authorization
 - Performance optimization (90-99% size reduction)
+- Main landing page (directory hub linking to photographer portfolios)
+- Documentation organization (docs/ structure with guides, planning, reviews)
+- Public repository with branch protection
+- Pre-commit hooks and code quality automation
 
 ### 🚧 In Progress
 - Backup system implementation (documented, not deployed)
+- Liam's site content (backend ready, awaiting images)
 
 ### 📋 Planned
-- Liam's site API integration (backend ready, frontend pending)
-- Main landing page design and implementation
 - E-commerce features (print sales, products, orders)
 - Advanced search/filtering on public site
+- Password reset self-service workflow
 - AVIF format support (even smaller than WebP)
 - CDN integration (if scaling beyond single server)
 

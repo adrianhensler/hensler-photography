@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Main landing page directory hub (hensler.photography) linking to Adrian and Liam portfolios
+- Branch protection on main branch requiring PR reviews
+- Pre-commit hooks for automated code quality checks (trailing whitespace, YAML/JSON validation, Python formatting)
+- README.md validation report documenting accuracy checks
+- Custom Claude Code agents (web-design-critic, modern-css-developer, expert-code-reviewer, product-marketing-critic)
+
+### Changed
+- Made repository public on GitHub for transparency and collaboration
+- Reorganized documentation into docs/ structure (planning/, guides/, setup/, reviews/)
+- Cleaned up root directory from 15 to 9 markdown files
+- Updated README.md deployment workflow to reflect PR-based process
+- Fixed GitHub Actions documentation to accurately reflect test status
+- Updated version management documentation for automated releases
+
+### Fixed
+- Critical flake8 code quality issues (32 warnings resolved)
+- Indentation errors in analytics.py
+- Missing subdomain filtering in analytics queries
+- User model missing subdomain and bio attributes
+- CI package-lock.json tracking for reproducible builds
+
+### Security
+- Repository audit completed (no secrets or credentials exposed)
+- Branch protection prevents direct pushes to main
+- All changes now require PR review
+
 ---
 
 ## [2.0.0] - 2025-11-13
