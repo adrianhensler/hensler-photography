@@ -97,6 +97,30 @@
     </div>
 
     <div class="settings-card">
+        <h2>AI Metadata Style</h2>
+        <p>Choose how AI generates titles, captions, and descriptions for your images.</p>
+        <div class="settings-field">
+            <label for="ai_style">Description style</label>
+            <select id="ai_style" name="ai_style">
+                <option value="technical" {% if current_user.ai_style == 'technical' %}selected{% endif %}>Technical - Grounded, compositional analysis</option>
+                <option value="balanced" {% if current_user.ai_style == 'balanced' or not current_user.ai_style %}selected{% endif %}>Balanced - Mix of technical and artistic (default)</option>
+                <option value="artistic" {% if current_user.ai_style == 'artistic' %}selected{% endif %}>Artistic - Evocative, storytelling, gallery-quality</option>
+                <option value="documentary" {% if current_user.ai_style == 'documentary' %}selected{% endif %}>Documentary - Factual, journalistic, informative</option>
+            </select>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px; line-height: 1.5;">
+            <strong>Technical:</strong> "Foggy Valley at Dawn" - Focus on composition, lighting, exposure decisions<br>
+            <strong>Balanced:</strong> Professional descriptions respecting both craft and creativity<br>
+            <strong>Artistic:</strong> "Whispers of Morning Mist" - Poetic, mood-focused, emotional resonance<br>
+            <strong>Documentary:</strong> "Street Market in Morning Light" - Clear, factual, objective
+        </div>
+        <div class="settings-actions">
+            <button class="btn-primary" type="button" onclick="saveAIStyle()">Save AI style</button>
+            <button class="btn-secondary" type="button">Cancel</button>
+        </div>
+    </div>
+
+    <div class="settings-card">
         <h2>Notifications</h2>
         <p>Choose how you want to hear about uploads, shares, and analytics.</p>
         <div class="settings-field">
@@ -119,4 +143,45 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveAIStyle() {
+    const aiStyle = document.getElementById('ai_style').value;
+    const button = event.target;
+
+    button.disabled = true;
+    button.textContent = 'Saving...';
+
+    try {
+        const response = await fetch('/api/users/me', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ai_style: aiStyle })
+        });
+
+        if (response.ok) {
+            button.textContent = 'Saved!';
+            button.style.background = 'var(--success)';
+            setTimeout(() => {
+                button.textContent = 'Save AI style';
+                button.style.background = 'var(--accent)';
+                button.disabled = false;
+            }, 2000);
+        } else {
+            const error = await response.json();
+            alert('Error saving AI style: ' + (error.detail || 'Unknown error'));
+            button.textContent = 'Save AI style';
+            button.disabled = false;
+        }
+    } catch (error) {
+        alert('Network error: ' + error.message);
+        button.textContent = 'Save AI style';
+        button.disabled = false;
+    }
+}
+</script>
 {% endblock %}

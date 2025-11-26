@@ -50,7 +50,7 @@ async def get_published_gallery(user_id: int):
         cursor = await db.execute(
             """
             SELECT
-                i.id, i.filename, i.slug, i.title, i.caption, i.tags, i.category,
+                i.id, i.filename, i.slug, i.title, i.caption, i.alt_text, i.tags, i.category,
                 i.width, i.height, i.aspect_ratio, i.share_exif,
                 i.camera_make, i.camera_model, i.lens, i.focal_length,
                 i.aperture, i.shutter_speed, i.iso, i.date_taken, i.location,
@@ -77,9 +77,9 @@ async def get_published_gallery(user_id: int):
         for row in rows:
             # Get variant filenames (fallback to original if not available)
             original_filename = row[1]
-            thumbnail_filename = row[21] or original_filename
-            medium_filename = row[22] or original_filename
-            large_filename = row[23] or original_filename
+            thumbnail_filename = row[22] or original_filename
+            medium_filename = row[23] or original_filename
+            large_filename = row[24] or original_filename
 
             # Construct URLs
             original_url = f"/assets/gallery/{original_filename}"
@@ -89,17 +89,17 @@ async def get_published_gallery(user_id: int):
 
             # Only include EXIF if share_exif = 1
             exif_data = None
-            if row[10]:  # share_exif
+            if row[11]:  # share_exif
                 exif_data = {
-                    "camera_make": row[11],
-                    "camera_model": row[12],
-                    "lens": row[13],
-                    "focal_length": row[14],
-                    "aperture": row[15],
-                    "shutter_speed": row[16],
-                    "iso": row[17],
-                    "date_taken": row[18],
-                    "location": row[19],
+                    "camera_make": row[12],
+                    "camera_model": row[13],
+                    "lens": row[14],
+                    "focal_length": row[15],
+                    "aperture": row[16],
+                    "shutter_speed": row[17],
+                    "iso": row[18],
+                    "date_taken": row[19],
+                    "location": row[20],
                 }
 
             images.append(
@@ -109,12 +109,13 @@ async def get_published_gallery(user_id: int):
                     "slug": row[2],
                     "title": row[3],
                     "caption": row[4],
-                    "tags": row[5],
-                    "category": row[6],
-                    "width": row[7],
-                    "height": row[8],
-                    "aspect_ratio": row[9],
-                    "share_exif": bool(row[10]),
+                    "alt_text": row[5],  # Alt text for accessibility
+                    "tags": row[6],
+                    "category": row[7],
+                    "width": row[8],
+                    "height": row[9],
+                    "aspect_ratio": row[10],
+                    "share_exif": bool(row[11]),
                     "exif": exif_data,
                     # Original full-resolution image
                     "image_url": original_url,
@@ -122,7 +123,7 @@ async def get_published_gallery(user_id: int):
                     "thumbnail_url": thumbnail_url,  # 400px for grid
                     "medium_url": medium_url,  # 800px for tablets
                     "large_url": large_url,  # 1200px for lightbox
-                    "created_at": row[20],
+                    "created_at": row[21],
                 }
             )
 

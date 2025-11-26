@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
     role TEXT DEFAULT 'photographer',
     subdomain TEXT,
     bio TEXT,
+    ai_style TEXT DEFAULT 'balanced',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -42,6 +43,7 @@ CREATE TABLE IF NOT EXISTS images (
     title TEXT,
     caption TEXT,
     description TEXT,
+    alt_text TEXT,
 
     -- EXIF data
     camera_make TEXT,
@@ -266,14 +268,28 @@ def run_migrations():
     with get_db() as conn:
         cursor = conn.cursor()
 
-        # Check if share_exif column exists
+        # Check images table columns
         cursor.execute("PRAGMA table_info(images)")
-        columns = [row[1] for row in cursor.fetchall()]
+        image_columns = [row[1] for row in cursor.fetchall()]
 
-        if "share_exif" not in columns:
+        if "share_exif" not in image_columns:
             print("Running migration: Adding share_exif column to images table")
             cursor.execute("ALTER TABLE images ADD COLUMN share_exif BOOLEAN DEFAULT 0")
             print("✓ Migration complete: share_exif column added")
+
+        if "alt_text" not in image_columns:
+            print("Running migration: Adding alt_text column to images table")
+            cursor.execute("ALTER TABLE images ADD COLUMN alt_text TEXT")
+            print("✓ Migration complete: alt_text column added")
+
+        # Check users table columns
+        cursor.execute("PRAGMA table_info(users)")
+        user_columns = [row[1] for row in cursor.fetchall()]
+
+        if "ai_style" not in user_columns:
+            print("Running migration: Adding ai_style column to users table")
+            cursor.execute("ALTER TABLE users ADD COLUMN ai_style TEXT DEFAULT 'balanced'")
+            print("✓ Migration complete: ai_style column added")
 
 
 def init_database():

@@ -615,18 +615,22 @@ While the code is publicly visible for transparency and collaboration, all right
 ### ✅ Complete
 - Backend infrastructure (FastAPI, SQLite, Docker)
 - Image upload with AI metadata generation
-- Gallery management (publish/unpublish, featured)
+- **AI metadata customization** - 4 preset styles (Technical, Artistic, Documentary, Balanced)
+- **Alt-text accessibility** - Auto-populated, editable, used on public sites
+- Gallery management (publish/unpublish, featured, alt-text editing)
 - Analytics system (6 event types, dashboard)
 - WebP optimization (10-20x faster page loads)
 - Public gallery API integration (Adrian's site)
 - EXIF extraction and editing
 - Authentication and authorization
 - Performance optimization (90-99% size reduction)
+- User preferences (AI style selection in `/manage/settings`)
 
 ### 🚧 In Progress
 - Backup system implementation (documented, not deployed)
 
 ### 📋 Planned
+- **Per-upload AI style override** - Allow selecting style during upload (currently uses user profile default)
 - Liam's site API integration (backend ready, frontend pending)
 - Main landing page design and implementation
 - E-commerce features (print sales, products, orders)

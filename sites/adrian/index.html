@@ -474,7 +474,7 @@
         img.src = imageData.large_url || imageData.medium_url || `/assets/gallery/${imageData.filename}`;
         img.srcset = `${imageData.medium_url} 800w, ${imageData.large_url} 1200w`;
         img.sizes = '100vw';
-        img.alt = imageData.title || 'Photography by Adrian Hensler';
+        img.alt = imageData.alt_text || imageData.title || 'Photography by Adrian Hensler';
         img.loading = index === 0 ? 'eager' : 'lazy';
 
         slide.appendChild(img);
@@ -604,7 +604,7 @@
         img.src = imageData.thumbnail_url || `/assets/gallery/${imageData.filename}`;
         img.srcset = `${imageData.thumbnail_url} 400w, ${imageData.medium_url} 800w`;
         img.sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
-        img.alt = imageData.title || 'Photography by Adrian Hensler';
+        img.alt = imageData.alt_text || imageData.title || 'Photography by Adrian Hensler';
         img.loading = 'lazy';
         img.setAttribute('decoding', 'async');
         img.setAttribute('fetchpriority', 'low');

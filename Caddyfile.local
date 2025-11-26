@@ -1,15 +1,28 @@
-# Test server Caddyfile with HTTPS and subdomain routing
-# Port 8080: Public sites only
+# Test server Caddyfile - mirrors production architecture
+# Port 8080: All routes (public + admin) on same port, just like production
 #   https://hensler.photography:8080          (main site)
 #   https://liam.hensler.photography:8080     (Liam's site)
 #   https://adrian.hensler.photography:8080   (Adrian's site)
-#
-# Port 4100: Admin interface only (separate for security)
-#   https://hensler.photography:4100/admin     (Admin dashboard)
-#   https://hensler.photography:4100/api       (API endpoints)
+#   https://adrian.hensler.photography:8080/manage  (Management interface)
+#   https://adrian.hensler.photography:8080/admin   (Admin login)
+
+{
+  # Disable automatic HTTPS redirects to prevent port 80 binding
+  auto_https disable_redirects
+}
 
 hensler.photography:8080 {
   encode zstd gzip
+
+  # Admin dashboard
+  handle /admin* {
+    reverse_proxy api:8000
+  }
+
+  # Management dashboard
+  handle /manage* {
+    reverse_proxy api:8000
+  }
 
   # Proxy API requests to backend (for analytics tracking)
   handle /api/* {
@@ -41,6 +54,20 @@ hensler.photography:8080 {
 
 liam.hensler.photography:8080 {
   encode zstd gzip
+
+  # Management interface (admin/photographer)
+  handle /manage* {
+    reverse_proxy api:8000
+  }
+
+  handle /admin* {
+    reverse_proxy api:8000
+  }
+
+  # Static files for management UI
+  handle /static/* {
+    reverse_proxy api:8000
+  }
 
   # Proxy API requests to backend (for analytics tracking)
   handle /api/* {
@@ -79,6 +106,20 @@ liam.hensler.photography:8080 {
 adrian.hensler.photography:8080 {
   encode zstd gzip
 
+  # Management interface (admin/photographer)
+  handle /manage* {
+    reverse_proxy api:8000
+  }
+
+  handle /admin* {
+    reverse_proxy api:8000
+  }
+
+  # Static files for management UI
+  handle /static/* {
+    reverse_proxy api:8000
+  }
+
   # Proxy API requests to backend (for analytics tracking)
   handle /api/* {
     reverse_proxy api:8000
@@ -100,137 +141,10 @@ adrian.hensler.photography:8080 {
     file_server
   }
 
-  # Static site files only (admin moved to port 4100)
+  # Serve static site files
   handle {
     root * /srv/sites/adrian
     file_server
-  }
-
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-    X-Frame-Options "DENY"
-    X-Content-Type-Options "nosniff"
-    Referrer-Policy "strict-origin-when-cross-origin"
-  }
-}
-
-# Admin interface on separate port for security
-# Each photographer can access admin at their subdomain:4100
-# Authentication is enforced by FastAPI (see api/routes/auth.py)
-
-adrian.hensler.photography:4100 {
-  encode zstd gzip
-
-  # Admin login
-  handle /admin* {
-    reverse_proxy api:8000
-  }
-
-  # Photographer management dashboard
-  handle /manage* {
-    reverse_proxy api:8000
-  }
-
-  # API endpoints
-  handle /api/* {
-    reverse_proxy api:8000
-  }
-
-  # Gallery assets (uploaded images)
-  handle /assets/gallery/* {
-    reverse_proxy api:8000
-  }
-
-  # Health check
-  handle /healthz {
-    reverse_proxy api:8000
-  }
-
-  # Root redirects to admin
-  handle / {
-    reverse_proxy api:8000
-  }
-
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-    X-Frame-Options "DENY"
-    X-Content-Type-Options "nosniff"
-    Referrer-Policy "strict-origin-when-cross-origin"
-  }
-}
-
-liam.hensler.photography:4100 {
-  encode zstd gzip
-
-  # Admin login
-  handle /admin* {
-    reverse_proxy api:8000
-  }
-
-  # Photographer management dashboard
-  handle /manage* {
-    reverse_proxy api:8000
-  }
-
-  # API endpoints
-  handle /api/* {
-    reverse_proxy api:8000
-  }
-
-  # Gallery assets (uploaded images)
-  handle /assets/gallery/* {
-    reverse_proxy api:8000
-  }
-
-  # Health check
-  handle /healthz {
-    reverse_proxy api:8000
-  }
-
-  # Root redirects to admin
-  handle / {
-    reverse_proxy api:8000
-  }
-
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-    X-Frame-Options "DENY"
-    X-Content-Type-Options "nosniff"
-    Referrer-Policy "strict-origin-when-cross-origin"
-  }
-}
-
-hensler.photography:4100 {
-  encode zstd gzip
-
-  # System admin dashboard (global settings, user management)
-  handle /admin* {
-    reverse_proxy api:8000
-  }
-
-  # Photographer management (if accessed via main domain)
-  handle /manage* {
-    reverse_proxy api:8000
-  }
-
-  # API endpoints
-  handle /api/* {
-    reverse_proxy api:8000
-  }
-
-  # Gallery assets (images, thumbnails)
-  handle /assets/gallery/* {
-    reverse_proxy api:8000
-  }
-
-  # Health check for API
-  handle /healthz {
-    reverse_proxy api:8000
-  }
-
-  # Root shows API info
-  handle / {
-    reverse_proxy api:8000
   }
 
   header {

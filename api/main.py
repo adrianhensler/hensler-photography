@@ -382,12 +382,14 @@ from api.routes.auth import router as auth_router
 from api.routes.gallery import router as gallery_router
 from api.routes.photographer import router as photographer_router
 from api.routes.analytics import router as analytics_router
+from api.routes.users import router as users_router
 
 app.include_router(ingestion_router)
 app.include_router(auth_router)
 app.include_router(gallery_router)
 app.include_router(photographer_router)
 app.include_router(analytics_router)
+app.include_router(users_router)
 
 
 # Track endpoint (public - for frontend JavaScript)
