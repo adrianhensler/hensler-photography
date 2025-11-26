@@ -36,7 +36,7 @@ Comprehensive guides for development, deployment, and maintenance:
 ### Operational Guides
 - **[WORKFLOW.md](WORKFLOW.md)** - Deployment procedures and checklists
 - **[BACKUP.md](BACKUP.md)** - Backup and restore procedures with restic
-- **[REVERT.md](REVERT.md)** - Rollback procedures (git, backups, emergency)
+- **[REVERT.md](docs/guides/REVERT.md)** - Rollback procedures (git, backups, emergency)
 - **[TESTING.md](TESTING.md)** - Playwright testing guide
 
 ### Design Work
