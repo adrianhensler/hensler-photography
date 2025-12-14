@@ -165,8 +165,11 @@ async def get_analytics_overview(
                 "views": views,
                 "views_trend": calc_trend(views, prev_views),
                 "viewers": viewers,
+                "visitors": viewers,  # Alias for dashboard compatibility
                 "viewers_trend": calc_trend(viewers, prev_viewers),
+                "visitors_trend": calc_trend(viewers, prev_viewers),  # Alias for dashboard
                 "ctr": round(ctr, 3),
+                "click_rate": round(ctr, 3),  # Alias for dashboard compatibility
                 "view_rate": round(view_rate, 3),
                 "avg_duration": avg_duration,
                 "period_days": days,
