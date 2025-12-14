@@ -4,13 +4,13 @@ Public gallery API routes - no authentication required.
 These endpoints serve published images to the public static sites.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 router = APIRouter(prefix="/api/gallery", tags=["gallery"])
 
 
 @router.get("/published")
-async def get_published_gallery(user_id: int):
+async def get_published_gallery(user_id: int, response: Response):
     """
     Get all published (public) images for a photographer.
 
@@ -51,7 +51,7 @@ async def get_published_gallery(user_id: int):
             """
             SELECT
                 i.id, i.filename, i.slug, i.title, i.caption, i.alt_text, i.tags, i.category,
-                i.width, i.height, i.aspect_ratio, i.share_exif,
+                i.featured, i.width, i.height, i.aspect_ratio, i.share_exif,
                 i.camera_make, i.camera_model, i.lens, i.focal_length,
                 i.aperture, i.shutter_speed, i.iso, i.date_taken, i.location,
                 i.created_at,
@@ -77,9 +77,9 @@ async def get_published_gallery(user_id: int):
         for row in rows:
             # Get variant filenames (fallback to original if not available)
             original_filename = row[1]
-            thumbnail_filename = row[22] or original_filename
-            medium_filename = row[23] or original_filename
-            large_filename = row[24] or original_filename
+            thumbnail_filename = row[23] or original_filename
+            medium_filename = row[24] or original_filename
+            large_filename = row[25] or original_filename
 
             # Construct URLs
             original_url = f"/assets/gallery/{original_filename}"
@@ -89,17 +89,17 @@ async def get_published_gallery(user_id: int):
 
             # Only include EXIF if share_exif = 1
             exif_data = None
-            if row[11]:  # share_exif
+            if row[12]:  # share_exif
                 exif_data = {
-                    "camera_make": row[12],
-                    "camera_model": row[13],
-                    "lens": row[14],
-                    "focal_length": row[15],
-                    "aperture": row[16],
-                    "shutter_speed": row[17],
-                    "iso": row[18],
-                    "date_taken": row[19],
-                    "location": row[20],
+                    "camera_make": row[13],
+                    "camera_model": row[14],
+                    "lens": row[15],
+                    "focal_length": row[16],
+                    "aperture": row[17],
+                    "shutter_speed": row[18],
+                    "iso": row[19],
+                    "date_taken": row[20],
+                    "location": row[21],
                 }
 
             images.append(
@@ -112,10 +112,11 @@ async def get_published_gallery(user_id: int):
                     "alt_text": row[5],  # Alt text for accessibility
                     "tags": row[6],
                     "category": row[7],
-                    "width": row[8],
-                    "height": row[9],
-                    "aspect_ratio": row[10],
-                    "share_exif": bool(row[11]),
+                    "featured": bool(row[8]),  # Featured flag for hero weighting
+                    "width": row[9],
+                    "height": row[10],
+                    "aspect_ratio": row[11],
+                    "share_exif": bool(row[12]),
                     "exif": exif_data,
                     # Original full-resolution image
                     "image_url": original_url,
@@ -123,10 +124,12 @@ async def get_published_gallery(user_id: int):
                     "thumbnail_url": thumbnail_url,  # 400px for grid
                     "medium_url": medium_url,  # 800px for tablets
                     "large_url": large_url,  # 1200px for lightbox
-                    "created_at": row[21],
+                    "created_at": row[22],
                 }
             )
 
+        # Set cache headers: 5 minutes for CDNs, revalidate on stale
+        response.headers["Cache-Control"] = "public, max-age=300, stale-while-revalidate=60"
         return {"images": images, "total": len(images), "user_id": user_id}
 
 

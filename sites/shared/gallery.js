@@ -1,23 +1,462 @@
 /**
- * Shared Gallery Filtering Logic
+ * Shared Gallery Application
  * Used by both adrian.hensler.photography and liam.hensler.photography
  *
  * DEPENDENCIES:
- * - Requires galleryData global variable to be set by host page
  * - Requires GLightbox library to be loaded
- * - Requires HTML elements: #category-pills, #tag-pills, #active-filters, #gallery-grid
+ * - Requires window.GALLERY_CONFIG = { userId: 1, siteName: 'Adrian Hensler' }
+ * - Requires HTML elements: #slideshow, #gallery-grid, #category-pills, #tag-pills, #active-filters
  */
 
 (function(window) {
   'use strict';
 
-  // ===== STATE =====
+  // ===== CONFIGURATION =====
+  let config = window.GALLERY_CONFIG || { userId: 1, siteName: 'Site' };
+
+  // ===== STATE VARIABLES =====
+  let galleryImages = [];
+  let galleryData = [];
+  let galleryLightbox = null;
+  let lightboxOpenTime = null;
+  let currentLightboxImageId = null;
+  const heroImpressions = new Set();
+
+  // Slideshow state
+  let currentSlide = 0;
+  let slideshowInterval;
+  let slideshowPaused = false;
+
+  // Filtering state (shared with GalleryFilter module below)
   let allCategories = {};
   let allTags = {};
   let activeCategory = null;
   let activeTags = [];
 
-  // ===== AGGREGATION =====
+  // ===== SLIDESHOW LOGIC =====
+
+  function initSlideshow() {
+    const container = document.getElementById('slideshow');
+    if (!container) {
+      console.warn('Slideshow container not found');
+      return;
+    }
+
+    // Separate featured from regular images
+    const featuredImages = galleryData.filter(img => img.featured);
+
+    // Weighted random: 70% featured, 30% any published
+    let randomStart;
+    if (featuredImages.length > 0 && Math.random() < 0.7) {
+      // Pick from featured images (70% chance)
+      const featuredIndex = Math.floor(Math.random() * featuredImages.length);
+      randomStart = galleryData.indexOf(featuredImages[featuredIndex]);
+    } else {
+      // Pick from all images (30% chance)
+      randomStart = Math.floor(Math.random() * galleryData.length);
+    }
+
+    currentSlide = randomStart;
+
+    galleryData.forEach((imageData, index) => {
+      const slide = document.createElement('div');
+      slide.className = 'slideshow-slide';
+      if (index === randomStart) slide.classList.add('active');
+
+      const img = document.createElement('img');
+      // Use large variant (1200px) for hero slideshow with responsive srcset
+      img.src = imageData.large_url || imageData.medium_url || `/assets/gallery/${imageData.filename}`;
+      img.srcset = `${imageData.medium_url} 800w, ${imageData.large_url} 1200w`;
+      img.sizes = '100vw';
+      img.alt = imageData.alt_text || imageData.title || `Photography by ${config.siteName}`;
+      // Eager load ONLY the random start image for optimal LCP
+      img.loading = index === randomStart ? 'eager' : 'lazy';
+
+      slide.appendChild(img);
+      slide.style.cursor = 'pointer';
+      slide.addEventListener('click', () => openSlideLightbox(index));
+      container.appendChild(slide);
+    });
+
+    // Auto-advance slideshow every 5 seconds
+    startSlideshow();
+
+    // Track first hero impression immediately (with random start)
+    recordHeroImpression(randomStart);
+
+    // Pause on hover
+    container.addEventListener('mouseenter', () => {
+      slideshowPaused = true;
+      clearInterval(slideshowInterval);
+    });
+
+    container.addEventListener('mouseleave', () => {
+      slideshowPaused = false;
+      startSlideshow();
+    });
+  }
+
+  function startSlideshow() {
+    if (slideshowPaused) return;
+    slideshowInterval = setInterval(() => {
+      changeSlide(1);
+    }, 5000);
+  }
+
+  function changeSlide(direction) {
+    const slides = document.querySelectorAll('.slideshow-slide');
+    slides[currentSlide].classList.remove('active');
+
+    currentSlide = (currentSlide + direction + slides.length) % slides.length;
+
+    slides[currentSlide].classList.add('active');
+
+    recordHeroImpression(currentSlide);
+
+    // Reset timer on manual navigation
+    if (slideshowInterval) {
+      clearInterval(slideshowInterval);
+      startSlideshow();
+    }
+  }
+
+  function recordHeroImpression(index) {
+    const imageId = galleryData[index]?.id;
+    if (imageId && !heroImpressions.has(imageId)) {
+      heroImpressions.add(imageId);
+      trackEvent('image_impression', imageId, { surface: 'hero_slideshow' });
+    }
+  }
+
+  function openSlideLightbox(index) {
+    const imageId = galleryData[index]?.id || index;
+    trackEvent('gallery_click', imageId, { surface: 'hero_slideshow' });
+
+    if (galleryLightbox) {
+      currentLightboxImageId = imageId;
+      lightboxOpenTime = Date.now();
+      trackEvent('lightbox_open', imageId);
+      galleryLightbox.openAt(index);
+    } else {
+      const galleryItems = document.querySelectorAll('.gallery-item');
+      if (galleryItems[index]) {
+        galleryItems[index].click();
+      }
+    }
+  }
+
+  // ===== GALLERY GRID LOGIC =====
+
+  function initGallery() {
+    const grid = document.getElementById('gallery-grid');
+    if (!grid) {
+      console.warn('Gallery grid not found');
+      return;
+    }
+
+    galleryData.forEach((imageData, index) => {
+      const link = document.createElement('a');
+      // Use 1200px WebP variant for lightbox (optimized, not full-res)
+      link.href = imageData.large_url || `/assets/gallery/${imageData.filename}`;
+      link.className = 'gallery-item glightbox';
+      link.setAttribute('data-gallery', 'portfolio');
+
+      // Add title and EXIF data if available
+      if (imageData.title) {
+        link.setAttribute('data-title', imageData.title);
+      }
+
+      // Build description with EXIF data if shared
+      let description = '';
+      if (imageData.caption) {
+        description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${imageData.caption}</p>`;
+      }
+
+      if (imageData.share_exif && imageData.exif) {
+        const exif = imageData.exif;
+        const exifParts = [];
+
+        if (exif.camera_make || exif.camera_model) {
+          const camera = [exif.camera_make, exif.camera_model].filter(Boolean).join(' ');
+          if (camera) exifParts.push(camera);
+        }
+        if (exif.lens) exifParts.push(exif.lens);
+        if (exif.focal_length) exifParts.push(exif.focal_length);
+        if (exif.aperture) exifParts.push(exif.aperture);
+        if (exif.shutter_speed) exifParts.push(exif.shutter_speed);
+        if (exif.iso) exifParts.push(`ISO ${exif.iso}`);
+
+        if (exifParts.length > 0) {
+          description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666; font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; letter-spacing: 0.02em;">${exifParts.join(' · ')}</p>`;
+        }
+
+        if (exif.location) {
+          description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">📍 ${exif.location}</p>`;
+        }
+      }
+
+      if (description) {
+        link.setAttribute('data-description', description);
+      }
+
+      const img = document.createElement('img');
+      // Use optimized WebP variants with responsive srcset
+      img.src = imageData.thumbnail_url || `/assets/gallery/${imageData.filename}`;
+      img.srcset = `${imageData.thumbnail_url} 400w, ${imageData.medium_url} 800w`;
+      img.sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
+      img.alt = imageData.alt_text || imageData.title || `Photography by ${config.siteName}`;
+      img.loading = 'lazy';
+      img.setAttribute('decoding', 'async');
+      img.setAttribute('fetchpriority', 'low');
+
+      img.onload = () => {
+        link.classList.add('has-image');
+      };
+
+      link.appendChild(img);
+      grid.appendChild(link);
+    });
+
+    // Initialize GLightbox after gallery is populated
+    setTimeout(() => {
+      galleryLightbox = window.GLightbox({
+        selector: '.glightbox',
+        touchNavigation: true,
+        loop: true,
+        autoplayVideos: false,
+        zoomable: false,
+        draggable: true,
+        closeButton: true,
+        closeOnOutsideClick: true
+      });
+    }, 100);
+
+    // Staggered reveal as items scroll into view
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!prefersReducedMotion) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-visible');
+            io.unobserve(e.target);
+          }
+        });
+      }, { rootMargin: '120px' });
+
+      document.querySelectorAll('.gallery-item').forEach(el => io.observe(el));
+    } else {
+      // Immediately show all items for users who prefer reduced motion
+      document.querySelectorAll('.gallery-item').forEach(el => {
+        el.classList.add('is-visible');
+      });
+    }
+  }
+
+  // ===== ANALYTICS TRACKING =====
+
+  // Session ID management (ephemeral, no PII)
+  function getSessionId() {
+    let sessionId = sessionStorage.getItem('analytics_session');
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem('analytics_session', sessionId);
+    }
+    return sessionId;
+  }
+
+  // Track events to analytics endpoint
+  async function trackEvent(eventType, imageId = null, metadata = null) {
+    try {
+      const payload = {
+        event_type: eventType,
+        session_id: getSessionId()
+      };
+
+      if (imageId !== null) {
+        payload.image_id = imageId;
+      }
+
+      // Get referrer from document
+      if (document.referrer) {
+        payload.referrer = document.referrer;
+      }
+
+      // Add metadata (duration, scroll depth, surface, etc.)
+      if (metadata) {
+        payload.metadata = JSON.stringify(metadata);
+      }
+
+      await fetch('/api/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (error) {
+      // Silently fail - don't disrupt user experience
+      console.debug('Analytics tracking failed:', error);
+    }
+  }
+
+  // Track page view on load
+  function trackPageView() {
+    trackEvent('page_view');
+  }
+
+  // Add click tracking to gallery items
+  function addGalleryTracking() {
+    document.querySelectorAll('.gallery-item').forEach((item, index) => {
+      item.addEventListener('click', () => {
+        // Use actual database ID instead of index for accurate analytics
+        const imageId = galleryData[index]?.id || index;
+        trackEvent('gallery_click', imageId);
+      });
+    });
+  }
+
+  // Track lightbox opens using GLightbox events
+  function addLightboxTracking() {
+    // Wait for GLightbox to be initialized
+    setTimeout(() => {
+      const lightboxElements = document.querySelectorAll('.glightbox');
+      lightboxElements.forEach((element, index) => {
+        element.addEventListener('click', () => {
+          // Track when lightbox opens (not the gallery click, which was already tracked)
+          setTimeout(() => {
+            // Use actual database ID instead of index for accurate analytics
+            const imageId = galleryData[index]?.id || index;
+            trackEvent('lightbox_open', imageId);
+            lightboxOpenTime = Date.now(); // Start duration tracking
+          }, 100);
+        });
+      });
+
+      // Track lightbox close and duration
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('gclose') || e.target.classList.contains('goverlay')) {
+          if (lightboxOpenTime) {
+            const duration = Math.round((Date.now() - lightboxOpenTime) / 1000); // seconds
+            trackEvent('lightbox_close', null, { duration });
+            lightboxOpenTime = null;
+          }
+        }
+      });
+    }, 200);
+  }
+
+  // Track image impressions (when images enter viewport)
+  function addImpressionTracking() {
+    const impressedImages = new Set(); // Prevent duplicate impressions
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+          const index = parseInt(entry.target.dataset.index);
+          const imageId = galleryData[index]?.id;
+
+          if (imageId && !impressedImages.has(imageId)) {
+            impressedImages.add(imageId);
+            trackEvent('image_impression', imageId);
+          }
+        }
+      });
+    }, {
+      threshold: 0.5, // 50% visible
+      rootMargin: '0px'
+    });
+
+    // Observe all gallery items
+    document.querySelectorAll('.gallery-item').forEach((item, index) => {
+      item.dataset.index = index;
+      observer.observe(item);
+    });
+  }
+
+  // Track scroll depth milestones
+  function addScrollDepthTracking() {
+    const milestones = [25, 50, 75, 100];
+    const reached = new Set();
+
+    function checkScrollDepth() {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrollPercent = (scrollTop / docHeight) * 100;
+
+      milestones.forEach(milestone => {
+        if (scrollPercent >= milestone && !reached.has(milestone)) {
+          reached.add(milestone);
+          trackEvent('scroll_depth', null, { depth: milestone });
+        }
+      });
+    }
+
+    // Throttle scroll events
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(checkScrollDepth, 200);
+    });
+  }
+
+  // ===== LOAD GALLERY DATA FROM API =====
+
+  async function loadGalleryData() {
+    try {
+      const response = await fetch(`/api/gallery/published?user_id=${config.userId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to load gallery: ${response.status}`);
+      }
+
+      const data = await response.json();
+      galleryData = data.images || [];
+      window.galleryData = galleryData; // Export for filtering module
+
+      // Extract filenames for backward compatibility
+      galleryImages = galleryData.map(img => img.filename);
+
+      console.log(`Loaded ${galleryData.length} published images from API for ${config.siteName}`);
+
+      // Dynamically update preload hint with first featured image
+      updatePreloadLink();
+
+      return true;
+    } catch (error) {
+      console.error('Error loading gallery data:', error);
+      // Fallback to empty gallery on error
+      galleryImages = [];
+      galleryData = [];
+      window.galleryData = [];
+      return false;
+    }
+  }
+
+  // Update preload link dynamically for optimal LCP
+  function updatePreloadLink() {
+    if (galleryData.length === 0) return;
+
+    const featuredImages = galleryData.filter(img => img.featured);
+    const preloadImage = featuredImages.length > 0
+      ? featuredImages[0].large_url
+      : galleryData[0].large_url;
+
+    // Update or create preload link
+    let preloadLink = document.querySelector('link[rel="preload"][as="image"]');
+    if (!preloadLink) {
+      preloadLink = document.createElement('link');
+      preloadLink.rel = 'preload';
+      preloadLink.as = 'image';
+      document.head.appendChild(preloadLink);
+    }
+    preloadLink.href = preloadImage;
+
+    console.log('Preload link updated:', preloadImage);
+  }
+
+  // ===== GALLERY FILTERING MODULE =====
+  // (Keep existing filtering logic from original shared/gallery.js)
+
   function aggregateFilters() {
     allCategories = {};
     allTags = {};
@@ -48,7 +487,6 @@
     console.log('Aggregated tags:', allTags);
   }
 
-  // ===== RENDERING =====
   function renderFilterSection() {
     // Render categories
     const categoryContainer = document.getElementById('category-pills');
@@ -91,7 +529,6 @@
     console.log('Filter section rendered');
   }
 
-  // ===== FILTER ACTIONS =====
   function filterByCategory(category) {
     if (activeCategory === category) {
       // Deactivate if clicking same category
@@ -194,7 +631,7 @@
       noResults.className = 'gallery-placeholder';
       noResults.innerHTML = `
         <p style="font-size: 18px; opacity: 0.7;">no images match your filters</p>
-        <button onclick="GalleryFilter.clearFilters()">clear all filters</button>
+        <button onclick="GalleryApp.GalleryFilter.clearFilters()">clear all filters</button>
       `;
       grid.appendChild(noResults);
       return;
@@ -244,14 +681,14 @@
       description += '<div class="lightbox-pills">';
 
       if (imageData.category) {
-        description += `<span class="lightbox-pill" onclick="GalleryFilter.filterFromLightbox('category', '${imageData.category}')">${imageData.category}</span>`;
+        description += `<span class="lightbox-pill" onclick="GalleryApp.GalleryFilter.filterFromLightbox('category', '${imageData.category}')">${imageData.category}</span>`;
       }
 
       if (imageData.tags) {
         imageData.tags.split(',').forEach(tag => {
           tag = tag.trim();
           if (tag) {
-            description += `<span class="lightbox-pill" onclick="GalleryFilter.filterFromLightbox('tag', '${tag}')">${tag}</span>`;
+            description += `<span class="lightbox-pill" onclick="GalleryApp.GalleryFilter.filterFromLightbox('tag', '${tag}')">${tag}</span>`;
           }
         });
       }
@@ -295,7 +732,6 @@
     }, 100);
   }
 
-  // ===== URL STATE MANAGEMENT =====
   function updateURL() {
     const params = new URLSearchParams();
 
@@ -327,7 +763,6 @@
     }
   }
 
-  // ===== LIGHTBOX INTEGRATION =====
   function filterFromLightbox(type, value) {
     // Close lightbox
     const closeBtn = document.querySelector('.gclose');
@@ -352,8 +787,7 @@
     }, 300);
   }
 
-  // ===== INITIALIZATION =====
-  function init() {
+  function initFiltering() {
     console.log('Initializing gallery filters...');
 
     // Aggregate and render
@@ -370,16 +804,56 @@
     console.log('Gallery filters initialized');
   }
 
+  // ===== MAIN INITIALIZATION =====
+
+  async function init() {
+    console.log('Initializing Gallery App for:', config.siteName);
+
+    // Load gallery data from API first
+    const loaded = await loadGalleryData();
+
+    if (!loaded || galleryData.length === 0) {
+      console.warn('No published images found');
+      return;
+    }
+
+    // Initialize gallery UI
+    initSlideshow();
+    initGallery();
+
+    // Initialize filtering
+    initFiltering();
+
+    // Initialize analytics tracking
+    trackPageView();
+    setTimeout(() => {
+      addGalleryTracking();
+      addLightboxTracking();
+      addImpressionTracking();
+      addScrollDepthTracking();
+    }, 500); // Wait for gallery to be fully initialized
+
+    console.log('Gallery App initialization complete');
+  }
+
   // ===== PUBLIC API =====
-  window.GalleryFilter = {
+
+  window.GalleryApp = {
     init: init,
-    aggregateFilters: aggregateFilters,
-    renderFilterSection: renderFilterSection,
-    filterByCategory: filterByCategory,
-    filterByTag: filterByTag,
-    clearFilters: clearFilters,
-    filterFromLightbox: filterFromLightbox,
-    loadFiltersFromURL: loadFiltersFromURL
+    // Expose filtering API for backward compatibility
+    GalleryFilter: {
+      init: initFiltering,
+      aggregateFilters: aggregateFilters,
+      renderFilterSection: renderFilterSection,
+      filterByCategory: filterByCategory,
+      filterByTag: filterByTag,
+      clearFilters: clearFilters,
+      filterFromLightbox: filterFromLightbox,
+      loadFiltersFromURL: loadFiltersFromURL
+    }
   };
+
+  // Also expose GalleryFilter at top level for backward compatibility
+  window.GalleryFilter = window.GalleryApp.GalleryFilter;
 
 })(window);
