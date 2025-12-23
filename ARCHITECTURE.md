@@ -106,7 +106,9 @@ Multi-photographer portfolio management system with AI-powered image analysis, m
     │   └── README.md                  # Notes on accessing private planning space
     ├── reviews/                       # Historical code/design reviews
     ├── setup/                         # One-time setup guides
-    └── guides/                        # Implementation guides
+    └── guides/                        # Implementation guides and operational runbooks
+        ├── GIT_WORKFLOW.md            # Protected branching/deployment guardrails (public)
+        └── OPERATIONS.md              # High-level ops runbook and cross-links
 
 /opt/prod/hensler_photography/         # Production environment (mirrors dev)
 ```
@@ -1275,6 +1277,7 @@ See **CHANGELOG.md** for detailed version history and release notes.
 - **CLAUDE.md**: Instructions for Claude Code AI assistant
 - **docs/ROADMAP_PUBLIC.md**: Sanitized public roadmap with released and upcoming milestones
 - **docs/planning/README.md**: Access notes for private sprint planning and task tracking
+- **docs/guides/GIT_WORKFLOW.md**: Branching and deployment safeguards to avoid divergence
 - **DEVELOPMENT.md**: Development best practices and workflow
 - **CHANGELOG.md**: Version history and release notes
 - **BACKUP.md**: Backup and recovery procedures

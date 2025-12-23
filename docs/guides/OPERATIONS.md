@@ -82,6 +82,7 @@ docker compose logs --tail=100
 
 - **[README.md](README.md)** - Complete project documentation and setup
 - **[WORKFLOW.md](WORKFLOW.md)** - Detailed deployment procedures
+- **[GIT_WORKFLOW.md](GIT_WORKFLOW.md)** - Branching and deployment guardrails to prevent divergence
 - **[BACKUP.md](BACKUP.md)** - Backup and restore procedures
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
 
