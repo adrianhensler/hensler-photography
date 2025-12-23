@@ -10,11 +10,12 @@ import os
 from typing import Optional
 
 from api.logging_config import get_logger
+from api.security import get_csrf_secret_key
 
 logger = get_logger(__name__)
 
 # CSRF configuration
-CSRF_SECRET_KEY = os.getenv("CSRF_SECRET_KEY", os.getenv("JWT_SECRET_KEY", "INSECURE_DEV_KEY"))
+CSRF_SECRET_KEY = get_csrf_secret_key()
 CSRF_TOKEN_EXPIRY = 3600  # 1 hour in seconds
 
 # Token serializer

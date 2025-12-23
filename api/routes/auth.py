@@ -18,6 +18,7 @@ from api.logging_config import get_logger
 from api.rate_limit import limiter, RATE_LIMITS
 from api.models import UserCreate, PasswordChange
 from api.audit import audit_login, audit_logout, audit_password_change, audit_user_create
+from api.security import get_jwt_secret_key
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -26,45 +27,9 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
 # JWT configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "INSECURE_DEV_KEY_CHANGE_IN_PRODUCTION")
+SECRET_KEY = get_jwt_secret_key()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
-
-
-# Validate JWT secret key on module load
-def _validate_jwt_secret():
-    """Validate that JWT secret key is properly configured"""
-    environment = os.getenv("ENVIRONMENT", "development")
-
-    if not SECRET_KEY:
-        raise ValueError(
-            "CRITICAL SECURITY ERROR: JWT_SECRET_KEY environment variable is not set. "
-            "Application cannot start without a secure JWT secret."
-        )
-
-    if SECRET_KEY == "INSECURE_DEV_KEY_CHANGE_IN_PRODUCTION":
-        if environment == "production":
-            raise ValueError(
-                "CRITICAL SECURITY ERROR: JWT_SECRET_KEY is using insecure default value. "
-                "You MUST set a secure random secret in production. "
-                "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
-            )
-        else:
-            logger.warning(
-                "WARNING: Using insecure default JWT_SECRET_KEY in development. "
-                "This is acceptable for local testing but NEVER use in production."
-            )
-
-    if len(SECRET_KEY) < 32:
-        raise ValueError(
-            f"CRITICAL SECURITY ERROR: JWT_SECRET_KEY is too short ({len(SECRET_KEY)} chars). "
-            "Must be at least 32 characters for security. "
-            "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
-        )
-
-
-# Run validation on module import
-_validate_jwt_secret()
 
 
 # User model (simple dict for now)
