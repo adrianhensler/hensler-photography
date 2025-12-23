@@ -30,6 +30,7 @@ def require_env_secret(var_name: str, *, min_length: int = 32) -> str:
 
 # Cache validated secrets at module import to ensure application fails fast
 JWT_SECRET_KEY = require_env_secret("JWT_SECRET_KEY")
+CSRF_SECRET_KEY = require_env_secret("CSRF_SECRET_KEY")
 
 
 def get_jwt_secret_key() -> str:
@@ -40,10 +41,6 @@ def get_jwt_secret_key() -> str:
 def get_csrf_secret_key() -> str:
     """Return the secret key to use for CSRF protection.
 
-    Prefer a dedicated CSRF secret if provided; otherwise reuse the validated JWT secret.
-    Both paths enforce minimum length requirements.
+    Enforces that a dedicated CSRF secret is configured and long enough.
     """
-    csrf_secret = os.getenv("CSRF_SECRET_KEY")
-    if csrf_secret:
-        return require_env_secret("CSRF_SECRET_KEY")
-    return get_jwt_secret_key()
+    return CSRF_SECRET_KEY
