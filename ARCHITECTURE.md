@@ -13,6 +13,8 @@ Multi-photographer portfolio management system with AI-powered image analysis, m
 
 **Next Phase**: Multi-user authentication, photographer dashboards, admin interface migration to main domain, and future AI chatbot assistant.
 
+**Roadmap Visibility**: High-level milestones are published in `docs/ROADMAP_PUBLIC.md`. Detailed sprint notes, task breakdowns, and retrospectives now live in private storage; see `docs/planning/README.md` for access guidance.
+
 ---
 
 ## Technology Stack
@@ -100,9 +102,8 @@ Multi-photographer portfolio management system with AI-powered image analysis, m
 ├── BACKUP.md                          # Backup and recovery procedures
 ├── CHANGELOG.md                       # Version history
 └── docs/                              # Organized documentation
-    ├── planning/                      # Roadmaps, TODOs, session notes
-    │   ├── ROADMAP.md
-    │   └── TODO.md
+    ├── planning/                      # Public pointer to private planning docs
+    │   └── README.md                  # Notes on accessing private planning space
     ├── reviews/                       # Historical code/design reviews
     ├── setup/                         # One-time setup guides
     └── guides/                        # Implementation guides
@@ -1272,8 +1273,8 @@ See **CHANGELOG.md** for detailed version history and release notes.
 ## References
 
 - **CLAUDE.md**: Instructions for Claude Code AI assistant
-- **docs/planning/ROADMAP.md**: Sprint timeline and feature roadmap
-- **docs/planning/TODO.md**: Current task list and future plans
+- **docs/ROADMAP_PUBLIC.md**: Sanitized public roadmap with released and upcoming milestones
+- **docs/planning/README.md**: Access notes for private sprint planning and task tracking
 - **DEVELOPMENT.md**: Development best practices and workflow
 - **CHANGELOG.md**: Version history and release notes
 - **BACKUP.md**: Backup and recovery procedures
