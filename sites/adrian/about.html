@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>About | Adrian Hensler Photography</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Learn about this photography portfolio and how it was built with AI assistance using Claude Code.">
+
+  <!-- Google Fonts: Playfair Display for headings, Inter for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:wght@300;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Base & Layout */
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #f5f5f5;
+      display: flex;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .wrap {
+      margin: auto;
+      max-width: 1000px;
+      padding: clamp(24px, 5vw, 48px);
+      text-align: center;
+    }
+
+    /* Typography - Ghost Effect Header */
+    .site-header {
+      margin: 0 0 48px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      margin: 0;
+      font-size: clamp(56px, 8vw, 80px);
+      letter-spacing: 0.05em;
+      line-height: 1.0;
+      opacity: 0.45;
+      text-transform: lowercase;
+    }
+
+    .subtitle {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(20px, 3vw, 28px);
+      letter-spacing: 0.08em;
+      margin: 8px 0 0;
+      opacity: 0.4;
+      text-transform: lowercase;
+    }
+
+    /* Site Navigation */
+    .site-nav {
+      margin-top: 24px;
+    }
+
+    .nav-link {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(14px, 2vw, 16px);
+      letter-spacing: 0.06em;
+      color: rgba(245, 245, 245, 0.4);
+      text-decoration: none;
+      text-transform: lowercase;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .nav-link:hover {
+      color: rgba(232, 213, 181, 0.7);
+      border-bottom-color: rgba(232, 213, 181, 0.3);
+    }
+
+    /* About Page Content */
+    .about-content {
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .about-section {
+      margin: 48px 0;
+      padding-bottom: 48px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .about-section:last-of-type {
+      border-bottom: none;
+    }
+
+    .about-section h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(24px, 4vw, 32px);
+      letter-spacing: 0.04em;
+      margin: 0 0 20px;
+      opacity: 0.55;
+      text-transform: lowercase;
+    }
+
+    .about-section p {
+      margin: 0 0 16px;
+      font-size: clamp(15px, 2vw, 17px);
+      line-height: 1.75;
+      color: rgba(245, 245, 245, 0.85);
+    }
+
+    .about-section p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Toggle/Accordion Styles */
+    .toggle-section {
+      margin: 24px 0;
+    }
+
+    .toggle-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 16px 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: rgba(245, 245, 245, 0.7);
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 16px;
+      font-weight: 300;
+      letter-spacing: 0.03em;
+      text-transform: lowercase;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-btn:hover {
+      border-color: rgba(232, 213, 181, 0.3);
+      background: rgba(232, 213, 181, 0.03);
+    }
+
+    .toggle-btn[aria-expanded="true"] {
+      border-color: rgba(232, 213, 181, 0.4);
+      background: rgba(232, 213, 181, 0.05);
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .toggle-icon {
+      font-size: 20px;
+      opacity: 0.5;
+      transition: transform 0.3s ease;
+      font-style: normal;
+    }
+
+    .toggle-btn[aria-expanded="true"] .toggle-icon {
+      transform: rotate(45deg);
+    }
+
+    .toggle-content {
+      background: rgba(15, 15, 15, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .toggle-content p {
+      margin: 0 0 12px;
+      font-size: 15px;
+      line-height: 1.7;
+      color: rgba(245, 245, 245, 0.8);
+    }
+
+    .toggle-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .toggle-content ul {
+      margin: 0 0 12px;
+      padding-left: 20px;
+      color: rgba(245, 245, 245, 0.8);
+    }
+
+    .toggle-content li {
+      margin-bottom: 8px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .toggle-content code {
+      background: rgba(232, 213, 181, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #e8d5b5;
+    }
+
+    /* AI Aside Styling */
+    .ai-note {
+      text-align: center;
+      margin: 64px 0 32px;
+      padding: 0;
+      border: none;
+    }
+
+    .ai-aside {
+      font-size: 14px;
+      color: rgba(245, 245, 245, 0.4);
+      font-style: italic;
+      margin: 0;
+    }
+
+    /* Buttons */
+    a.button {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 999px;
+      border: 1px solid #444;
+      text-decoration: none;
+      color: #f5f5f5;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin: 8px;
+    }
+
+    a.button:hover {
+      background: #1a1a1a;
+      border-color: #666;
+      transform: translateY(-1px);
+    }
+
+    .button-group {
+      margin: 24px 0;
+    }
+
+    /* Inline Links */
+    .about-section a {
+      color: #e8d5b5;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(232, 213, 181, 0.3);
+      transition: border-color 0.2s ease;
+    }
+
+    .about-section a:hover {
+      border-bottom-color: #e8d5b5;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .site-header {
+      animation: fadeIn 0.8s ease-out both;
+    }
+
+    h1 {
+      animation: fadeIn 1s ease-out 0.1s both;
+    }
+
+    .subtitle {
+      animation: fadeIn 1s ease-out 0.15s both;
+    }
+
+    .about-content {
+      animation: fadeIn 1s ease-out 0.3s both;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 48px;
+      font-size: 0.875rem;
+      color: #888;
+      letter-spacing: 0.03em;
+      text-align: center;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .about-section {
+        margin: 32px 0;
+        padding-bottom: 32px;
+      }
+
+      .toggle-btn {
+        padding: 14px 16px;
+        font-size: 15px;
+      }
+    }
+
+    /* Reduce motion for accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+
+  <meta property="og:title" content="About | Adrian Hensler Photography">
+  <meta property="og:description" content="Learn about this photography portfolio and how it was built with AI assistance.">
+  <meta property="og:type" content="website">
+</head>
+<body>
+  <main class="wrap about-page">
+    <header class="site-header">
+      <h1>adrian hensler</h1>
+      <p class="subtitle">photography</p>
+      <nav class="site-nav">
+        <a href="/" class="nav-link">back to gallery</a>
+      </nav>
+    </header>
+
+    <article class="about-content">
+
+      <!-- Section 1: What is this? -->
+      <section class="about-section">
+        <h2>what is this?</h2>
+        <p>
+          This is a photography portfolio showcasing images from Halifax, Nova Scotia and surrounding areas.
+          But it's also something else: a working example of what happens when you build an entire website
+          through conversation with AI.
+        </p>
+        <p>
+          I'm Adrian Hensler, a photographer and technologist. This site serves as both my portfolio and
+          a showcase of AI-assisted development. Every feature you see here was built through collaboration
+          between human creative direction and AI implementation.
+        </p>
+      </section>
+
+      <!-- Section 2: Built with AI -->
+      <section class="about-section">
+        <h2>built with artificial intelligence</h2>
+        <p>
+          The entire codebase for this site was created using <a href="https://claude.ai/code" target="_blank" rel="noopener">Claude Code</a>,
+          Anthropic's AI coding assistant. I describe what I want, and we build it together through conversation.
+        </p>
+
+        <div class="toggle-section">
+          <button class="toggle-btn" aria-expanded="false">
+            <span class="toggle-text">how it actually works</span>
+            <span class="toggle-icon">+</span>
+          </button>
+          <div class="toggle-content" hidden>
+            <p>
+              Think of it as pair programming with an AI. I provide the creative direction, requirements,
+              and quality standards. Claude handles the implementation details, writes the code, and helps
+              debug issues.
+            </p>
+            <p>
+              The workflow looks like this: I say "add a dark mode toggle to the settings page" and Claude
+              writes the HTML, CSS, and JavaScript. I review it, suggest changes, and we iterate until it's right.
+            </p>
+            <p>
+              I also use other AI tools when they make sense: GitHub Copilot for quick completions,
+              OpenAI's Codex-based tools for specific tasks. The goal is always the same: build something
+              good, efficiently.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: AI Features -->
+      <section class="about-section">
+        <h2>ai-powered features</h2>
+        <p>
+          Several features on this site use AI behind the scenes. Here's what's actually happening
+          when you browse the gallery.
+        </p>
+
+        <div class="toggle-section">
+          <button class="toggle-btn" aria-expanded="false">
+            <span class="toggle-text">image descriptions</span>
+            <span class="toggle-icon">+</span>
+          </button>
+          <div class="toggle-content" hidden>
+            <p>
+              Every image description you see in the gallery was generated by Claude's Vision API.
+              When I upload a photo, the AI analyzes it and suggests a title, caption, tags, and category.
+            </p>
+            <p>
+              You might notice a subtle "AI-generated description" label in the lightbox. That's intentional
+              transparency. If I review and edit a description, that label disappears because a human has
+              approved the content.
+            </p>
+            <p>
+              I can also choose different AI "styles" for descriptions: a minimal, factual style or a more
+              artistic, evocative approach. The minimal style is my attempt to avoid what people call
+              "AI slop" - those overly flowery, generic-sounding descriptions.
+            </p>
+          </div>
+        </div>
+
+        <div class="toggle-section">
+          <button class="toggle-btn" aria-expanded="false">
+            <span class="toggle-text">under the hood</span>
+            <span class="toggle-icon">+</span>
+          </button>
+          <div class="toggle-content" hidden>
+            <p>The technical stack, for those curious:</p>
+            <ul>
+              <li><strong>Frontend:</strong> Vanilla HTML, CSS, JavaScript. No frameworks.</li>
+              <li><strong>Backend:</strong> Python with FastAPI for the image management API</li>
+              <li><strong>Database:</strong> SQLite storing image metadata, EXIF data, and analytics</li>
+              <li><strong>Image processing:</strong> Automatic WebP conversion (images are 10-20x smaller)</li>
+              <li><strong>Hosting:</strong> Docker containers on a VPS, Caddy for HTTPS</li>
+              <li><strong>Analytics:</strong> Privacy-preserving (no cookies, hashed IPs, no personal data)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Explore the Code -->
+      <section class="about-section">
+        <h2>explore the code</h2>
+        <p>
+          This project is open source. You can browse the repository, see how everything is built,
+          and even fork it if you want to build something similar.
+        </p>
+
+        <div class="button-group">
+          <a href="https://github.com/adrianhensler/hensler-photography" class="button" target="_blank" rel="noopener">
+            View on GitHub
+          </a>
+        </div>
+
+        <div class="toggle-section">
+          <button class="toggle-btn" aria-expanded="false">
+            <span class="toggle-text">architecture overview</span>
+            <span class="toggle-icon">+</span>
+          </button>
+          <div class="toggle-content" hidden>
+            <p>The repository is organized around a multi-site architecture:</p>
+            <ul>
+              <li><code>/sites/adrian/</code> - This site you're viewing</li>
+              <li><code>/sites/liam/</code> - My brother's photography portfolio</li>
+              <li><code>/sites/shared/</code> - Common gallery code shared between sites</li>
+              <li><code>/api/</code> - FastAPI backend for image management</li>
+            </ul>
+            <p>
+              The management interface at <code>/manage</code> lets me upload images, edit metadata,
+              publish/unpublish photos, and view analytics. It's all built with the same AI-assisted workflow.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: AI Self-Aware Aside -->
+      <section class="about-section ai-note">
+        <p class="ai-aside">
+          Incidentally, this About page was also written by AI.<br>
+          But I promise a human checked my work.
+        </p>
+      </section>
+
+    </article>
+
+    <footer>
+      <p>&copy; <span id="y"></span> Adrian Hensler</p>
+    </footer>
+  </main>
+
+  <!-- Toggle functionality -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Toggle/accordion functionality
+      const toggleButtons = document.querySelectorAll('.toggle-btn');
+
+      toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const isExpanded = this.getAttribute('aria-expanded') === 'true';
+          const content = this.nextElementSibling;
+
+          // Toggle state
+          this.setAttribute('aria-expanded', !isExpanded);
+
+          if (isExpanded) {
+            content.hidden = true;
+          } else {
+            content.hidden = false;
+          }
+        });
+      });
+
+      // Copyright year
+      const yearEl = document.getElementById('y');
+      if (yearEl) {
+        yearEl.textContent = new Date().getFullYear();
+      }
+    });
+  </script>
+</body>
+</html>

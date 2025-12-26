@@ -65,6 +65,29 @@
       text-transform: lowercase;
     }
 
+    /* Site Navigation */
+    .site-nav {
+      margin-top: 24px;
+    }
+
+    .nav-link {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(14px, 2vw, 16px);
+      letter-spacing: 0.06em;
+      color: rgba(245, 245, 245, 0.4);
+      text-decoration: none;
+      text-transform: lowercase;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .nav-link:hover {
+      color: rgba(232, 213, 181, 0.7);
+      border-bottom-color: rgba(232, 213, 181, 0.3);
+    }
+
     p {
       margin: 0 0 24px;
       line-height: 1.65;
@@ -381,6 +404,9 @@
     <header class="site-header">
       <h1>adrian hensler</h1>
       <p class="subtitle">photography</p>
+      <nav class="site-nav">
+        <a href="/about" class="nav-link">about this site</a>
+      </nav>
     </header>
 
     <p class="bio">

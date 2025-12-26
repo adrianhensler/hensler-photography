@@ -132,9 +132,10 @@ adrian.hensler.photography {
     file_server
   }
 
-  # Serve static site files
+  # Serve static site files (with clean URLs for /about etc.)
   handle {
     root * /srv/sites/adrian
+    try_files {path} {path}.html {path}/index.html
     file_server
   }
 
