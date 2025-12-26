@@ -151,9 +151,19 @@ gptresearcher.hensler.photography:4001 {
 
   # Serve outputs (PDFs, reports) as static files
   @outputs path /outputs/*
-  handle @outputs {
+  @outputs_allowed {
+    path_regexp outputs ^/outputs/.*\.(pdf|txt|html|json)$
+    remote_ip private_ranges
+  }
+
+  handle @outputs_allowed {
     root * /srv/gptresearcher
-    file_server browse
+    header @outputs_allowed X-Robots-Tag "noindex, nofollow"
+    file_server
+  }
+
+  handle @outputs {
+    respond "forbidden" 403
   }
 
   # Route API and WebSocket requests to backend

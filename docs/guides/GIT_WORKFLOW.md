@@ -1,6 +1,6 @@
 # Git Workflow Best Practices
 
-This document establishes workflow practices to prevent "divergent branches" and lost work.
+This document codifies operational workflows to prevent divergent branches and lost work in production.
 
 ## What Happened (November 22, 2025)
 
@@ -9,7 +9,7 @@ This document establishes workflow practices to prevent "divergent branches" and
 - 1 unpushed commit (9887fde)
 - Meanwhile, GitHub had PR #4 merge commit (35d274a)
 
-**Result**: Git reported "divergent branches" - local and remote histories had split.
+**Result**: Git reported "divergent branches"—local and remote histories had split.
 
 **Resolution**: Stashed local changes, reset to origin/main, recovered work as PR #5.
 
@@ -122,42 +122,6 @@ docker compose restart
 # 4. If it doesn't work:
 git restore <file>  # Undo changes
 ```
-
-**Benefits**:
-- ✅ Fast experimentation
-- ✅ No git history pollution
-
-**Risks**:
-- ⚠️ Changes lost if you pull from GitHub
-- ⚠️ Can't recover if you break something
-
-**When to use**: Quick tests, debugging, experiments you might throw away
-
----
-
-## How to Check Status Before Pulling
-
-**Before any `git pull`, always check:**
-
-```bash
-# Check for uncommitted changes
-git status
-
-# Check for unpushed commits
-git log origin/main..HEAD
-
-# If either shows anything, handle it BEFORE pulling!
-```
-
-**If you have uncommitted changes:**
-- Option A: Commit them (Option 1 or 2 above)
-- Option B: Stash them (`git stash`)
-- Option C: Discard them (`git restore .`)
-
-**If you have unpushed commits:**
-- Option A: Push them (`git push origin main`)
-- Option B: Create PR from branch
-- Option C: Reset if they're not important
 
 ---
 

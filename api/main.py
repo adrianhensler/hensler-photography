@@ -26,6 +26,7 @@ from api.logging_config import get_logger
 from api.rate_limit import limiter
 from api.csrf import add_csrf_token_to_context
 from api.models import TrackingEvent
+from api.security import get_jwt_secret_key
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -413,7 +414,7 @@ async def track_event(request: Request, event: TrackingEvent):
     ip_hash = None
     if client_ip:
         # Use JWT secret as salt for IP hashing
-        salt = os.getenv("JWT_SECRET_KEY", "INSECURE_DEV_KEY")
+        salt = get_jwt_secret_key()
         ip_hash = hashlib.sha256(f"{client_ip}{salt}".encode()).hexdigest()[:16]
 
     # Get user agent and referrer from headers
