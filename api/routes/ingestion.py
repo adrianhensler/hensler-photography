@@ -903,18 +903,32 @@ async def reextract_exif(image_id: int):
 
 
 @router.post("/{image_id}/regenerate-ai")
-async def regenerate_ai_metadata(image_id: int, user_id: int = Form(...)):
+async def regenerate_ai_metadata(
+    image_id: int,
+    user_id: int = Form(...),
+    style: str = Form("balanced"),
+):
     """
     Re-run Claude Vision analysis on an existing image.
     Generates new title, caption, tags, category.
+
+    Args:
+        image_id: The image to regenerate metadata for
+        user_id: The user ID (for authorization)
+        style: AI style - 'minimal', 'technical', 'balanced', 'documentary', or 'artistic'
 
     Cost: ~$0.02 per image
     """
     from api.database import get_db_connection
     from api.services.claude_vision import analyze_image
 
-    context = {"image_id": image_id, "user_id": user_id}
-    logger.info(f"Regenerating AI metadata for image {image_id}", extra={"context": context})
+    # Validate style parameter
+    valid_styles = ["minimal", "technical", "balanced", "documentary", "artistic"]
+    if style not in valid_styles:
+        style = "balanced"
+
+    context = {"image_id": image_id, "user_id": user_id, "style": style}
+    logger.info(f"Regenerating AI metadata for image {image_id} with style '{style}'", extra={"context": context})
 
     try:
         async with get_db_connection() as db:
@@ -931,9 +945,9 @@ async def regenerate_ai_metadata(image_id: int, user_id: int = Form(...)):
             filename = row[0]
             file_path = f"/app/assets/gallery/{filename}"
 
-            # Re-run AI analysis
+            # Re-run AI analysis with selected style
             ai_metadata, ai_error = await analyze_image(
-                file_path, user_id=user_id, filename=filename
+                file_path, user_id=user_id, filename=filename, style=style
             )
 
             if ai_error:

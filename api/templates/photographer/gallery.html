@@ -1070,13 +1070,22 @@
                 </div>
 
                 <div style="margin: 1.5rem 0; padding-top: 1rem; border-top: 1px solid var(--border-light);">
-                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                        <button type="button" onclick="reextractEXIF()" style="flex: 1; min-width: 200px; padding: 0.75rem; background: var(--bg-primary); border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: stretch;">
+                        <button type="button" onclick="reextractEXIF()" style="flex: 1; min-width: 180px; padding: 0.75rem; background: var(--bg-primary); border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
                             🔄 Re-Extract EXIF
                         </button>
-                        <button type="button" onclick="regenerateAI()" style="flex: 1; min-width: 200px; padding: 0.75rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                            ✨ Regenerate AI Metadata (~$0.02)
-                        </button>
+                        <div style="flex: 2; min-width: 280px; display: flex; gap: 0;">
+                            <select id="regenerateStyle" style="padding: 0.75rem; background: var(--bg-secondary); border: 1px solid rgba(102, 126, 234, 0.5); border-right: none; color: var(--text-primary); border-radius: 8px 0 0 8px; font-size: 0.85rem; cursor: pointer;">
+                                <option value="minimal">Minimal</option>
+                                <option value="technical">Technical</option>
+                                <option value="balanced" selected>Balanced</option>
+                                <option value="documentary">Documentary</option>
+                                <option value="artistic">Artistic</option>
+                            </select>
+                            <button type="button" onclick="regenerateAI()" style="flex: 1; padding: 0.75rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 0 8px 8px 0; cursor: pointer; font-size: 0.9rem; white-space: nowrap;">
+                                ✨ Regenerate AI (~$0.02)
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1560,7 +1569,12 @@
             const imageId = document.getElementById('editImageId').value;
             if (!imageId) return;
 
-            if (!confirm('Regenerate AI metadata for this image? This will cost ~$0.02 and overwrite Title, Caption, Tags, Category.')) {
+            // Get selected AI style
+            const styleSelect = document.getElementById('regenerateStyle');
+            const style = styleSelect ? styleSelect.value : 'balanced';
+            const styleName = styleSelect ? styleSelect.options[styleSelect.selectedIndex].text : 'Balanced';
+
+            if (!confirm(`Regenerate AI metadata using "${styleName}" style? This will cost ~$0.02 and overwrite Title, Caption, Tags, Category.`)) {
                 return;
             }
 
@@ -1575,6 +1589,7 @@
             try {
                 const formData = new FormData();
                 formData.append('user_id', CURRENT_USER_ID);
+                formData.append('style', style);
 
                 const response = await fetch(`/api/images/${imageId}/regenerate-ai`, {
                     method: 'POST',
@@ -1595,8 +1610,8 @@
                     if (result.tags) document.getElementById('editTags').value = result.tags;
                     if (result.category) document.getElementById('editCategory').value = result.category;
 
-                    // Show success message
-                    showToast('✅ AI metadata regenerated successfully!', 'success');
+                    // Show success message with style used
+                    showToast(`✅ AI metadata regenerated (${styleName} style)`, 'success');
                 } else {
                     showToast('❌ ' + (result.error?.user_message || 'Failed to regenerate AI metadata'), 'error');
                 }
