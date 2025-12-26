@@ -57,7 +57,9 @@ async def get_published_gallery(user_id: int, response: Response):
                 i.created_at,
                 thumb.filename as thumbnail_filename,
                 medium.filename as medium_filename,
-                large.filename as large_filename
+                large.filename as large_filename,
+                i.ai_generated_title, i.ai_generated_caption, i.ai_generated_description,
+                i.ai_generated_alt_text, i.ai_generated_tags, i.ai_generated_category
             FROM images i
             LEFT JOIN image_variants thumb ON i.id = thumb.image_id
                 AND thumb.format = 'webp' AND thumb.size = 'thumbnail'
@@ -102,6 +104,17 @@ async def get_published_gallery(user_id: int, response: Response):
                     "location": row[21],
                 }
 
+            # AI disclosure: indicates which fields are AI-generated vs human-reviewed
+            # A field is AI-generated if its ai_generated_X value is 1 (or NULL for old data)
+            ai_disclosure = {
+                "title": bool(row[26]) if row[26] is not None else True,
+                "caption": bool(row[27]) if row[27] is not None else True,
+                "description": bool(row[28]) if row[28] is not None else True,
+                "alt_text": bool(row[29]) if row[29] is not None else True,
+                "tags": bool(row[30]) if row[30] is not None else True,
+                "category": bool(row[31]) if row[31] is not None else True,
+            }
+
             images.append(
                 {
                     "id": row[0],
@@ -125,6 +138,8 @@ async def get_published_gallery(user_id: int, response: Response):
                     "medium_url": medium_url,  # 800px for tablets
                     "large_url": large_url,  # 1200px for lightbox
                     "created_at": row[22],
+                    # AI disclosure for public transparency
+                    "ai_disclosure": ai_disclosure,
                 }
             )
 

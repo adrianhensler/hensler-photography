@@ -215,6 +215,9 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
                 slug = f"{slug_base}-{count + 1}" if count > 0 else slug_base
 
                 # Insert main image record
+                # AI-generated flags: 1 if AI succeeded, 0 if fallback was used
+                ai_generated = 1 if ai_error is None else 0
+
                 cursor = await db.execute(
                     """
                         INSERT INTO images (
@@ -224,10 +227,13 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
                             focal_length, aperture, shutter_speed, iso,
                             date_taken, location,
                             width, height, aspect_ratio, file_size,
-                            published, featured, available_for_sale
+                            published, featured, available_for_sale,
+                            ai_generated_title, ai_generated_caption, ai_generated_description,
+                            ai_generated_alt_text, ai_generated_tags, ai_generated_category
                         ) VALUES (
                             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?
                         )
                     """,
                     (
@@ -263,6 +269,12 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
                         0,  # Not published by default
                         0,  # Not featured
                         0,  # Not for sale yet
+                        ai_generated,  # ai_generated_title
+                        ai_generated,  # ai_generated_caption
+                        ai_generated,  # ai_generated_description
+                        ai_generated,  # ai_generated_alt_text
+                        ai_generated,  # ai_generated_tags
+                        ai_generated,  # ai_generated_category
                     ),
                 )
 
@@ -613,7 +625,9 @@ async def get_image(image_id: int):
                    tags, category, published, featured, available_for_sale, share_exif,
                    camera_make, camera_model, lens, focal_length, aperture,
                    shutter_speed, iso, date_taken, location,
-                   width, height, aspect_ratio, created_at, updated_at
+                   width, height, aspect_ratio, created_at, updated_at,
+                   ai_generated_title, ai_generated_caption, ai_generated_description,
+                   ai_generated_alt_text, ai_generated_tags, ai_generated_category
             FROM images WHERE id = ?
         """,
             (image_id,),
@@ -663,6 +677,15 @@ async def get_image(image_id: int):
         "dimensions": {"width": row[22], "height": row[23], "aspect_ratio": row[24]},
         "created_at": row[25],
         "updated_at": row[26],
+        # AI disclosure: indicates which fields are AI-generated vs human-reviewed
+        "ai_disclosure": {
+            "title": bool(row[27]) if row[27] is not None else True,
+            "caption": bool(row[28]) if row[28] is not None else True,
+            "description": bool(row[29]) if row[29] is not None else True,
+            "alt_text": bool(row[30]) if row[30] is not None else True,
+            "tags": bool(row[31]) if row[31] is not None else True,
+            "category": bool(row[32]) if row[32] is not None else True,
+        },
         "variants": [
             {
                 "format": v[0],
@@ -683,8 +706,19 @@ async def update_image_metadata(image_id: int, metadata: ImageMetadataUpdate):
     Update image metadata (title, caption, tags, etc.)
 
     Uses Pydantic ImageMetadataUpdate model for validation.
+    When a user edits a field, also marks it as human-reviewed (ai_generated = 0).
     """
     from api.database import get_db_connection
+
+    # Mapping of content fields to their ai_generated tracking columns
+    ai_tracked_fields = {
+        "title": "ai_generated_title",
+        "caption": "ai_generated_caption",
+        "description": "ai_generated_description",
+        "alt_text": "ai_generated_alt_text",
+        "tags": "ai_generated_tags",
+        "category": "ai_generated_category",
+    }
 
     async with get_db_connection() as db:
         # Build update query dynamically based on provided fields
@@ -700,6 +734,11 @@ async def update_image_metadata(image_id: int, metadata: ImageMetadataUpdate):
         for field, value in metadata_dict.items():
             updates.append(f"{field} = ?")
             values.append(value)
+
+            # If this is a tracked AI field, mark as human-reviewed
+            if field in ai_tracked_fields:
+                updates.append(f"{ai_tracked_fields[field]} = ?")
+                values.append(0)  # 0 = human-reviewed, no longer AI-generated
 
         values.append(image_id)
 
@@ -902,14 +941,22 @@ async def regenerate_ai_metadata(image_id: int, user_id: int = Form(...)):
                 return JSONResponse(status_code=ai_error.http_status, content=ai_error.to_dict())
 
             # Update database with new AI metadata (preserving manual edits to EXIF)
+            # Also reset ai_generated flags to 1 since this is fresh AI content
             await db.execute(
                 """
                 UPDATE images SET
                     title = ?,
                     caption = ?,
                     description = ?,
+                    alt_text = ?,
                     tags = ?,
                     category = ?,
+                    ai_generated_title = 1,
+                    ai_generated_caption = 1,
+                    ai_generated_description = 1,
+                    ai_generated_alt_text = 1,
+                    ai_generated_tags = 1,
+                    ai_generated_category = 1,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
             """,
@@ -917,6 +964,7 @@ async def regenerate_ai_metadata(image_id: int, user_id: int = Form(...)):
                     ai_metadata.get("title"),
                     ai_metadata.get("caption"),
                     ai_metadata.get("description"),
+                    ai_metadata.get("caption"),  # Auto-populate alt_text from caption
                     (
                         ",".join(ai_metadata.get("tags", []))
                         if isinstance(ai_metadata.get("tags"), list)

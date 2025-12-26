@@ -291,6 +291,23 @@ def run_migrations():
             cursor.execute("ALTER TABLE users ADD COLUMN ai_style TEXT DEFAULT 'balanced'")
             print("✓ Migration complete: ai_style column added")
 
+        # AI-generated content tracking (per-field)
+        # Default = 1 (AI-generated) since all existing content was AI-generated
+        ai_tracking_columns = [
+            "ai_generated_title",
+            "ai_generated_caption",
+            "ai_generated_description",
+            "ai_generated_alt_text",
+            "ai_generated_tags",
+            "ai_generated_category",
+        ]
+
+        for col in ai_tracking_columns:
+            if col not in image_columns:
+                print(f"Running migration: Adding {col} column to images table")
+                cursor.execute(f"ALTER TABLE images ADD COLUMN {col} BOOLEAN DEFAULT 1")
+                print(f"✓ Migration complete: {col} column added")
+
 
 def init_database():
     """Initialize database with schema and seed data"""

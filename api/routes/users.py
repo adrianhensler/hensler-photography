@@ -20,7 +20,7 @@ class UserUpdate(BaseModel):
 
     display_name: Optional[str] = Field(None, max_length=200)
     bio: Optional[str] = Field(None, max_length=1000)
-    ai_style: Optional[str] = Field(None, pattern="^(technical|artistic|documentary|balanced)$")
+    ai_style: Optional[str] = Field(None, pattern="^(technical|artistic|documentary|balanced|minimal)$")
 
 
 @router.get("/me")

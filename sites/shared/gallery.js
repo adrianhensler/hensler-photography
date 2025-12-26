@@ -170,6 +170,11 @@
       let description = '';
       if (imageData.caption) {
         description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${imageData.caption}</p>`;
+
+        // AI disclosure indicator (subtle, only if caption is AI-generated)
+        if (imageData.ai_disclosure && imageData.ai_disclosure.caption) {
+          description += `<p style="margin: 0 0 0.75rem 0; font-size: 0.7rem; color: #999; font-style: italic; opacity: 0.7;">AI-generated description</p>`;
+        }
       }
 
       if (imageData.share_exif && imageData.exif) {
@@ -652,6 +657,11 @@
       let description = '';
       if (imageData.caption) {
         description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${imageData.caption}</p>`;
+
+        // AI disclosure indicator (subtle, only if caption is AI-generated)
+        if (imageData.ai_disclosure && imageData.ai_disclosure.caption) {
+          description += `<p style="margin: 0 0 0.75rem 0; font-size: 0.7rem; color: #999; font-style: italic; opacity: 0.7;">AI-generated description</p>`;
+        }
       }
 
       if (imageData.share_exif && imageData.exif) {

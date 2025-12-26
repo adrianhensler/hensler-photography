@@ -31,7 +31,7 @@ def get_analysis_prompt(style: str = "balanced") -> str:
     Get AI analysis prompt based on photographer's preferred style.
 
     Args:
-        style: One of 'technical', 'artistic', 'documentary', or 'balanced'
+        style: One of 'technical', 'artistic', 'documentary', 'balanced', or 'minimal'
 
     Returns:
         Prompt string for Claude Vision API
@@ -119,6 +119,34 @@ Guidelines:
 - Focus on: what makes the image work both technically and aesthetically
 - Tags should include: subject matter, mood, technical aspects, compositional elements, time of day
 - Write in a professional tone that respects both craft and creativity
+
+Return ONLY valid JSON, no other text.""",
+        "minimal": """You are describing a photograph for a portfolio website. Be factual and direct.
+
+Provide a JSON response with the following fields:
+
+{
+  "title": "A simple, factual title (3-6 words)",
+  "caption": "One sentence describing what is shown in the image",
+  "description": "Two sentences: what the image shows and one basic observation about the composition or lighting",
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "category": "one of: landscape, portrait, street, nature, architecture, abstract, wildlife, urban, night, or other"
+}
+
+Guidelines:
+- Title: State what is in the image directly (e.g., "Oak Tree in Winter Field" not "Solitary Sentinel of the Frozen Landscape")
+- Caption: One factual sentence about the subject. No metaphors, no poetry, no emotional language.
+- Description: State what is visible and one technical observation. No flowery language.
+- Tags: Factual descriptors only (subject, location type, weather, time of day, technique if obvious)
+
+AVOID these patterns:
+- "captures the essence" / "tells a story" / "invites the viewer"
+- "whispers" / "embraces" / "dances" / "breathes"
+- Metaphors, similes, or personification
+- Emotional or evocative language
+- Gallery-speak or art criticism terminology
+
+BE DIRECT: Write "A foggy valley at sunrise" not "Morning mist whispers across the sleeping valley"
 
 Return ONLY valid JSON, no other text.""",
     }
