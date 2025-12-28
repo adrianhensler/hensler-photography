@@ -39,22 +39,24 @@ def get_analysis_prompt(style: str = "balanced") -> str:
     prompts = {
         "technical": """You are a technical photography analyst with expertise in composition, lighting, and camera techniques.
 
+CRITICAL: You MUST provide an alt_text field for accessibility compliance.
+
 Provide a JSON response with the following fields:
 
 {
+  "alt_text": "REQUIRED: Accessible description for screen readers (1 sentence, factual description of what is visible)",
   "title": "A descriptive, factual title (3-8 words)",
   "caption": "A 1-2 sentence description focusing on what is actually in the image and how it was captured",
   "description": "A detailed technical analysis (2-3 sentences) covering composition, lighting setup, technical execution, and photographic techniques used",
-  "alt_text": "Accessible description for screen readers (1 sentence, factual)",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "category": "one of: landscape, portrait, street, nature, architecture, abstract, wildlife, urban, night, or other"
 }
 
 Guidelines:
+- Alt text (REQUIRED): One factual sentence describing key visual elements for accessibility. Example: "Wide-angle landscape of rocky coastline at sunset with dramatic clouds"
 - Title should be direct and descriptive (e.g., "Foggy Valley at Dawn" not "Whispers of Morning Mist")
 - Caption should describe what is actually visible and the capture conditions
 - Description should read like a photographer explaining their work to another photographer
-- Alt text should be concise, factual, describe key visual elements for accessibility
 - Focus on: composition techniques, lighting quality, exposure decisions, depth of field choices
 - Tags should include: subject matter, lighting conditions, compositional technique, equipment used (if apparent), time of day
 - Write in a grounded, technical tone focused on photographic craft
@@ -62,22 +64,24 @@ Guidelines:
 Return ONLY valid JSON, no other text.""",
         "artistic": """You are an expert photography curator analyzing this image for a fine art gallery.
 
+CRITICAL: You MUST provide an alt_text field for accessibility compliance.
+
 Provide a JSON response with the following fields:
 
 {
+  "alt_text": "REQUIRED: Accessible description for screen readers (1 sentence, factual description of what is visible)",
   "title": "A short, evocative title (3-8 words)",
   "caption": "A 1-2 sentence caption describing the mood, emotion, or story",
   "description": "A detailed description (2-3 sentences) covering the narrative, emotional impact, and artistic vision",
-  "alt_text": "Accessible description for screen readers (1 sentence, factual despite artistic context)",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "category": "one of: landscape, portrait, street, nature, architecture, abstract, wildlife, urban, night, or other"
 }
 
 Guidelines:
+- Alt text (REQUIRED): One factual sentence describing key visual elements for accessibility. Example: "Silhouette of a person standing on a misty mountain peak at dawn"
 - Title should be evocative and poetic (e.g., "Whispers of Morning Mist" or "Solitude's Embrace")
 - Caption should tell a story or evoke an emotional response
 - Description should explore the mood, atmosphere, and artistic intent
-- Alt text should remain factual and accessible, describing key visual elements
 - Focus on: emotional resonance, symbolism, narrative elements, aesthetic qualities
 - Tags should include: mood/emotion, artistic style, color palette, thematic elements, atmosphere
 - Write in a sophisticated, gallery-quality tone that elevates the artistic vision
@@ -85,22 +89,24 @@ Guidelines:
 Return ONLY valid JSON, no other text.""",
         "documentary": """You are a documentary photography expert analyzing this image for journalistic or educational purposes.
 
+CRITICAL: You MUST provide an alt_text field for accessibility compliance.
+
 Provide a JSON response with the following fields:
 
 {
+  "alt_text": "REQUIRED: Accessible description for screen readers (1 sentence, factual description of what is visible)",
   "title": "A clear, informative title (3-8 words)",
   "caption": "A 1-2 sentence factual description of what is shown",
   "description": "A detailed objective description (2-3 sentences) covering the subject matter, context, and relevant details",
-  "alt_text": "Accessible description for screen readers (1 sentence, factual)",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "category": "one of: landscape, portrait, street, nature, architecture, abstract, wildlife, urban, night, or other"
 }
 
 Guidelines:
+- Alt text (REQUIRED): One factual sentence describing key visual elements for accessibility. Example: "Crowded outdoor market with vendors selling fresh produce under colorful awnings"
 - Title should be clear and informative (e.g., "Street Market in Morning Light" or "Urban Cyclist at Intersection")
 - Caption should state facts about what is depicted
 - Description should provide context and relevant information about the subject
-- Alt text should be concise and describe key visual elements for accessibility
 - Focus on: what is shown, where it might be, when (time of day/season), who/what is the subject
 - Tags should include: subject matter, location type, activity shown, documentary genre, contextual details
 - Write in a neutral, journalistic tone focused on accuracy and information
@@ -108,45 +114,48 @@ Guidelines:
 Return ONLY valid JSON, no other text.""",
         "balanced": """You are an experienced photography expert analyzing this image for a professional portfolio.
 
+CRITICAL: You MUST provide an alt_text field for accessibility compliance.
+
 Provide a JSON response with the following fields:
 
 {
+  "alt_text": "REQUIRED: Accessible description for screen readers (1 sentence, factual description of what is visible)",
   "title": "A compelling, descriptive title (3-8 words)",
   "caption": "A 1-2 sentence caption balancing what is shown with how it makes viewers feel",
   "description": "A detailed description (2-3 sentences) covering both technical execution and artistic qualities",
-  "alt_text": "Accessible description for screen readers (1 sentence, factual)",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "category": "one of: landscape, portrait, street, nature, architecture, abstract, wildlife, urban, night, or other"
 }
 
 Guidelines:
+- Alt text (REQUIRED): One factual sentence describing key visual elements for accessibility. Example: "A person in a red coat walking through a snowy forest at dusk"
 - Title should be both descriptive and engaging
 - Caption should describe the scene while acknowledging its mood or appeal
 - Description should balance technical observations (lighting, composition) with artistic qualities (mood, impact)
-- Alt text should be concise, factual, describing key visual elements for accessibility
-- Focus on: what makes the image work both technically and aesthetically
 - Tags should include: subject matter, mood, technical aspects, compositional elements, time of day
 - Write in a professional tone that respects both craft and creativity
 
 Return ONLY valid JSON, no other text.""",
         "minimal": """You are describing a photograph for a portfolio website. Be factual and direct.
 
+CRITICAL: You MUST provide an alt_text field for accessibility compliance.
+
 Provide a JSON response with the following fields:
 
 {
+  "alt_text": "REQUIRED: One factual sentence describing what is visible in the image",
   "title": "A simple, factual title (3-6 words)",
   "caption": "One sentence describing what is shown in the image",
   "description": "Two sentences: what the image shows and one basic observation about the composition or lighting",
-  "alt_text": "Accessible description for screen readers (1 sentence, factual)",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "category": "one of: landscape, portrait, street, nature, architecture, abstract, wildlife, urban, night, or other"
 }
 
 Guidelines:
+- Alt text (REQUIRED): Direct factual description. Example: "A bearded man in black and white portrait looking off camera"
 - Title: State what is in the image directly (e.g., "Oak Tree in Winter Field" not "Solitary Sentinel of the Frozen Landscape")
 - Caption: One factual sentence about the subject. No metaphors, no poetry, no emotional language.
 - Description: State what is visible and one technical observation. No flowery language.
-- Alt text: One concise sentence describing key visual elements for accessibility
 - Tags: Factual descriptors only (subject, location type, weather, time of day, technique if obvious)
 
 AVOID these patterns:
@@ -336,6 +345,12 @@ async def analyze_image(
         # Parse response
         response_text = message.content[0].text.strip()
 
+        # DEBUG: Log raw response to investigate alt_text issue
+        logger.info(
+            f"Raw Claude response (first 800 chars): {response_text[:800]}",
+            extra={"context": context},
+        )
+
         # Extract JSON from response (Claude sometimes adds markdown formatting)
         if response_text.startswith("```json"):
             response_text = response_text.split("```json")[1].split("```")[0].strip()
@@ -367,7 +382,7 @@ async def analyze_image(
             metadata["tags"] = [tag.strip() for tag in metadata["tags"].split(",")]
 
         # Validate required fields
-        required_fields = ["title", "caption", "description", "tags", "category"]
+        required_fields = ["title", "caption", "description", "alt_text", "tags", "category"]
         for field in required_fields:
             if field not in metadata:
                 logger.warning(

@@ -10,6 +10,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **DEVELOPMENT.md** - Development workflow and best practices
 - **INTEGRATION_BREAKPOINT.md** - Current integration status (static → API)
 
+## AI Coding Working Agreement
+
+### Non-Negotiables
+1. **Make it work first.** Only refactor after tests pass and behavior is correct.
+2. **Small, reviewable diffs.** Prefer multiple small commits over one big change.
+3. **Do not change tests** unless explicitly instructed (or adding coverage for new behavior).
+4. **No new dependencies** without approval. If needed, explain why and list alternatives.
+5. **Ask before destructive actions** (deletes, migrations, data resets, force pushes, wide refactors).
+
+### Workflow: Plan → Build → Verify → Summarize
+
+**Plan** (before edits):
+- Restate goal in 1-2 lines
+- List files to touch
+- Define acceptance criteria (what proves this is done)
+
+**Build** (implementation):
+- Follow existing patterns unless told otherwise
+- Prefer straightforward code over clever code
+- Keep functions small; isolate side effects at edges
+
+**Verify** (always run):
+- Run targeted tests for changed areas, then full suite
+- Check lint/format, typecheck if present
+- Test on port 8080 before production (see "Test Before Production" section)
+
+**Summarize** (after completion):
+- What changed and why (bullet list)
+- How verified (commands run + results)
+- Any follow-ups or known limitations
+
+### Backend Quality Attributes
+- **Idempotency**: Re-running same operation should not duplicate/corrupt state
+- **Reproducibility**: Pin dependencies, avoid time-dependent behavior in core logic
+- **Traceability**: Log inputs, key decisions, outputs; include run_id for async operations
+- **Auditability**: Prefer append-only history for important records
+
 ## Project Overview
 
 Multi-site static photography portfolio deployment using a **single Caddy container** serving three domains:

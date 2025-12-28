@@ -35,6 +35,7 @@ services:
     environment:
       - DATABASE_PATH=/data/gallery.db
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - CSRF_SECRET_KEY=${CSRF_SECRET_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 
 networks:
