@@ -711,7 +711,7 @@
 
       const img = document.createElement('img');
       img.src = `/assets/gallery/${imageData.filename}`;
-      img.alt = imageData.title || 'Photography';
+      img.alt = imageData.alt_text || imageData.title || `Photography by ${config.siteName}`;
       img.loading = 'lazy';
       img.setAttribute('decoding', 'async');
       img.setAttribute('fetchpriority', 'low');
