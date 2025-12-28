@@ -621,7 +621,7 @@ async def get_image(image_id: int):
     async with get_db_connection() as db:
         cursor = await db.execute(
             """
-            SELECT id, user_id, filename, slug, title, caption, description,
+            SELECT id, user_id, filename, slug, title, caption, description, alt_text,
                    tags, category, published, featured, available_for_sale, share_exif,
                    camera_make, camera_model, lens, focal_length, aperture,
                    shutter_speed, iso, date_taken, location,
@@ -657,34 +657,35 @@ async def get_image(image_id: int):
         "title": row[4],
         "caption": row[5],
         "description": row[6],
-        "tags": row[7],
-        "category": row[8],
-        "published": bool(row[9]),
-        "featured": bool(row[10]),
-        "available_for_sale": bool(row[11]),
-        "share_exif": bool(row[12]),
+        "alt_text": row[7],
+        "tags": row[8],
+        "category": row[9],
+        "published": bool(row[10]),
+        "featured": bool(row[11]),
+        "available_for_sale": bool(row[12]),
+        "share_exif": bool(row[13]),
         "exif": {
-            "camera_make": row[13],
-            "camera_model": row[14],
-            "lens": row[15],
-            "focal_length": row[16],
-            "aperture": row[17],
-            "shutter_speed": row[18],
-            "iso": row[19],
-            "date_taken": row[20],
-            "location": row[21],
+            "camera_make": row[14],
+            "camera_model": row[15],
+            "lens": row[16],
+            "focal_length": row[17],
+            "aperture": row[18],
+            "shutter_speed": row[19],
+            "iso": row[20],
+            "date_taken": row[21],
+            "location": row[22],
         },
-        "dimensions": {"width": row[22], "height": row[23], "aspect_ratio": row[24]},
-        "created_at": row[25],
-        "updated_at": row[26],
+        "dimensions": {"width": row[23], "height": row[24], "aspect_ratio": row[25]},
+        "created_at": row[26],
+        "updated_at": row[27],
         # AI disclosure: indicates which fields are AI-generated vs human-reviewed
         "ai_disclosure": {
-            "title": bool(row[27]) if row[27] is not None else True,
-            "caption": bool(row[28]) if row[28] is not None else True,
-            "description": bool(row[29]) if row[29] is not None else True,
-            "alt_text": bool(row[30]) if row[30] is not None else True,
-            "tags": bool(row[31]) if row[31] is not None else True,
-            "category": bool(row[32]) if row[32] is not None else True,
+            "title": bool(row[28]) if row[28] is not None else True,
+            "caption": bool(row[29]) if row[29] is not None else True,
+            "description": bool(row[30]) if row[30] is not None else True,
+            "alt_text": bool(row[31]) if row[31] is not None else True,
+            "tags": bool(row[32]) if row[32] is not None else True,
+            "category": bool(row[33]) if row[33] is not None else True,
         },
         "variants": [
             {
@@ -928,7 +929,10 @@ async def regenerate_ai_metadata(
         style = "balanced"
 
     context = {"image_id": image_id, "user_id": user_id, "style": style}
-    logger.info(f"Regenerating AI metadata for image {image_id} with style '{style}'", extra={"context": context})
+    logger.info(
+        f"Regenerating AI metadata for image {image_id} with style '{style}'",
+        extra={"context": context},
+    )
 
     try:
         async with get_db_connection() as db:
