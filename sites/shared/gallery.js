@@ -6,6 +6,7 @@
  * - Requires GLightbox library to be loaded
  * - Requires window.GALLERY_CONFIG = { userId: 1, siteName: 'Adrian Hensler' }
  * - Requires HTML elements: #slideshow, #gallery-grid, #category-pills, #tag-pills, #active-filters
+ * - Optional HTML element: #featured-toggle (button group for featured vs all)
  */
 
 (function(window) {
@@ -32,6 +33,7 @@
   let allTags = {};
   let activeCategory = null;
   let activeTags = [];
+  let featuredOnly = true;
 
   // ===== SLIDESHOW LOGIC =====
 
@@ -42,7 +44,8 @@
       return;
     }
 
-    // Separate featured from regular images
+    // The hero slideshow always uses the full published dataset,
+    // independent of the featured-only gallery filter.
     const featuredImages = galleryData.filter(img => img.featured);
 
     // Weighted random: 70% featured, 30% any published
@@ -560,6 +563,10 @@
     // Filter galleryData
     let filteredData = window.galleryData;
 
+    if (featuredOnly) {
+      filteredData = filteredData.filter(img => img.featured);
+    }
+
     if (activeCategory) {
       filteredData = filteredData.filter(img => img.category === activeCategory);
     }
@@ -589,6 +596,8 @@
       pill.classList.remove('active');
     });
 
+    document.querySelector(`.pill[data-featured="${featuredOnly}"]`)?.classList.add('active');
+
     if (activeCategory) {
       document.querySelector(`.pill[data-category="${activeCategory}"]`)?.classList.add('active');
     }
@@ -602,14 +611,15 @@
     const activeFilterText = document.getElementById('active-filter-text');
 
     if (activeFiltersDiv && activeFilterText) {
-      if (activeCategory || activeTags.length > 0) {
+      if (featuredOnly || activeCategory || activeTags.length > 0) {
         activeFiltersDiv.style.display = 'flex';
 
         const parts = [];
+        if (featuredOnly) parts.push('featured only');
         if (activeCategory) parts.push(`category: ${activeCategory}`);
-        if (activeTags.length > 0) parts.push(`tags: ${activeTags.join(', ')}`);
-        activeFilterText.textContent = parts.join('  •  ');
-      } else {
+      if (activeTags.length > 0) parts.push(`tags: ${activeTags.join(', ')}`);
+      activeFilterText.textContent = parts.join('  •  ');
+    } else {
         activeFiltersDiv.style.display = 'none';
       }
     }
@@ -773,6 +783,11 @@
     }
   }
 
+  function setFeaturedOnly(value) {
+    featuredOnly = Boolean(value);
+    applyFilters();
+  }
+
   function filterFromLightbox(type, value) {
     // Close lightbox
     const closeBtn = document.querySelector('.gclose');
@@ -804,6 +819,18 @@
     aggregateFilters();
     renderFilterSection();
     loadFiltersFromURL();
+
+    const featuredToggle = document.getElementById('featured-toggle');
+    if (featuredToggle) {
+      featuredToggle.querySelectorAll('[data-featured]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const value = button.dataset.featured === 'true';
+          setFeaturedOnly(value);
+        });
+      });
+    }
+
+    applyFilters();
 
     // Setup clear filters button
     const clearBtn = document.getElementById('clear-filters');
@@ -857,6 +884,7 @@
       renderFilterSection: renderFilterSection,
       filterByCategory: filterByCategory,
       filterByTag: filterByTag,
+      setFeaturedOnly: setFeaturedOnly,
       clearFilters: clearFilters,
       filterFromLightbox: filterFromLightbox,
       loadFiltersFromURL: loadFiltersFromURL
