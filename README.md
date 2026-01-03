@@ -183,7 +183,7 @@ docker compose logs -f
 - Re-extract EXIF from original file (free)
 - Regenerate AI metadata on demand
 - Publish/unpublish workflow
-- Mark images as featured
+- Mark images as featured (used to weight/curate public gallery selections)
 - Delete images (cascade to variants)
 
 **Analytics Dashboard** (`/manage/analytics`):
