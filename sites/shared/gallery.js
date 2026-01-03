@@ -758,6 +758,11 @@
   function buildFilterURL() {
     const params = new URLSearchParams();
 
+    // Only add featured param if set to false (default is true)
+    if (!featuredOnly) {
+      params.set('featured', 'false');
+    }
+
     if (activeCategory) {
       params.set('category', activeCategory);
     }
@@ -825,6 +830,11 @@
   function loadFiltersFromURL() {
     const params = new URLSearchParams(window.location.search);
 
+    // Load featured filter from URL (default is true)
+    if (params.has('featured')) {
+      featuredOnly = params.get('featured') !== 'false';
+    }
+
     if (params.has('category')) {
       activeCategory = params.get('category');
     }
@@ -845,7 +855,7 @@
       activeTags = [...new Set(tagValues.map(tag => tag.trim()).filter(Boolean))];
     }
 
-    if (activeCategory || activeTags.length > 0) {
+    if (featuredOnly || activeCategory || activeTags.length > 0) {
       applyFilters({ historyMode: 'replace' });
     } else {
       updateFilterUI();
@@ -906,6 +916,12 @@
     if (clearBtn) {
       clearBtn.addEventListener('click', clearFilters);
     }
+
+    // Setup popstate handler for browser back/forward navigation
+    window.addEventListener('popstate', () => {
+      console.log('Popstate event: restoring filter state from URL');
+      loadFiltersFromURL();
+    });
 
     console.log('Gallery filters initialized');
   }
