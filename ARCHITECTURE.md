@@ -174,7 +174,7 @@ CREATE TABLE images (
 
     -- Publishing controls
     published BOOLEAN DEFAULT 0,
-    featured BOOLEAN DEFAULT 0,
+    featured BOOLEAN DEFAULT 0,             -- Weighted/curated for public gallery selection
     available_for_sale BOOLEAN DEFAULT 0,
 
     -- Timestamps

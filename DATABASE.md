@@ -121,7 +121,7 @@ CREATE TABLE images (
 
     -- Publishing workflow
     published BOOLEAN DEFAULT 0,            -- 0=Private (draft), 1=Public (on website)
-    featured BOOLEAN DEFAULT 0,             -- DEPRECATED: Use 'published' instead
+    featured BOOLEAN DEFAULT 0,             -- Highlighted for public gallery weighting/curation
     available_for_sale BOOLEAN DEFAULT 0,   -- Future: e-commerce integration
     sort_order INTEGER,                     -- Manual ordering within gallery
 
@@ -136,6 +136,7 @@ CREATE TABLE images (
 **Publishing States:**
 - `published=0` (Private): Image only visible in `/manage/gallery`
 - `published=1` (Public): Image appears on `user.hensler.photography` via API
+- `featured=1` (Featured): Used to weight/curate public gallery selections (requires published image)
 
 **Filename Convention:**
 ```
