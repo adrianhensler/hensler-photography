@@ -438,6 +438,38 @@ CREATE TABLE ai_costs (
 - Native lazy loading (loading="lazy" attribute)
 - 10-20x faster page loads vs full-resolution images
 
+**Gallery Filtering & URL Synchronization** (✅ Implemented January 2026):
+- **Featured/All Toggle**: Default view shows only featured images, users can toggle to "all"
+  - UI: Two-button toggle above filters: "featured" | "all"
+  - Default: Featured only (shows curated selection)
+  - State persists in URL: `?featured=false` for "all" view
+- **Category Filters**: Click category pills to filter by category
+  - URL format: `?category=portrait` or `?category=wildlife`
+  - Categories dynamically generated from image metadata
+- **Tag Filters**: Click tag pills to filter by tags (supports multiple)
+  - Single tag: `?tag=nature`
+  - Multiple tags: `?tags=nature,landscape,wildlife`
+  - Tags dynamically aggregated from all images
+- **URL Synchronization**:
+  - All filter state synced to URL query parameters
+  - Browser history support: back/forward buttons restore filter state (popstate)
+  - Shareable links: Copy URL preserves exact filter configuration
+  - Clean URLs: Default state (featured only, no filters) = `/` with no query params
+- **Copy Link Button**: Appears when filters are active
+  - One-click copy shareable link to clipboard
+  - Visual feedback: "Copied!" for 1.5 seconds
+  - Fallback to `window.prompt()` if Clipboard API unavailable
+- **Filter Combinations**: All filters work together
+  - Example: `/?featured=false&category=wildlife&tag=nature`
+  - Active filters display shows current state
+  - Clear all button resets to default (featured only)
+
+**Hero Slideshow Behavior**:
+- Slideshow always uses full published dataset (independent of gallery filters)
+- 70% weighted toward featured images, 30% any published
+- Gallery grid respects user-selected filters
+- This separation ensures slideshow variety while allowing focused gallery browsing
+
 ### Current Status & Next Steps
 
 **✅ Complete** (Production-ready features):
@@ -454,6 +486,8 @@ CREATE TABLE ai_costs (
 - ✅ **Analytics system** (impression tracking, engagement metrics)
 - ✅ **Analytics dashboard** (top images, categories, scroll depth)
 - ✅ **Image optimization** (10-20x faster page loads)
+- ✅ **Gallery filtering system** (featured/all, category, tags)
+- ✅ **URL-based filters** (shareable links, browser history support)
 
 **🚀 Performance Achievements**:
 - Gallery grid: 90-99% smaller images (thumbnails vs originals)
@@ -475,7 +509,7 @@ CREATE TABLE ai_costs (
 - Service worker caching (offline support)
 - Image CDN (if scaling beyond single server)
 - E-commerce integration (print sales)
-- Advanced search/filtering on public site
+- Text search on public site (search across titles, captions, tags)
 
 ### Testing URLs
 
