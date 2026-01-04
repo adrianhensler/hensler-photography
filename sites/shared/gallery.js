@@ -181,10 +181,14 @@
         trackEvent('lightbox_open', queuedImageId);
         galleryLightbox.openAt(queuedIndex);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Lightbox init failed:', error);
         const galleryItems = document.querySelectorAll('.gallery-item');
         if (galleryItems[index]) {
+          console.log('Fallback: clicking gallery item', index);
           galleryItems[index].click();
+        } else {
+          console.error('Gallery item not found at index', index);
         }
       });
   }
@@ -269,7 +273,11 @@
     });
 
     galleryInitialized = true;
-    ensureLightboxReady();
+
+    // Initialize lightbox immediately after gallery is populated
+    ensureLightboxReady().catch((error) => {
+      console.error('Failed to initialize lightbox:', error);
+    });
 
     // Staggered reveal as items scroll into view
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -309,7 +317,15 @@
 
         setTimeout(() => {
           if (!window.GLightbox) {
+            console.error('GLightbox library not loaded');
             reject(new Error('GLightbox not available'));
+            return;
+          }
+
+          const items = document.querySelectorAll('.glightbox');
+          if (items.length === 0) {
+            console.warn('No gallery items found for GLightbox');
+            reject(new Error('No gallery items available'));
             return;
           }
 
@@ -323,8 +339,9 @@
             closeButton: true,
             closeOnOutsideClick: true
           });
+          console.log('GLightbox initialized with', items.length, 'items');
           resolve(galleryLightbox);
-        }, 100);
+        }, 250);
       }).finally(() => {
         lightboxInitPromise = null;
       });
@@ -1041,6 +1058,11 @@
     // Initialize gallery UI
     initSlideshow();
     initGallery();
+
+    // Wait for lightbox to be ready before continuing
+    await ensureLightboxReady().catch((error) => {
+      console.warn('Lightbox initialization delayed:', error);
+    });
 
     // Initialize filtering
     initFiltering();
