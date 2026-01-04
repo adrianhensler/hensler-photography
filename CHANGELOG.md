@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+(Empty - next release in progress)
+
+---
+
+## [2.1.0] - 2026-01-04
+
+### Changed
+- **Refactored gallery.js**: Reduced file size from 1,309 to 1,282 lines (2.1% reduction)
+  - Extracted `buildLightboxDescription()` function to eliminate EXIF builder duplication
+  - Extracted `applyFilterCriteria()` function to consolidate filtering logic
+  - Extracted `createGalleryItem()` function to eliminate gallery renderer duplication
+- **Improved code maintainability**: All future EXIF/filtering changes now happen in single location
+
+### Documentation
+- Added public GitHub visibility notice to CLAUDE.md
+- Added comprehensive JavaScript code quality standards
+- Added gallery.js architecture guide for contributors
+- Updated security checklist with XSS prevention guidelines
+
+### Technical
+- No functional changes to user-facing features
+- All automated tests pass (npm test)
+- Backward compatible with existing deployments
+- Performance unchanged (load time within 5% margin)
+
+---
+
+## [Unreleased - Before 2.1.0]
+
 ### Added
 - Main landing page directory hub (hensler.photography) linking to Adrian and Liam portfolios
 - Branch protection on main branch requiring PR reviews

@@ -10,6 +10,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **DEVELOPMENT.md** - Development workflow and best practices
 - **INTEGRATION_BREAKPOINT.md** - Current integration status (static → API)
 
+## Public Repository Notice
+
+**This code is publicly visible on GitHub**: https://github.com/adrianhensler/hensler-photography
+
+### Guidelines for Public Code
+- **Security first**: Never commit secrets, API keys, or credentials
+- **Code quality matters**: All code is reviewed by external developers
+- **XSS prevention**: Always escape user input before DOM insertion (use `escapeHtml()`)
+- **Comments for clarity**: Explain non-obvious logic for external contributors
+- **Test before push**: Run `npm test` and manual verification on dev server (port 8080)
+
+### For External Contributors
+See `DEVELOPMENT.md` for setup instructions and coding standards.
+
 ## AI Coding Working Agreement
 
 ### Non-Negotiables
@@ -46,6 +60,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Reproducibility**: Pin dependencies, avoid time-dependent behavior in core logic
 - **Traceability**: Log inputs, key decisions, outputs; include run_id for async operations
 - **Auditability**: Prefer append-only history for important records
+
+## Code Quality Standards
+
+### JavaScript Style
+- **Pure vanilla JS**: No frameworks (React, Vue, etc.) for frontend
+- **ES6+ syntax**: Use arrow functions, destructuring, template literals
+- **No jQuery**: Use native DOM APIs
+- **Function size**: Keep functions under 50 lines; extract if larger
+- **Single responsibility**: Each function does one thing well
+- **DRY principle**: Extract duplicate code into reusable functions
+
+### Security Checklist
+- ✅ Escape all user input with `escapeHtml()` before inserting into DOM
+- ✅ Use event listeners (addEventListener) instead of inline onclick handlers
+- ✅ Validate URL parameters against known database values
+- ✅ Never use `eval()` or `innerHTML` with unescaped user data
+- ✅ Review all string interpolation in template literals for XSS risks
+
+### Performance Targets
+- **Gallery load time**: < 1 second on 4G connection
+- **First Contentful Paint**: < 1.5 seconds
+- **Lazy loading**: Images load progressively as user scrolls
+- **WebP optimization**: Use responsive srcset with 400px/800px/1200px variants
+
+### Testing Requirements
+- **Run automated tests**: `npm test` (Playwright suite)
+- **Manual testing**: Test on dev server (port 8080) before production
+- **Browser testing**: Chrome, Firefox, Safari (latest 2 versions)
+- **Mobile testing**: iOS Safari, Chrome Android
+- **Filter testing**: Verify all filter combinations work correctly
+
+### Accessibility
+- **Alt text**: All images must have descriptive alt attributes
+- **Keyboard navigation**: Lightbox navigable via keyboard
+- **Reduced motion**: Respect `prefers-reduced-motion` setting
+- **Semantic HTML**: Use proper heading hierarchy (h1, h2, h3)
 
 ## Project Overview
 
@@ -1070,6 +1120,39 @@ curl https://adrian.hensler.photography/ | head -20
 - Verify responsive breakpoints (mobile, tablet, desktop)
 - Ensure WebP variants are loading (check Network tab)
 - Verify analytics events fire (check Network tab for /api/track)
+
+### Gallery.js Architecture
+
+**File**: `/opt/prod/hensler_photography/sites/shared/gallery.js` (1,282 lines)
+**Pattern**: IIFE (Immediately Invoked Function Expression) module
+
+#### Module Structure
+1. **Configuration & State** (lines 15-40): Global variables, filter state
+2. **Security Helpers** (lines 42-57): `escapeHtml()` XSS prevention
+3. **Utility Functions** (lines 59-209): `applyFilterCriteria()`, `buildLightboxDescription()`, `createGalleryItem()`
+4. **Slideshow Logic** (lines 211-273): Hero carousel, auto-advance
+5. **Gallery Grid Logic** (lines 405-480): Thumbnail grid, lazy loading
+6. **Analytics Tracking** (lines 482-627): Event tracking (impression, click, scroll)
+7. **Gallery Filtering** (lines 684-1004): Featured/category/tag filters, URL sync
+8. **Main Initialization** (lines 1282-): Entry point, orchestration
+9. **Public API** (lines 1282-): Exposed methods via `window.GalleryApp`
+
+#### Key Functions
+- `escapeHtml(unsafe)` - XSS prevention for all user input
+- `applyFilterCriteria(dataset, criteria)` - Filters images by featured/category/tags
+- `buildLightboxDescription(imageData, options)` - Builds EXIF/caption HTML
+- `createGalleryItem(imageData, index, options)` - Creates gallery thumbnail element
+- `getFilteredDataset()` - Returns currently filtered dataset
+- `applyFilters()` - Applies filters and updates UI
+- `rerenderGallery(filteredData)` - Re-renders gallery grid with filtered images
+- `initSlideshow()` - Initializes hero slideshow carousel
+- `initGallery()` - Initializes thumbnail grid with lazy loading
+
+#### Modifying gallery.js
+- **Extract duplicates**: If you see similar code in multiple functions, extract to reusable helper
+- **Test thoroughly**: Changes affect both adrian.hensler.photography and liam.hensler.photography
+- **Security review**: All user input (URL params, database values) must be escaped
+- **Performance**: Avoid DOM manipulation in loops; use DocumentFragment for batch inserts
 
 ### Session Continuity
 
