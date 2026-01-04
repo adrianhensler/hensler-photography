@@ -41,6 +41,32 @@
 
   // ===== SLIDESHOW LOGIC =====
 
+  // Helper function: Get filtered dataset based on current filter state
+  function getFilteredDataset() {
+    let filtered = window.galleryData || galleryData;
+
+    if (featuredOnly) {
+      filtered = filtered.filter(img => img.featured);
+    }
+
+    if (activeCategory) {
+      filtered = filtered.filter(img => img.category === activeCategory);
+    }
+
+    if (activeTags.length > 0) {
+      filtered = filtered.filter(img => {
+        if (!img.tags) return false;
+        const imageTags = img.tags.split(',').map(t => t.trim());
+        if (tagMatchMode === 'all') {
+          return activeTags.every(activeTag => imageTags.includes(activeTag));
+        }
+        return activeTags.some(activeTag => imageTags.includes(activeTag));
+      });
+    }
+
+    return filtered;
+  }
+
   function initSlideshow() {
     const container = document.getElementById('slideshow');
     if (!container) {
@@ -48,28 +74,37 @@
       return;
     }
 
-    // The hero slideshow always uses the full published dataset,
-    // independent of the featured-only gallery filter.
-    const featuredImages = galleryData.filter(img => img.featured);
+    // Get filtered dataset based on current filter state
+    let slideshowData = getFilteredDataset();
 
-    // Weighted random: 70% featured, 30% any published
-    let randomStart;
-    if (featuredImages.length > 0 && Math.random() < 0.7) {
-      // Pick from featured images (70% chance)
-      const featuredIndex = Math.floor(Math.random() * featuredImages.length);
-      randomStart = galleryData.indexOf(featuredImages[featuredIndex]);
-    } else {
-      // Pick from all images (30% chance)
-      randomStart = Math.floor(Math.random() * galleryData.length);
+    // Fallback strategy if filters result in zero images
+    if (slideshowData.length === 0) {
+      console.warn('No images match current filters, falling back to featured images');
+      const featured = galleryData.filter(img => img.featured);
+      if (featured.length > 0) {
+        slideshowData = featured;
+      } else {
+        console.warn('No featured images, falling back to all published');
+        slideshowData = galleryData;
+      }
     }
 
+    if (slideshowData.length === 0) {
+      console.warn('No images available for slideshow');
+      return;
+    }
+
+    // Random start from filtered dataset
+    const randomStart = Math.floor(Math.random() * slideshowData.length);
     currentSlide = randomStart;
 
-    // Slides and gallery grid items both use galleryData order for index alignment.
-    galleryData.forEach((imageData, index) => {
+    // Build slideshow from filtered dataset
+    slideshowData.forEach((imageData, index) => {
       const slide = document.createElement('div');
       slide.className = 'slideshow-slide';
-      slide.dataset.galleryIndex = index;
+      // Store the gallery data index for lightbox alignment
+      const galleryIndex = galleryData.indexOf(imageData);
+      slide.dataset.galleryIndex = galleryIndex;
       if (index === randomStart) slide.classList.add('active');
 
       const img = document.createElement('img');
@@ -83,7 +118,7 @@
 
       slide.appendChild(img);
       slide.style.cursor = 'pointer';
-      slide.addEventListener('click', () => openSlideLightbox(index));
+      slide.addEventListener('click', () => openSlideLightbox(galleryIndex));
       container.appendChild(slide);
     });
 
@@ -91,7 +126,10 @@
     startSlideshow();
 
     // Track first hero impression immediately (with random start)
-    recordHeroImpression(randomStart);
+    if (slideshowData[randomStart]) {
+      const galleryIndex = galleryData.indexOf(slideshowData[randomStart]);
+      recordHeroImpression(galleryIndex);
+    }
 
     // Pause on hover
     container.addEventListener('mouseenter', () => {
@@ -119,6 +157,24 @@
         GalleryApp.Slideshow.next();
       });
     }
+
+    console.log(`Slideshow initialized with ${slideshowData.length} images (filtered from ${galleryData.length} total)`);
+  }
+
+  // Rebuild slideshow when filters change
+  function rebuildSlideshow() {
+    const container = document.getElementById('slideshow');
+    if (!container) return;
+
+    // Stop current slideshow
+    clearInterval(slideshowInterval);
+    slideshowPaused = false;
+
+    // Clear existing slides
+    container.innerHTML = '';
+
+    // Rebuild with current filters
+    initSlideshow();
   }
 
   function startSlideshow() {
@@ -563,7 +619,21 @@
       return;
     }
 
-    window.galleryData.forEach(img => {
+    // Use filtered base for counting (respects featured filter)
+    let baseData = window.galleryData;
+
+    // Apply featured filter if active
+    if (featuredOnly) {
+      baseData = baseData.filter(img => img.featured);
+    }
+
+    // Apply category filter if active (when counting tags)
+    if (activeCategory) {
+      baseData = baseData.filter(img => img.category === activeCategory);
+    }
+
+    // Count from filtered base
+    baseData.forEach(img => {
       // Aggregate categories
       if (img.category) {
         allCategories[img.category] = (allCategories[img.category] || 0) + 1;
@@ -580,8 +650,8 @@
       }
     });
 
-    console.log('Aggregated categories:', allCategories);
-    console.log('Aggregated tags:', allTags);
+    console.log('Aggregated categories (dynamic):', allCategories);
+    console.log('Aggregated tags (dynamic):', allTags);
   }
 
   function renderFilterSection() {
@@ -600,7 +670,15 @@
         pill.className = 'pill';
         pill.dataset.category = category;
         pill.innerHTML = `${category} <span class="count">(${count})</span>`;
-        pill.addEventListener('click', () => filterByCategory(category));
+
+        if (count === 0) {
+          pill.classList.add('disabled');
+          pill.title = 'No images match this filter in current view';
+          pill.style.pointerEvents = 'none';
+        } else {
+          pill.addEventListener('click', () => filterByCategory(category));
+        }
+
         categoryContainer.appendChild(pill);
       });
 
@@ -619,7 +697,15 @@
         pill.className = 'pill';
         pill.dataset.tag = tag;
         pill.innerHTML = `${tag} <span class="count">(${count})</span>`;
-        pill.addEventListener('click', () => filterByTag(tag));
+
+        if (count === 0) {
+          pill.classList.add('disabled');
+          pill.title = 'No images match this filter in current view';
+          pill.style.pointerEvents = 'none';
+        } else {
+          pill.addEventListener('click', () => filterByTag(tag));
+        }
+
         tagContainer.appendChild(pill);
       });
 
@@ -675,6 +761,14 @@
     }
 
     console.log(`Filtered: ${filteredData.length} of ${window.galleryData.length} images`);
+
+    // Recalculate filter counts based on current state
+    aggregateFilters();
+    // Re-render filter pills with updated counts
+    renderFilterSection();
+
+    // Rebuild slideshow with filtered images
+    rebuildSlideshow();
 
     // Update UI
     updateFilterUI();
@@ -738,12 +832,74 @@
     grid.innerHTML = ''; // Clear existing
 
     if (filteredData.length === 0) {
-      // Show "no results" message
+      // Enhanced zero results message with contextual suggestions
+      const suggestions = [];
+
+      // Check if switching to "all" would help
+      if (featuredOnly) {
+        const allData = window.galleryData.filter(img => {
+          let match = true;
+          if (activeCategory) match = match && img.category === activeCategory;
+          if (activeTags.length > 0) {
+            const imgTags = (img.tags || '').split(',').map(t => t.trim());
+            if (tagMatchMode === 'all') {
+              match = match && activeTags.every(t => imgTags.includes(t));
+            } else {
+              match = match && activeTags.some(t => imgTags.includes(t));
+            }
+          }
+          return match;
+        });
+
+        if (allData.length > 0) {
+          suggestions.push({
+            text: `Switch to "all" to see ${allData.length} more images`,
+            action: 'GalleryApp.GalleryFilter.setFeaturedOnly(false)'
+          });
+        }
+      }
+
+      // Suggest removing specific filters
+      if (activeCategory) {
+        suggestions.push({
+          text: `Remove category: ${activeCategory}`,
+          action: `GalleryApp.GalleryFilter.filterByCategory('${activeCategory}')`
+        });
+      }
+
+      if (activeTags.length > 0) {
+        activeTags.forEach(tag => {
+          suggestions.push({
+            text: `Remove tag: ${tag}`,
+            action: `GalleryApp.GalleryFilter.filterByTag('${tag}')`
+          });
+        });
+      }
+
+      // Always offer clear all
+      suggestions.push({
+        text: 'Clear all filters',
+        action: 'GalleryApp.GalleryFilter.clearFilters()'
+      });
+
+      // Build enhanced UI
       const noResults = document.createElement('div');
-      noResults.className = 'gallery-placeholder';
+      noResults.className = 'gallery-placeholder enhanced-empty-state';
       noResults.innerHTML = `
-        <p style="font-size: 18px; opacity: 0.7;">no images match your filters</p>
-        <button onclick="GalleryApp.GalleryFilter.clearFilters()">clear all filters</button>
+        <h3>No images found</h3>
+        <p class="empty-state-context">
+          Currently showing: <strong>${featuredOnly ? 'featured only' : 'all images'}</strong>
+          ${activeCategory ? `<br>Category: <strong>${activeCategory}</strong>` : ''}
+          ${activeTags.length > 0 ? `<br>Tags: <strong>${activeTags.join(', ')}</strong>` : ''}
+        </p>
+        <div class="empty-state-suggestions">
+          <p>Try this:</p>
+          ${suggestions.map(s => `
+            <button class="suggestion-btn" onclick="${s.action}">
+              ${s.text}
+            </button>
+          `).join('')}
+        </div>
       `;
       grid.appendChild(noResults);
       return;
