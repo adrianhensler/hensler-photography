@@ -19,6 +19,9 @@
   let galleryImages = [];
   let galleryData = [];
   let galleryLightbox = null;
+  let galleryInitialized = false;
+  let lightboxInitPromise = null;
+  let queuedLightboxIndex = null;
   let lightboxOpenTime = null;
   let currentLightboxImageId = null;
   const heroImpressions = new Set();
@@ -61,9 +64,11 @@
 
     currentSlide = randomStart;
 
+    // Slides and gallery grid items both use galleryData order for index alignment.
     galleryData.forEach((imageData, index) => {
       const slide = document.createElement('div');
       slide.className = 'slideshow-slide';
+      slide.dataset.galleryIndex = index;
       if (index === randomStart) slide.classList.add('active');
 
       const img = document.createElement('img');
@@ -135,17 +140,36 @@
     const imageId = galleryData[index]?.id || index;
     trackEvent('gallery_click', imageId, { surface: 'hero_slideshow' });
 
+    openLightboxAtIndex(index, imageId);
+  }
+
+  function openLightboxAtIndex(index, imageId) {
     if (galleryLightbox) {
       currentLightboxImageId = imageId;
       lightboxOpenTime = Date.now();
       trackEvent('lightbox_open', imageId);
       galleryLightbox.openAt(index);
-    } else {
-      const galleryItems = document.querySelectorAll('.gallery-item');
-      if (galleryItems[index]) {
-        galleryItems[index].click();
-      }
+      return;
     }
+
+    queuedLightboxIndex = index;
+    ensureLightboxReady()
+      .then(() => {
+        if (!galleryLightbox || queuedLightboxIndex === null) return;
+        const queuedIndex = queuedLightboxIndex;
+        queuedLightboxIndex = null;
+        const queuedImageId = galleryData[queuedIndex]?.id || queuedIndex;
+        currentLightboxImageId = queuedImageId;
+        lightboxOpenTime = Date.now();
+        trackEvent('lightbox_open', queuedImageId);
+        galleryLightbox.openAt(queuedIndex);
+      })
+      .catch(() => {
+        const galleryItems = document.querySelectorAll('.gallery-item');
+        if (galleryItems[index]) {
+          galleryItems[index].click();
+        }
+      });
   }
 
   // ===== GALLERY GRID LOGIC =====
@@ -157,12 +181,14 @@
       return;
     }
 
+    // Gallery grid items align with slideshow indices from galleryData order.
     galleryData.forEach((imageData, index) => {
       const link = document.createElement('a');
       // Use 1200px WebP variant for lightbox (optimized, not full-res)
       link.href = imageData.large_url || `/assets/gallery/${imageData.filename}`;
       link.className = 'gallery-item glightbox';
       link.setAttribute('data-gallery', 'portfolio');
+      link.dataset.galleryIndex = index;
 
       // Add title and EXIF data if available
       if (imageData.title) {
@@ -225,19 +251,8 @@
       grid.appendChild(link);
     });
 
-    // Initialize GLightbox after gallery is populated
-    setTimeout(() => {
-      galleryLightbox = window.GLightbox({
-        selector: '.glightbox',
-        touchNavigation: true,
-        loop: true,
-        autoplayVideos: false,
-        zoomable: false,
-        draggable: true,
-        closeButton: true,
-        closeOnOutsideClick: true
-      });
-    }, 100);
+    galleryInitialized = true;
+    ensureLightboxReady();
 
     // Staggered reveal as items scroll into view
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -259,6 +274,46 @@
         el.classList.add('is-visible');
       });
     }
+  }
+
+  function ensureLightboxReady() {
+    if (galleryLightbox) {
+      return Promise.resolve(galleryLightbox);
+    }
+
+    if (!lightboxInitPromise) {
+      lightboxInitPromise = new Promise((resolve, reject) => {
+        const grid = document.getElementById('gallery-grid');
+        const hasItems = grid && grid.querySelectorAll('.gallery-item').length > 0;
+
+        if (!galleryInitialized && !hasItems) {
+          initGallery();
+        }
+
+        setTimeout(() => {
+          if (!window.GLightbox) {
+            reject(new Error('GLightbox not available'));
+            return;
+          }
+
+          galleryLightbox = window.GLightbox({
+            selector: '.glightbox',
+            touchNavigation: true,
+            loop: true,
+            autoplayVideos: false,
+            zoomable: false,
+            draggable: true,
+            closeButton: true,
+            closeOnOutsideClick: true
+          });
+          resolve(galleryLightbox);
+        }, 100);
+      }).finally(() => {
+        lightboxInitPromise = null;
+      });
+    }
+
+    return lightboxInitPromise;
   }
 
   // ===== ANALYTICS TRACKING =====
