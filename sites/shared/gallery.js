@@ -56,32 +56,169 @@
       .replace(/'/g, "&#039;");
   }
 
-  // ===== SLIDESHOW LOGIC =====
+  /**
+   * Apply filtering criteria to a dataset
+   * @param {Array} dataset - Array of image objects to filter
+   * @param {Object} criteria - { featuredOnly, category, tags, tagMatchMode }
+   * @returns {Array} - Filtered dataset
+   */
+  function applyFilterCriteria(dataset, criteria = {}) {
+    const {
+      featuredOnly = false,
+      category = null,
+      tags = [],
+      tagMatchMode = 'any'
+    } = criteria;
 
-  // Helper function: Get filtered dataset based on current filter state
-  function getFilteredDataset() {
-    let filtered = window.galleryData || galleryData;
+    let filtered = dataset;
 
     if (featuredOnly) {
       filtered = filtered.filter(img => img.featured);
     }
 
-    if (activeCategory) {
-      filtered = filtered.filter(img => img.category === activeCategory);
+    if (category) {
+      filtered = filtered.filter(img => img.category === category);
     }
 
-    if (activeTags.length > 0) {
+    if (tags.length > 0) {
       filtered = filtered.filter(img => {
         if (!img.tags) return false;
         const imageTags = img.tags.split(',').map(t => t.trim());
         if (tagMatchMode === 'all') {
-          return activeTags.every(activeTag => imageTags.includes(activeTag));
+          return tags.every(activeTag => imageTags.includes(activeTag));
         }
-        return activeTags.some(activeTag => imageTags.includes(activeTag));
+        return tags.some(activeTag => imageTags.includes(activeTag));
       });
     }
 
     return filtered;
+  }
+
+  /**
+   * Build lightbox description HTML with caption, AI disclosure, EXIF, and location
+   * @param {Object} imageData - Image data with caption, exif, ai_disclosure
+   * @param {Object} options - { includePills: boolean }
+   * @returns {string} - HTML string for GLightbox data-description attribute
+   */
+  function buildLightboxDescription(imageData, options = {}) {
+    const { includePills = false } = options;
+    let description = '';
+
+    // Caption + AI disclosure
+    if (imageData.caption) {
+      description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${imageData.caption}</p>`;
+      if (imageData.ai_disclosure && imageData.ai_disclosure.caption) {
+        description += `<p style="margin: 0 0 0.75rem 0; font-size: 0.7rem; color: #999; font-style: italic; opacity: 0.7;">AI-generated description</p>`;
+      }
+    }
+
+    // EXIF data
+    if (imageData.share_exif && imageData.exif) {
+      const exif = imageData.exif;
+      const exifParts = [];
+
+      if (exif.camera_make || exif.camera_model) {
+        const camera = [exif.camera_make, exif.camera_model].filter(Boolean).join(' ');
+        if (camera) exifParts.push(camera);
+      }
+      if (exif.lens) exifParts.push(exif.lens);
+      if (exif.focal_length) exifParts.push(exif.focal_length);
+      if (exif.aperture) exifParts.push(exif.aperture);
+      if (exif.shutter_speed) exifParts.push(exif.shutter_speed);
+      if (exif.iso) exifParts.push(`ISO ${exif.iso}`);
+
+      if (exifParts.length > 0) {
+        description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666; font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; letter-spacing: 0.02em;">${exifParts.join(' · ')}</p>`;
+      }
+
+      if (exif.location) {
+        description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">📍 ${exif.location}</p>`;
+      }
+    }
+
+    // Category/tag pills (only when rerendering with filters)
+    if (includePills) {
+      description += '<div class="lightbox-pills">';
+      if (imageData.category) {
+        description += `<span class="lightbox-pill" onclick="GalleryApp.GalleryFilter.filterFromLightbox('category', '${imageData.category}')">${imageData.category}</span>`;
+      }
+      if (imageData.tags) {
+        imageData.tags.split(',').forEach(tag => {
+          tag = tag.trim();
+          if (tag) {
+            description += `<span class="lightbox-pill" onclick="GalleryApp.GalleryFilter.filterFromLightbox('tag', '${tag}')">${tag}</span>`;
+          }
+        });
+      }
+      description += '</div>';
+    }
+
+    return description;
+  }
+
+  /**
+   * Create a gallery item <a> element with image and lightbox attributes
+   * @param {Object} imageData - Image data object
+   * @param {number} index - Index in galleryData array
+   * @param {Object} options - { includePills: boolean, showImmediately: boolean }
+   * @returns {HTMLElement} - <a> element ready to append to grid
+   */
+  function createGalleryItem(imageData, index, options = {}) {
+    const { includePills = false, showImmediately = false } = options;
+
+    const link = document.createElement('a');
+    link.href = imageData.large_url || `/assets/gallery/${imageData.filename}`;
+    link.className = 'gallery-item glightbox';
+    link.setAttribute('data-gallery', 'portfolio');
+    link.dataset.galleryIndex = index;
+
+    if (imageData.title) {
+      link.setAttribute('data-title', imageData.title);
+    }
+
+    const description = buildLightboxDescription(imageData, { includePills });
+    if (description) {
+      link.setAttribute('data-description', description);
+    }
+
+    const img = document.createElement('img');
+
+    // Use responsive srcset for initial gallery load, simple src for rerender
+    if (!includePills) {
+      img.src = imageData.thumbnail_url || `/assets/gallery/${imageData.filename}`;
+      img.srcset = `${imageData.thumbnail_url} 400w, ${imageData.medium_url} 800w`;
+      img.sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
+    } else {
+      img.src = `/assets/gallery/${imageData.filename}`;
+    }
+
+    img.alt = imageData.alt_text || imageData.title || `Photography by ${config.siteName}`;
+    img.loading = 'lazy';
+    img.setAttribute('decoding', 'async');
+    img.setAttribute('fetchpriority', 'low');
+
+    img.onload = () => {
+      link.classList.add('has-image');
+      if (showImmediately) {
+        link.classList.add('is-visible');
+      }
+    };
+
+    link.appendChild(img);
+    return link;
+  }
+
+  // ===== SLIDESHOW LOGIC =====
+
+  // Helper function: Get filtered dataset based on current filter state
+  function getFilteredDataset() {
+    const dataset = window.galleryData || galleryData;
+    return applyFilterCriteria(dataset, {
+      featuredOnly,
+      category: activeCategory,
+      tags: activeTags,
+      tagMatchMode
+    });
   }
 
   function initSlideshow() {
@@ -277,71 +414,7 @@
 
     // Gallery grid items align with slideshow indices from galleryData order.
     galleryData.forEach((imageData, index) => {
-      const link = document.createElement('a');
-      // Use 1200px WebP variant for lightbox (optimized, not full-res)
-      link.href = imageData.large_url || `/assets/gallery/${imageData.filename}`;
-      link.className = 'gallery-item glightbox';
-      link.setAttribute('data-gallery', 'portfolio');
-      link.dataset.galleryIndex = index;
-
-      // Add title and EXIF data if available
-      if (imageData.title) {
-        link.setAttribute('data-title', imageData.title);
-      }
-
-      // Build description with EXIF data if shared
-      let description = '';
-      if (imageData.caption) {
-        description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${imageData.caption}</p>`;
-
-        // AI disclosure indicator (subtle, only if caption is AI-generated)
-        if (imageData.ai_disclosure && imageData.ai_disclosure.caption) {
-          description += `<p style="margin: 0 0 0.75rem 0; font-size: 0.7rem; color: #999; font-style: italic; opacity: 0.7;">AI-generated description</p>`;
-        }
-      }
-
-      if (imageData.share_exif && imageData.exif) {
-        const exif = imageData.exif;
-        const exifParts = [];
-
-        if (exif.camera_make || exif.camera_model) {
-          const camera = [exif.camera_make, exif.camera_model].filter(Boolean).join(' ');
-          if (camera) exifParts.push(camera);
-        }
-        if (exif.lens) exifParts.push(exif.lens);
-        if (exif.focal_length) exifParts.push(exif.focal_length);
-        if (exif.aperture) exifParts.push(exif.aperture);
-        if (exif.shutter_speed) exifParts.push(exif.shutter_speed);
-        if (exif.iso) exifParts.push(`ISO ${exif.iso}`);
-
-        if (exifParts.length > 0) {
-          description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666; font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; letter-spacing: 0.02em;">${exifParts.join(' · ')}</p>`;
-        }
-
-        if (exif.location) {
-          description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">📍 ${exif.location}</p>`;
-        }
-      }
-
-      if (description) {
-        link.setAttribute('data-description', description);
-      }
-
-      const img = document.createElement('img');
-      // Use optimized WebP variants with responsive srcset
-      img.src = imageData.thumbnail_url || `/assets/gallery/${imageData.filename}`;
-      img.srcset = `${imageData.thumbnail_url} 400w, ${imageData.medium_url} 800w`;
-      img.sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
-      img.alt = imageData.alt_text || imageData.title || `Photography by ${config.siteName}`;
-      img.loading = 'lazy';
-      img.setAttribute('decoding', 'async');
-      img.setAttribute('fetchpriority', 'low');
-
-      img.onload = () => {
-        link.classList.add('has-image');
-      };
-
-      link.appendChild(img);
+      const link = createGalleryItem(imageData, index);
       grid.appendChild(link);
     });
 
@@ -753,29 +826,13 @@
 
   function applyFilters(options = {}) {
     const { historyMode = 'push' } = options;
-    // Filter galleryData
-    let filteredData = window.galleryData;
-
-    if (featuredOnly) {
-      filteredData = filteredData.filter(img => img.featured);
-    }
-
-    if (activeCategory) {
-      filteredData = filteredData.filter(img => img.category === activeCategory);
-    }
-
-    if (activeTags.length > 0) {
-      filteredData = filteredData.filter(img => {
-        if (!img.tags) return false;
-        const imageTags = img.tags.split(',').map(t => t.trim());
-        if (tagMatchMode === 'all') {
-          // Image must have ALL active tags (AND logic)
-          return activeTags.every(activeTag => imageTags.includes(activeTag));
-        }
-        // Image must have ANY active tag (OR logic)
-        return activeTags.some(activeTag => imageTags.includes(activeTag));
-      });
-    }
+    // Filter galleryData using shared criteria function
+    const filteredData = applyFilterCriteria(window.galleryData, {
+      featuredOnly,
+      category: activeCategory,
+      tags: activeTags,
+      tagMatchMode
+    });
 
     console.log(`Filtered: ${filteredData.length} of ${window.galleryData.length} images`);
 
@@ -854,18 +911,11 @@
 
       // Check if switching to "all" would help
       if (featuredOnly) {
-        const allData = window.galleryData.filter(img => {
-          let match = true;
-          if (activeCategory) match = match && img.category === activeCategory;
-          if (activeTags.length > 0) {
-            const imgTags = (img.tags || '').split(',').map(t => t.trim());
-            if (tagMatchMode === 'all') {
-              match = match && activeTags.every(t => imgTags.includes(t));
-            } else {
-              match = match && activeTags.some(t => imgTags.includes(t));
-            }
-          }
-          return match;
+        const allData = applyFilterCriteria(window.galleryData, {
+          featuredOnly: false,
+          category: activeCategory,
+          tags: activeTags,
+          tagMatchMode
         });
 
         if (allData.length > 0) {
@@ -933,84 +983,7 @@
 
     // Re-render gallery items with category/tags in lightbox description
     filteredData.forEach((imageData, index) => {
-      const link = document.createElement('a');
-      link.href = `/assets/gallery/${imageData.filename}`;
-      link.className = 'gallery-item glightbox';
-      link.setAttribute('data-gallery', 'portfolio');
-
-      if (imageData.title) {
-        link.setAttribute('data-title', imageData.title);
-      }
-
-      // Build description with caption and EXIF
-      let description = '';
-      if (imageData.caption) {
-        description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${imageData.caption}</p>`;
-
-        // AI disclosure indicator (subtle, only if caption is AI-generated)
-        if (imageData.ai_disclosure && imageData.ai_disclosure.caption) {
-          description += `<p style="margin: 0 0 0.75rem 0; font-size: 0.7rem; color: #999; font-style: italic; opacity: 0.7;">AI-generated description</p>`;
-        }
-      }
-
-      if (imageData.share_exif && imageData.exif) {
-        const exif = imageData.exif;
-        const exifParts = [];
-
-        if (exif.camera_make || exif.camera_model) {
-          const camera = [exif.camera_make, exif.camera_model].filter(Boolean).join(' ');
-          if (camera) exifParts.push(camera);
-        }
-        if (exif.lens) exifParts.push(exif.lens);
-        if (exif.focal_length) exifParts.push(exif.focal_length);
-        if (exif.aperture) exifParts.push(exif.aperture);
-        if (exif.shutter_speed) exifParts.push(exif.shutter_speed);
-        if (exif.iso) exifParts.push(`ISO ${exif.iso}`);
-
-        if (exifParts.length > 0) {
-          description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666; font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; letter-spacing: 0.02em;">${exifParts.join(' · ')}</p>`;
-        }
-
-        if (exif.location) {
-          description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">📍 ${exif.location}</p>`;
-        }
-      }
-
-      // ADD CATEGORY/TAGS TO LIGHTBOX DESCRIPTION
-      description += '<div class="lightbox-pills">';
-
-      if (imageData.category) {
-        description += `<span class="lightbox-pill" onclick="GalleryApp.GalleryFilter.filterFromLightbox('category', '${imageData.category}')">${imageData.category}</span>`;
-      }
-
-      if (imageData.tags) {
-        imageData.tags.split(',').forEach(tag => {
-          tag = tag.trim();
-          if (tag) {
-            description += `<span class="lightbox-pill" onclick="GalleryApp.GalleryFilter.filterFromLightbox('tag', '${tag}')">${tag}</span>`;
-          }
-        });
-      }
-
-      description += '</div>';
-
-      if (description) {
-        link.setAttribute('data-description', description);
-      }
-
-      const img = document.createElement('img');
-      img.src = `/assets/gallery/${imageData.filename}`;
-      img.alt = imageData.alt_text || imageData.title || `Photography by ${config.siteName}`;
-      img.loading = 'lazy';
-      img.setAttribute('decoding', 'async');
-      img.setAttribute('fetchpriority', 'low');
-
-      img.onload = () => {
-        link.classList.add('has-image');
-        link.classList.add('is-visible'); // Show immediately (no stagger on rerender)
-      };
-
-      link.appendChild(img);
+      const link = createGalleryItem(imageData, index, { includePills: true, showImmediately: true });
       grid.appendChild(link);
     });
 
