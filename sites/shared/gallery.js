@@ -102,6 +102,22 @@
       slideshowPaused = false;
       startSlideshow();
     });
+
+    // Attach navigation button listeners
+    const prevButton = document.querySelector('.slideshow-prev');
+    const nextButton = document.querySelector('.slideshow-next');
+
+    if (prevButton) {
+      prevButton.addEventListener('click', () => {
+        GalleryApp.Slideshow.prev();
+      });
+    }
+
+    if (nextButton) {
+      nextButton.addEventListener('click', () => {
+        GalleryApp.Slideshow.next();
+      });
+    }
   }
 
   function startSlideshow() {
