@@ -962,6 +962,11 @@
 
   window.GalleryApp = {
     init: init,
+    Slideshow: {
+      next: () => changeSlide(1),
+      prev: () => changeSlide(-1),
+      changeSlide: changeSlide
+    },
     // Expose filtering API for backward compatibility
     GalleryFilter: {
       init: initFiltering,
