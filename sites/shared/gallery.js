@@ -39,6 +39,23 @@
   let featuredOnly = true;
   let tagMatchMode = 'any';
 
+  // ===== SECURITY HELPERS =====
+
+  /**
+   * Escape HTML to prevent XSS attacks
+   * @param {string} unsafe - Untrusted string that may contain HTML/script tags
+   * @returns {string} - Safely escaped string for use in HTML context
+   */
+  function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return '';
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   // ===== SLIDESHOW LOGIC =====
 
   // Helper function: Get filtered dataset based on current filter state
@@ -862,16 +879,16 @@
       // Suggest removing specific filters
       if (activeCategory) {
         suggestions.push({
-          text: `Remove category: ${activeCategory}`,
-          action: `GalleryApp.GalleryFilter.filterByCategory('${activeCategory}')`
+          text: `Remove category: ${escapeHtml(activeCategory)}`,
+          action: () => GalleryApp.GalleryFilter.filterByCategory(activeCategory)
         });
       }
 
       if (activeTags.length > 0) {
         activeTags.forEach(tag => {
           suggestions.push({
-            text: `Remove tag: ${tag}`,
-            action: `GalleryApp.GalleryFilter.filterByTag('${tag}')`
+            text: `Remove tag: ${escapeHtml(tag)}`,
+            action: () => GalleryApp.GalleryFilter.filterByTag(tag)
           });
         });
       }
@@ -879,29 +896,38 @@
       // Always offer clear all
       suggestions.push({
         text: 'Clear all filters',
-        action: 'GalleryApp.GalleryFilter.clearFilters()'
+        action: () => GalleryApp.GalleryFilter.clearFilters()
       });
 
-      // Build enhanced UI
+      // Build enhanced UI (using escapeHtml to prevent XSS)
       const noResults = document.createElement('div');
       noResults.className = 'gallery-placeholder enhanced-empty-state';
       noResults.innerHTML = `
         <h3>No images found</h3>
         <p class="empty-state-context">
           Currently showing: <strong>${featuredOnly ? 'featured only' : 'all images'}</strong>
-          ${activeCategory ? `<br>Category: <strong>${activeCategory}</strong>` : ''}
-          ${activeTags.length > 0 ? `<br>Tags: <strong>${activeTags.join(', ')}</strong>` : ''}
+          ${activeCategory ? `<br>Category: <strong>${escapeHtml(activeCategory)}</strong>` : ''}
+          ${activeTags.length > 0 ? `<br>Tags: <strong>${escapeHtml(activeTags.join(', '))}</strong>` : ''}
         </p>
         <div class="empty-state-suggestions">
           <p>Try this:</p>
-          ${suggestions.map(s => `
-            <button class="suggestion-btn" onclick="${s.action}">
+          ${suggestions.map((s, i) => `
+            <button class="suggestion-btn" data-suggestion-index="${i}">
               ${s.text}
             </button>
           `).join('')}
         </div>
       `;
       grid.appendChild(noResults);
+
+      // Attach event listeners safely (avoiding onclick XSS)
+      suggestions.forEach((s, i) => {
+        const btn = noResults.querySelector(`[data-suggestion-index="${i}"]`);
+        if (btn && typeof s.action === 'function') {
+          btn.addEventListener('click', s.action);
+        }
+      });
+
       return;
     }
 
@@ -1089,8 +1115,15 @@
       featuredOnly = params.get('featured') !== 'false';
     }
 
+    // Validate category against known categories from database (XSS protection)
     if (params.has('category')) {
-      activeCategory = params.get('category');
+      const requestedCategory = params.get('category');
+      const validCategories = Object.keys(allCategories);
+      if (validCategories.includes(requestedCategory)) {
+        activeCategory = requestedCategory;
+      } else {
+        console.warn('Invalid category from URL:', requestedCategory);
+      }
     }
 
     const tagValues = [];
@@ -1109,8 +1142,19 @@
       tagMatchMode = params.get('tagMatch') === 'all' ? 'all' : 'any';
     }
 
+    // Validate tags against known tags from database (XSS protection)
     if (tagValues.length > 0) {
-      activeTags = [...new Set(tagValues.map(tag => tag.trim()).filter(Boolean))];
+      const validTags = Object.keys(allTags);
+      activeTags = [...new Set(
+        tagValues
+          .map(tag => tag.trim())
+          .filter(tag => tag && validTags.includes(tag))
+      )];
+
+      const invalidTags = tagValues.filter(tag => tag.trim() && !validTags.includes(tag.trim()));
+      if (invalidTags.length > 0) {
+        console.warn('Invalid tags from URL:', invalidTags);
+      }
     }
 
     if (featuredOnly || activeCategory || activeTags.length > 0) {
