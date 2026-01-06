@@ -247,6 +247,26 @@ Failed deployments: Auto-rollback + alerts
 11. [ ] Blue-green deployment
 12. [ ] Preview environments for PRs
 
+### Infrastructure / Technical Debt:
+13. [ ] **Review HTTP cache strategy for HTML/JS files**
+    - **Problem:** Aggressive browser caching causes deployment issues
+      - Users can get "stuck" with old HTML/JS after deployments
+      - New features don't work until hard refresh (like photographer tracking bug)
+      - Makes troubleshooting confusing ("works for me but not for user")
+    - **Current behavior:** All static files cached equally (HTML, JS, images)
+    - **Options to consider:**
+      - Add `Cache-Control: no-cache, must-revalidate` for HTML/JS (always check for updates)
+      - Keep long cache for images/fonts (performance)
+      - Use versioned URLs for JS/CSS (e.g., `gallery.js?v=YYYYMMDD`) - already partially implemented
+      - Automatic version bumping on deployment
+    - **Trade-offs:**
+      - No-cache = Small overhead (extra HTTP requests) but always fresh code
+      - Long cache = Fast but can serve stale code during deployments
+      - Versioned URLs = Best of both worlds but requires deployment process changes
+    - **Priority:** Medium (inconvenient but not critical)
+    - **Time estimate:** 1-2 hours (research + implement + test)
+    - **References:** Caddy cache-control docs, web caching best practices
+
 ---
 
 ## 🎯 **Success Criteria**
