@@ -511,31 +511,34 @@
   // Track events to analytics endpoint
   async function trackEvent(eventType, imageId = null, metadata = null) {
     try {
-      // Check if user is authenticated (has session_token cookie)
-      const isAuthenticated = document.cookie.includes('session_token=');
+      // Check if user is authenticated by calling /api/users/me
+      // Note: session_token is httpOnly (secure), so we can't read it from document.cookie
+      // Instead, browser automatically sends it with fetch requests when credentials: 'include'
       let isPhotographer = false;
 
-      if (isAuthenticated) {
-        try {
-          // Fetch user's tracking preference
-          const userResponse = await fetch('/api/users/me');
-          if (userResponse.ok) {
-            const user = await userResponse.json();
+      try {
+        const userResponse = await fetch('/api/users/me', {
+          credentials: 'include'  // Include httpOnly cookies in request
+        });
 
-            // If photographer opted out of tracking, don't track at all
-            if (!user.track_own_activity) {
-              console.debug('Skipping analytics (photographer opted out)');
-              return;
-            }
+        if (userResponse.ok) {
+          // User is authenticated - check tracking preference
+          const user = await userResponse.json();
 
-            // Mark this event as from photographer
-            isPhotographer = true;
+          if (!user.track_own_activity) {
+            // Photographer opted out - don't track at all
+            console.debug('Skipping analytics (photographer opted out)');
+            return;
           }
-        } catch (e) {
-          // If we can't check preference, fail safe and don't track
-          console.debug('Could not check tracking preference:', e);
-          return;
+
+          // Mark this event as from photographer
+          isPhotographer = true;
         }
+        // If response is 401, user is not authenticated - continue as visitor (isPhotographer = false)
+      } catch (e) {
+        // Network error - fail gracefully and track as visitor
+        console.debug('Could not check authentication:', e);
+        // Continue with isPhotographer = false
       }
 
       const payload = {
