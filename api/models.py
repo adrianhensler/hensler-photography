@@ -396,6 +396,9 @@ class TrackingEvent(BaseModel):
     metadata: Optional[str] = Field(
         None, max_length=1000, description="JSON metadata for events (e.g., duration, scroll depth)"
     )
+    is_photographer: bool = Field(
+        False, description="Whether this event is from the photographer (vs visitor)"
+    )
 
     @validator("image_id")
     def validate_image_id_for_type(cls, v, values):

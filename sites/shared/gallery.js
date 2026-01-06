@@ -511,9 +511,37 @@
   // Track events to analytics endpoint
   async function trackEvent(eventType, imageId = null, metadata = null) {
     try {
+      // Check if user is authenticated (has session_token cookie)
+      const isAuthenticated = document.cookie.includes('session_token=');
+      let isPhotographer = false;
+
+      if (isAuthenticated) {
+        try {
+          // Fetch user's tracking preference
+          const userResponse = await fetch('/api/users/me');
+          if (userResponse.ok) {
+            const user = await userResponse.json();
+
+            // If photographer opted out of tracking, don't track at all
+            if (!user.track_own_activity) {
+              console.debug('Skipping analytics (photographer opted out)');
+              return;
+            }
+
+            // Mark this event as from photographer
+            isPhotographer = true;
+          }
+        } catch (e) {
+          // If we can't check preference, fail safe and don't track
+          console.debug('Could not check tracking preference:', e);
+          return;
+        }
+      }
+
       const payload = {
         event_type: eventType,
-        session_id: getSessionId()
+        session_id: getSessionId(),
+        is_photographer: isPhotographer
       };
 
       if (imageId !== null) {

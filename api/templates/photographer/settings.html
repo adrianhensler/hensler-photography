@@ -123,6 +123,27 @@
     </div>
 
     <div class="settings-card">
+        <h2>Analytics Tracking</h2>
+        <p>Control how your own activity is tracked in analytics.</p>
+        <div class="settings-field">
+            <label>
+                <input type="checkbox" id="track_own_activity" name="track_own_activity"
+                       {% if current_user.track_own_activity %}checked{% endif %}>
+                Include my own activity in analytics
+            </label>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px; line-height: 1.5;">
+            When enabled, your clicks and views are tracked separately from visitor activity.
+            You can toggle between "Visitors Only", "My Activity", and "Combined" views in the analytics dashboard.
+            When disabled, your activity is not tracked at all.
+        </div>
+        <div class="settings-actions">
+            <button class="btn-primary" type="button" onclick="saveTrackingPreference()">Save tracking preference</button>
+            <button class="btn-secondary" type="button">Cancel</button>
+        </div>
+    </div>
+
+    <div class="settings-card">
         <h2>Notifications</h2>
         <p>Choose how you want to hear about uploads, shares, and analytics.</p>
         <div class="settings-field">
@@ -182,6 +203,43 @@ async function saveAIStyle() {
     } catch (error) {
         alert('Network error: ' + error.message);
         button.textContent = 'Save AI style';
+        button.disabled = false;
+    }
+}
+
+async function saveTrackingPreference() {
+    const trackOwnActivity = document.getElementById('track_own_activity').checked;
+    const button = event.target;
+
+    button.disabled = true;
+    button.textContent = 'Saving...';
+
+    try {
+        const response = await fetch('/api/users/me', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ track_own_activity: trackOwnActivity })
+        });
+
+        if (response.ok) {
+            button.textContent = 'Saved!';
+            button.style.background = 'var(--success)';
+            setTimeout(() => {
+                button.textContent = 'Save tracking preference';
+                button.style.background = 'var(--accent)';
+                button.disabled = false;
+            }, 2000);
+        } else {
+            const error = await response.json();
+            alert('Error saving tracking preference: ' + (error.detail || 'Unknown error'));
+            button.textContent = 'Save tracking preference';
+            button.disabled = false;
+        }
+    } catch (error) {
+        alert('Network error: ' + error.message);
+        button.textContent = 'Save tracking preference';
         button.disabled = false;
     }
 }

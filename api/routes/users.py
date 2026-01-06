@@ -21,6 +21,7 @@ class UserUpdate(BaseModel):
     display_name: Optional[str] = Field(None, max_length=200)
     bio: Optional[str] = Field(None, max_length=1000)
     ai_style: Optional[str] = Field(None, pattern="^(technical|artistic|documentary|balanced|minimal)$")
+    track_own_activity: Optional[bool] = Field(None, description="Whether to track own activity in analytics")
 
 
 @router.get("/me")
@@ -35,6 +36,7 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
         "subdomain": current_user.subdomain,
         "bio": current_user.bio,
         "ai_style": current_user.ai_style,
+        "track_own_activity": current_user.track_own_activity,
     }
 
 

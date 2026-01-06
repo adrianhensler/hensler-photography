@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
     subdomain TEXT,
     bio TEXT,
     ai_style TEXT DEFAULT 'balanced',
+    track_own_activity BOOLEAN DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -110,8 +111,12 @@ CREATE TABLE IF NOT EXISTS image_events (
     referrer TEXT,
     ip_hash TEXT,
     session_id TEXT,
+    metadata TEXT,
+    is_photographer BOOLEAN DEFAULT 0,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_is_photographer ON image_events(is_photographer);
 
 -- Future: Products (print sizes, pricing)
 CREATE TABLE IF NOT EXISTS products (

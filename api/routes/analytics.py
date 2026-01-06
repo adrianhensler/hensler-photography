@@ -46,9 +46,30 @@ def get_subdomain_filter(subdomain: Optional[str]) -> str:
     )
 
 
+def get_photographer_filter(include_photographer: bool = True, photographer_only: bool = False) -> str:
+    """
+    Get SQL WHERE clause for filtering photographer's own activity.
+
+    Args:
+        include_photographer: If True, include photographer's activity. If False, exclude it.
+        photographer_only: If True, only show photographer's activity (overrides include_photographer).
+
+    Returns:
+        SQL WHERE clause fragment (e.g., "AND e.is_photographer = 0")
+    """
+    if photographer_only:
+        return "AND e.is_photographer = 1"
+    elif not include_photographer:
+        return "AND e.is_photographer = 0"
+    else:
+        return ""  # Include both photographer and visitor activity
+
+
 @router.get("/overview")
 async def get_analytics_overview(
     days: int = Query(30, ge=1, le=365, description="Number of days to include"),
+    include_photographer: bool = Query(True, description="Include photographer's own activity"),
+    photographer_only: bool = Query(False, description="Show only photographer's activity"),
     current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
@@ -62,18 +83,24 @@ async def get_analytics_overview(
     - CTR (clicks / impressions) and view-through rate (views / clicks)
     - Average lightbox dwell time (from lightbox_close metadata)
     - Trends for key metrics vs. previous period
+
+    Filtering:
+    - include_photographer=True: Include both visitor and photographer activity (default)
+    - include_photographer=False: Exclude photographer's activity (visitors only)
+    - photographer_only=True: Show only photographer's activity
     """
     user_id = current_user.id
     subdomain = current_user.subdomain or ""
     subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
     prev_since = since - timedelta(days=days)  # Previous period for comparison
+    photographer_filter = get_photographer_filter(include_photographer, photographer_only)
 
     try:
         async with get_db_connection() as db:
             # Current period metrics
             cursor = await db.execute(
-                """
+                f"""
                 SELECT
                     COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
                     COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
@@ -81,7 +108,7 @@ async def get_analytics_overview(
                     COUNT(DISTINCT CASE WHEN e.event_type IN ('image_impression','gallery_click','lightbox_open') THEN e.session_id END) as viewers
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE i.user_id = ? AND e.timestamp >= ?
+                WHERE i.user_id = ? AND e.timestamp >= ? {photographer_filter}
                 """,
                 (user_id, since),
             )
@@ -89,7 +116,7 @@ async def get_analytics_overview(
             current = await cursor.fetchone()
 
             cursor = await db.execute(
-                """
+                f"""
                 SELECT
                     COUNT(CASE WHEN e.event_type = 'image_impression' THEN 1 END) as impressions,
                     COUNT(CASE WHEN e.event_type = 'gallery_click' THEN 1 END) as clicks,
@@ -97,7 +124,7 @@ async def get_analytics_overview(
                     COUNT(DISTINCT CASE WHEN e.event_type IN ('image_impression','gallery_click','lightbox_open') THEN e.session_id END) as viewers
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
-                WHERE i.user_id = ? AND e.timestamp >= ? AND e.timestamp < ?
+                WHERE i.user_id = ? AND e.timestamp >= ? AND e.timestamp < ? {photographer_filter}
                 """,
                 (user_id, prev_since, since),
             )
@@ -119,13 +146,14 @@ async def get_analytics_overview(
 
             # Average lightbox dwell time
             cursor = await db.execute(
-                """
+                f"""
                 SELECT e.metadata
                 FROM image_events e
                 LEFT JOIN images i ON e.image_id = i.id
                 WHERE i.user_id = ?
                 AND e.timestamp >= ?
                 AND e.event_type = 'lightbox_close'
+                {photographer_filter}
                 """,
                 (user_id, since),
             )
@@ -480,17 +508,25 @@ async def get_analytics_timeline(
     metric: str = Query(
         "impressions", regex="^(impressions|clicks|views)$", description="Metric to chart"
     ),
+    include_photographer: bool = Query(True, description="Include photographer's own activity"),
+    photographer_only: bool = Query(False, description="Show only photographer's activity"),
     current_user: User = Depends(get_current_user_for_subdomain),
 ):
     """
     Get time-series analytics data for charts.
 
     Returns daily counts for specified metric (views, clicks, or lightbox_opens).
+
+    Filtering:
+    - include_photographer=True: Include both visitor and photographer activity (default)
+    - include_photographer=False: Exclude photographer's activity (visitors only)
+    - photographer_only=True: Show only photographer's activity
     """
     user_id = current_user.id
     subdomain = current_user.subdomain or ""
     subdomain_pattern = f"%{subdomain}.hensler.photography%"
     since = datetime.now() - timedelta(days=days)
+    photographer_filter = get_photographer_filter(include_photographer, photographer_only)
 
     # Map metric to event type
     event_type_map = {
@@ -503,7 +539,7 @@ async def get_analytics_timeline(
     try:
         async with get_db_connection() as db:
             cursor = await db.execute(
-                """
+                f"""
                 SELECT
                     DATE(e.timestamp) as date,
                     COUNT(*) as count
@@ -512,6 +548,7 @@ async def get_analytics_timeline(
                 WHERE i.user_id = ?
                 AND e.event_type = ?
                 AND e.timestamp >= ?
+                {photographer_filter}
                 GROUP BY DATE(e.timestamp)
                 ORDER BY date ASC
             """,

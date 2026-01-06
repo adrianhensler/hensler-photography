@@ -428,8 +428,8 @@ async def track_event(request: Request, event: TrackingEvent):
                 """
                 INSERT INTO image_events
                 (image_id, event_type, user_agent, referrer, ip_hash,
-                 session_id, metadata, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                 session_id, metadata, is_photographer, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             """,
                 (
                     event.image_id,
@@ -439,6 +439,7 @@ async def track_event(request: Request, event: TrackingEvent):
                     ip_hash,
                     event.session_id,
                     event.metadata,
+                    event.is_photographer,
                 ),
             )
             await db.commit()
