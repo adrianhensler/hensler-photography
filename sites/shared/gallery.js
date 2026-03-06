@@ -6,7 +6,7 @@
  * - Requires GLightbox library to be loaded
  * - Requires window.GALLERY_CONFIG = { userId: 1, siteName: 'Adrian Hensler' }
  * - Requires HTML elements: #slideshow, #gallery-grid, #category-pills, #tag-pills, #active-filters
- * - Optional HTML elements: #intent-pills, #refine-results
+ * - Optional HTML elements: #intent-pills, #featured-toggle, #refine-results
  */
 
 (function(window) {
@@ -896,17 +896,46 @@
     }
   }
 
-  function findFirstMatch(options, values) {
-    return options.find((option) => values.includes(option.toLowerCase())) || null;
+  function normalizeFacetValue(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  function findFirstKeywordMatch(options, keywords) {
+    return options.find((option) => {
+      const normalizedOption = normalizeFacetValue(option);
+      return keywords.some((keyword) => normalizedOption.includes(keyword));
+    }) || null;
+  }
+
+  function getMostCommonFacet(facetKey) {
+    const counts = {};
+
+    window.galleryData.forEach((image) => {
+      if (facetKey === 'category' && image.category) {
+        counts[image.category] = (counts[image.category] || 0) + 1;
+      }
+
+      if (facetKey === 'tag' && image.tags) {
+        image.tags.split(',').forEach((tag) => {
+          const normalizedTag = tag.trim();
+          if (normalizedTag) {
+            counts[normalizedTag] = (counts[normalizedTag] || 0) + 1;
+          }
+        });
+      }
+    });
+
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return sorted.length > 0 ? sorted[0][0] : null;
   }
 
   function applyIntent(intentKey) {
     const intentMap = {
       start: { featuredOnly: true, category: null, tags: [], tagMatchMode: 'any' },
-      popular: { featuredOnly: true, category: null, tags: [], tagMatchMode: 'any' },
+      popular: { featuredOnly: false, category: 'mostCommon', tag: 'mostCommon', tags: [], tagMatchMode: 'any' },
       recent: { featuredOnly: false, category: null, tags: [], tagMatchMode: 'any' },
-      landscapes: { featuredOnly: false, categoryCandidates: ['landscape', 'nature', 'travel'], tagCandidates: ['landscape', 'nature', 'outdoors'], tagMatchMode: 'any' },
-      people: { featuredOnly: false, categoryCandidates: ['people', 'portrait', 'street'], tagCandidates: ['people', 'portrait'], tagMatchMode: 'any' }
+      landscapes: { featuredOnly: false, categoryKeywords: ['land', 'nature', 'outdoor', 'mountain', 'scenic', 'travel', 'seascape'], tagKeywords: ['land', 'nature', 'outdoor', 'mountain', 'scenic', 'travel', 'seascape'], tagMatchMode: 'any' },
+      people: { featuredOnly: false, categoryKeywords: ['people', 'person', 'portrait', 'street', 'human', 'wedding', 'family'], tagKeywords: ['people', 'person', 'portrait', 'street', 'human', 'wedding', 'family'], tagMatchMode: 'any' }
     };
 
     const normalizedIntent = intentMap[intentKey] ? intentKey : 'start';
@@ -916,17 +945,27 @@
     tagMatchMode = config.tagMatchMode || 'any';
 
     const categoryOptions = Object.keys(allCategories);
-    activeCategory = config.category ?? null;
-    if (!activeCategory && config.categoryCandidates) {
-      activeCategory = findFirstMatch(categoryOptions, config.categoryCandidates);
+    if (config.category === 'mostCommon') {
+      activeCategory = getMostCommonFacet('category');
+    } else {
+      activeCategory = config.category ?? null;
+    }
+
+    if (!activeCategory && config.categoryKeywords) {
+      activeCategory = findFirstKeywordMatch(categoryOptions, config.categoryKeywords);
     }
 
     const tagOptions = Object.keys(allTags);
     activeTags = [];
-    if (Array.isArray(config.tags) && config.tags.length > 0) {
+    if (config.tag === 'mostCommon' && !activeCategory) {
+      const mostCommonTag = getMostCommonFacet('tag');
+      if (mostCommonTag) {
+        activeTags = [mostCommonTag];
+      }
+    } else if (Array.isArray(config.tags) && config.tags.length > 0) {
       activeTags = config.tags.filter((tag) => tagOptions.includes(tag));
-    } else if (config.tagCandidates) {
-      const matchingTag = findFirstMatch(tagOptions, config.tagCandidates);
+    } else if (config.tagKeywords) {
+      const matchingTag = findFirstKeywordMatch(tagOptions, config.tagKeywords);
       if (matchingTag) {
         activeTags = [matchingTag];
       }
@@ -1021,10 +1060,11 @@
     const activeFilterText = document.getElementById('active-filter-text');
 
     if (activeFiltersDiv && activeFilterText) {
-      if (featuredOnly || activeCategory || activeTags.length > 0) {
+      if (featuredOnly || activeCategory || activeTags.length > 0 || activeIntent !== 'start') {
         activeFiltersDiv.style.display = 'flex';
 
         const parts = [];
+        if (activeIntent !== 'start') parts.push(`intent: ${activeIntent}`);
         if (featuredOnly) parts.push('featured only');
         if (activeCategory) parts.push(`category: ${activeCategory}`);
         if (activeTags.length > 0) parts.push(`tags: ${activeTags.join(', ')} (${tagMatchMode})`);
@@ -1346,6 +1386,16 @@
       intentPills.querySelectorAll('[data-intent]').forEach((button) => {
         button.addEventListener('click', () => {
           applyIntent(button.dataset.intent);
+        });
+      });
+    }
+
+    const featuredToggle = document.getElementById('featured-toggle');
+    if (featuredToggle) {
+      featuredToggle.querySelectorAll('[data-featured]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const value = button.dataset.featured === 'true';
+          setFeaturedOnly(value);
         });
       });
     }
