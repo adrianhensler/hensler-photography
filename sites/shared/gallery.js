@@ -740,35 +740,63 @@
       return;
     }
 
-    // Use filtered base for counting (respects featured filter)
-    let baseData = window.galleryData;
+    // Base scope is always controlled by featured mode.
+    const featuredScopedData = applyFilterCriteria(window.galleryData, {
+      featuredOnly
+    });
 
-    // Apply featured filter if active
-    if (featuredOnly) {
-      baseData = baseData.filter(img => img.featured);
-    }
-
-    // Apply category filter if active (when counting tags)
-    if (activeCategory) {
-      baseData = baseData.filter(img => img.category === activeCategory);
-    }
-
-    // Count from filtered base
-    baseData.forEach(img => {
-      // Aggregate categories
+    // Build complete option list from current featured scope so unavailable
+    // options remain visible with a 0 count instead of disappearing.
+    const knownCategories = new Set();
+    const knownTags = new Set();
+    featuredScopedData.forEach(img => {
       if (img.category) {
-        allCategories[img.category] = (allCategories[img.category] || 0) + 1;
+        knownCategories.add(img.category);
       }
 
-      // Aggregate tags (comma-separated string)
       if (img.tags) {
         img.tags.split(',').forEach(tag => {
-          tag = tag.trim();
-          if (tag) {
-            allTags[tag] = (allTags[tag] || 0) + 1;
+          const normalizedTag = tag.trim();
+          if (normalizedTag) {
+            knownTags.add(normalizedTag);
           }
         });
       }
+    });
+
+    // Category facet strategy:
+    // Apply all active filters except category itself.
+    const categoryScope = applyFilterCriteria(featuredScopedData, {
+      tags: activeTags,
+      tagMatchMode
+    });
+
+    knownCategories.forEach(category => {
+      allCategories[category] = 0;
+    });
+    categoryScope.forEach(img => {
+      if (img.category && img.category in allCategories) {
+        allCategories[img.category] += 1;
+      }
+    });
+
+    // Tag facet strategy:
+    // Recompute per tag using all active filters except the tag being evaluated.
+    knownTags.forEach(tag => {
+      const tagsWithoutCurrent = activeTags.filter(activeTag => activeTag !== tag);
+      const tagScope = applyFilterCriteria(featuredScopedData, {
+        category: activeCategory,
+        tags: tagsWithoutCurrent,
+        tagMatchMode
+      });
+
+      const tagCount = tagScope.reduce((count, img) => {
+        if (!img.tags) return count;
+        const imageTags = img.tags.split(',').map(t => t.trim());
+        return imageTags.includes(tag) ? count + 1 : count;
+      }, 0);
+
+      allTags[tag] = tagCount;
     });
 
     console.log('Aggregated categories (dynamic):', allCategories);
@@ -792,10 +820,13 @@
         pill.dataset.category = category;
         pill.innerHTML = `${category} <span class="count">(${count})</span>`;
 
-        if (count === 0) {
+        const isUnavailable = count === 0;
+        const isActive = activeCategory === category;
+
+        if (isUnavailable && !isActive) {
           pill.classList.add('disabled');
           pill.title = 'No images match this filter in current view';
-          pill.style.pointerEvents = 'none';
+          pill.setAttribute('aria-disabled', 'true');
         } else {
           pill.addEventListener('click', () => filterByCategory(category));
         }
@@ -819,10 +850,13 @@
         pill.dataset.tag = tag;
         pill.innerHTML = `${tag} <span class="count">(${count})</span>`;
 
-        if (count === 0) {
+        const isUnavailable = count === 0;
+        const isActive = activeTags.includes(tag);
+
+        if (isUnavailable && !isActive) {
           pill.classList.add('disabled');
           pill.title = 'No images match this filter in current view';
-          pill.style.pointerEvents = 'none';
+          pill.setAttribute('aria-disabled', 'true');
         } else {
           pill.addEventListener('click', () => filterByTag(tag));
         }
