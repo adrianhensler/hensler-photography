@@ -818,6 +818,8 @@
         const pill = document.createElement('span');
         pill.className = 'pill';
         pill.dataset.category = category;
+        pill.setAttribute('role', 'button');
+        pill.setAttribute('tabindex', '0');
         pill.innerHTML = `${category} <span class="count">(${count})</span>`;
 
         const isUnavailable = count === 0;
@@ -828,7 +830,14 @@
           pill.title = 'No images match this filter in current view';
           pill.setAttribute('aria-disabled', 'true');
         } else {
+          pill.setAttribute('aria-disabled', 'false');
           pill.addEventListener('click', () => filterByCategory(category));
+          pill.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              filterByCategory(category);
+            }
+          });
         }
 
         categoryContainer.appendChild(pill);
@@ -848,6 +857,8 @@
         const pill = document.createElement('span');
         pill.className = 'pill';
         pill.dataset.tag = tag;
+        pill.setAttribute('role', 'button');
+        pill.setAttribute('tabindex', '0');
         pill.innerHTML = `${tag} <span class="count">(${count})</span>`;
 
         const isUnavailable = count === 0;
@@ -858,7 +869,14 @@
           pill.title = 'No images match this filter in current view';
           pill.setAttribute('aria-disabled', 'true');
         } else {
+          pill.setAttribute('aria-disabled', 'false');
           pill.addEventListener('click', () => filterByTag(tag));
+          pill.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              filterByTag(tag);
+            }
+          });
         }
 
         tagContainer.appendChild(pill);
@@ -918,20 +936,28 @@
   }
 
   function updateFilterUI() {
-    // Update active pills
-    document.querySelectorAll('.pill').forEach(pill => {
-      pill.classList.remove('active');
-    });
+    const setPillPressedState = (selector, isPressed) => {
+      document.querySelectorAll(selector).forEach((pill) => {
+        pill.classList.toggle('active', isPressed);
+        pill.setAttribute('aria-pressed', String(isPressed));
+      });
+    };
 
-    document.querySelector(`.pill[data-featured="${featuredOnly}"]`)?.classList.add('active');
-    document.querySelector(`.pill[data-tag-match="${tagMatchMode}"]`)?.classList.add('active');
+    // Set defaults for all toggle-like pills before applying current state.
+    setPillPressedState('.pill[data-featured]', false);
+    setPillPressedState('.pill[data-tag-match]', false);
+    setPillPressedState('.pill[data-category]', false);
+    setPillPressedState('.pill[data-tag]', false);
+
+    setPillPressedState(`.pill[data-featured="${featuredOnly}"]`, true);
+    setPillPressedState(`.pill[data-tag-match="${tagMatchMode}"]`, true);
 
     if (activeCategory) {
-      document.querySelector(`.pill[data-category="${activeCategory}"]`)?.classList.add('active');
+      setPillPressedState(`.pill[data-category="${activeCategory}"]`, true);
     }
 
     activeTags.forEach(tag => {
-      document.querySelector(`.pill[data-tag="${tag}"]`)?.classList.add('active');
+      setPillPressedState(`.pill[data-tag="${tag}"]`, true);
     });
 
     // Show/hide active filters section

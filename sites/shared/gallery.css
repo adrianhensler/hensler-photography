@@ -140,6 +140,17 @@
   box-shadow: 0 2px 8px rgba(232, 213, 181, 0.15);
 }
 
+
+.pill[aria-pressed="true"] {
+  border-color: rgba(232, 213, 181, 0.6);
+  background: rgba(232, 213, 181, 0.12);
+  color: #e8d5b5;
+  box-shadow: 0 2px 8px rgba(232, 213, 181, 0.15);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
 .pill:focus-visible {
   outline: 2px solid rgba(232, 213, 181, 0.45);
   outline-offset: 2px;
@@ -340,15 +351,19 @@
 }
 
 /* Disabled pill state (zero-count filters) */
-.pill.disabled {
-  opacity: 0.3;
+.pill.disabled,
+.pill[aria-disabled="true"] {
+  opacity: 0.45;
   cursor: not-allowed;
-  border-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
   pointer-events: none;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 
-.pill.disabled:hover {
-  border-color: rgba(255, 255, 255, 0.05);
+.pill.disabled:hover,
+.pill[aria-disabled="true"]:hover {
+  border-color: rgba(255, 255, 255, 0.08);
   background: transparent;
   color: rgba(245, 245, 245, 0.6);
   transform: none;
