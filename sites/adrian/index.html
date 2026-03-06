@@ -439,17 +439,20 @@
       <p class="filter-helper">Start broad, then add tags to refine.</p>
 
       <div class="filter-zone">
-        <h3 class="filter-heading filter-zone-heading" id="scope-filter-heading">scope</h3>
+        <h3 class="filter-heading filter-zone-heading" id="intent-filter-heading">start with an intent</h3>
         <div class="filter-group">
-          <div class="filter-pills" id="featured-toggle" aria-labelledby="scope-filter-heading">
-            <button class="pill" type="button" data-featured="true">featured</button>
-            <button class="pill" type="button" data-featured="false">all</button>
+          <div class="filter-pills" id="intent-pills" aria-labelledby="intent-filter-heading">
+            <button class="pill" type="button" data-intent="start">start here</button>
+            <button class="pill" type="button" data-intent="popular">popular</button>
+            <button class="pill" type="button" data-intent="landscapes">landscapes</button>
+            <button class="pill" type="button" data-intent="people">people</button>
+            <button class="pill" type="button" data-intent="recent">recent</button>
           </div>
         </div>
       </div>
 
-      <div class="filter-zone">
-        <h3 class="filter-heading filter-zone-heading">refine</h3>
+      <details class="filter-zone" id="refine-results">
+        <summary class="filter-heading filter-zone-heading">Refine results</summary>
 
         <div class="filter-group">
           <h4 class="filter-heading" id="categories-filter-heading">categories</h4>
@@ -475,7 +478,7 @@
             </div>
           </div>
         </details>
-      </div>
+      </details>
 
       <!-- Active Filters Display -->
       <div class="active-filters" id="active-filters" style="display: none;">

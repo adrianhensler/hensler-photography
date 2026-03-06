@@ -6,7 +6,7 @@
  * - Requires GLightbox library to be loaded
  * - Requires window.GALLERY_CONFIG = { userId: 1, siteName: 'Adrian Hensler' }
  * - Requires HTML elements: #slideshow, #gallery-grid, #category-pills, #tag-pills, #active-filters
- * - Optional HTML element: #featured-toggle (button group for featured vs all)
+ * - Optional HTML elements: #intent-pills, #refine-results
  */
 
 (function(window) {
@@ -38,6 +38,8 @@
   let activeTags = [];
   let featuredOnly = true;
   let tagMatchMode = 'any';
+  let activeIntent = 'start';
+  let hasUserInteracted = false;
 
   // ===== SECURITY HELPERS =====
 
@@ -885,7 +887,58 @@
     console.log('Filter section rendered');
   }
 
+
+  function markFilterInteraction() {
+    hasUserInteracted = true;
+    const refineDetails = document.getElementById('refine-results');
+    if (refineDetails) {
+      refineDetails.open = true;
+    }
+  }
+
+  function findFirstMatch(options, values) {
+    return options.find((option) => values.includes(option.toLowerCase())) || null;
+  }
+
+  function applyIntent(intentKey) {
+    const intentMap = {
+      start: { featuredOnly: true, category: null, tags: [], tagMatchMode: 'any' },
+      popular: { featuredOnly: true, category: null, tags: [], tagMatchMode: 'any' },
+      recent: { featuredOnly: false, category: null, tags: [], tagMatchMode: 'any' },
+      landscapes: { featuredOnly: false, categoryCandidates: ['landscape', 'nature', 'travel'], tagCandidates: ['landscape', 'nature', 'outdoors'], tagMatchMode: 'any' },
+      people: { featuredOnly: false, categoryCandidates: ['people', 'portrait', 'street'], tagCandidates: ['people', 'portrait'], tagMatchMode: 'any' }
+    };
+
+    const normalizedIntent = intentMap[intentKey] ? intentKey : 'start';
+    const config = intentMap[normalizedIntent];
+
+    featuredOnly = config.featuredOnly;
+    tagMatchMode = config.tagMatchMode || 'any';
+
+    const categoryOptions = Object.keys(allCategories);
+    activeCategory = config.category ?? null;
+    if (!activeCategory && config.categoryCandidates) {
+      activeCategory = findFirstMatch(categoryOptions, config.categoryCandidates);
+    }
+
+    const tagOptions = Object.keys(allTags);
+    activeTags = [];
+    if (Array.isArray(config.tags) && config.tags.length > 0) {
+      activeTags = config.tags.filter((tag) => tagOptions.includes(tag));
+    } else if (config.tagCandidates) {
+      const matchingTag = findFirstMatch(tagOptions, config.tagCandidates);
+      if (matchingTag) {
+        activeTags = [matchingTag];
+      }
+    }
+
+    activeIntent = normalizedIntent;
+    markFilterInteraction();
+    applyFilters();
+  }
+
   function filterByCategory(category) {
+    markFilterInteraction();
     if (activeCategory === category) {
       // Deactivate if clicking same category
       activeCategory = null;
@@ -896,6 +949,7 @@
   }
 
   function filterByTag(tag) {
+    markFilterInteraction();
     const index = activeTags.indexOf(tag);
     if (index > -1) {
       // Remove tag if already active
@@ -948,9 +1002,11 @@
     setPillPressedState('.pill[data-tag-match]', false);
     setPillPressedState('.pill[data-category]', false);
     setPillPressedState('.pill[data-tag]', false);
+    setPillPressedState('.pill[data-intent]', false);
 
     setPillPressedState(`.pill[data-featured="${featuredOnly}"]`, true);
     setPillPressedState(`.pill[data-tag-match="${tagMatchMode}"]`, true);
+    setPillPressedState(`.pill[data-intent="${activeIntent}"]`, true);
 
     if (activeCategory) {
       setPillPressedState(`.pill[data-category="${activeCategory}"]`, true);
@@ -982,8 +1038,12 @@
   }
 
   function clearFilters() {
+    markFilterInteraction();
+    activeIntent = 'start';
     activeCategory = null;
     activeTags = [];
+    featuredOnly = true;
+    tagMatchMode = 'any';
     applyFilters();
   }
 
@@ -1221,7 +1281,11 @@
       }
     }
 
-    if (featuredOnly || activeCategory || activeTags.length > 0) {
+    const hasConfiguredFilters = featuredOnly !== true || Boolean(activeCategory) || activeTags.length > 0 || tagMatchMode !== 'any';
+    hasUserInteracted = hasConfiguredFilters;
+    activeIntent = 'start';
+
+    if (hasConfiguredFilters) {
       applyFilters({ historyMode: 'replace' });
     } else {
       updateFilterUI();
@@ -1229,11 +1293,13 @@
   }
 
   function setFeaturedOnly(value) {
+    markFilterInteraction();
     featuredOnly = Boolean(value);
     applyFilters();
   }
 
   function setTagMatchMode(mode) {
+    markFilterInteraction();
     tagMatchMode = mode === 'all' ? 'all' : 'any';
     applyFilters();
   }
@@ -1270,12 +1336,16 @@
     renderFilterSection();
     loadFiltersFromURL();
 
-    const featuredToggle = document.getElementById('featured-toggle');
-    if (featuredToggle) {
-      featuredToggle.querySelectorAll('[data-featured]').forEach((button) => {
+    const refineDetails = document.getElementById('refine-results');
+    if (refineDetails) {
+      refineDetails.open = hasUserInteracted;
+    }
+
+    const intentPills = document.getElementById('intent-pills');
+    if (intentPills) {
+      intentPills.querySelectorAll('[data-intent]').forEach((button) => {
         button.addEventListener('click', () => {
-          const value = button.dataset.featured === 'true';
-          setFeaturedOnly(value);
+          applyIntent(button.dataset.intent);
         });
       });
     }
@@ -1359,6 +1429,7 @@
       renderFilterSection: renderFilterSection,
       filterByCategory: filterByCategory,
       filterByTag: filterByTag,
+      applyIntent: applyIntent,
       setFeaturedOnly: setFeaturedOnly,
       setTagMatchMode: setTagMatchMode,
       clearFilters: clearFilters,
