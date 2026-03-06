@@ -436,34 +436,45 @@
 
     <!-- Category/Tag Filter Section -->
     <div class="filter-section" id="filter-section">
-      <div class="filter-group">
-        <h3 class="filter-heading">show</h3>
-        <div class="filter-pills" id="featured-toggle">
-          <button class="pill" type="button" data-featured="true">featured</button>
-          <button class="pill" type="button" data-featured="false">all</button>
+      <p class="filter-helper">Start broad, then add tags to refine.</p>
+
+      <div class="filter-zone">
+        <h3 class="filter-heading filter-zone-heading">scope</h3>
+        <div class="filter-group">
+          <div class="filter-pills" id="featured-toggle">
+            <button class="pill" type="button" data-featured="true">featured</button>
+            <button class="pill" type="button" data-featured="false">all</button>
+          </div>
         </div>
       </div>
 
-      <div class="filter-group">
-        <h3 class="filter-heading">categories</h3>
-        <div class="filter-pills" id="category-pills">
-          <!-- Dynamically populated by JavaScript -->
-        </div>
-      </div>
+      <div class="filter-zone">
+        <h3 class="filter-heading filter-zone-heading">refine</h3>
 
-      <div class="filter-group">
-        <h3 class="filter-heading">tags</h3>
-        <div class="filter-pills" id="tag-pills">
-          <!-- Dynamically populated by JavaScript -->
+        <div class="filter-group">
+          <h4 class="filter-heading">categories</h4>
+          <div class="filter-pills" id="category-pills">
+            <!-- Dynamically populated by JavaScript -->
+          </div>
         </div>
-      </div>
 
-      <div class="filter-group">
-        <h3 class="filter-heading">match</h3>
-        <div class="filter-pills" id="tag-match-toggle">
-          <button class="pill" type="button" data-tag-match="any">match any</button>
-          <button class="pill" type="button" data-tag-match="all">match all</button>
+        <div class="filter-group">
+          <h4 class="filter-heading">tags</h4>
+          <div class="filter-pills" id="tag-pills">
+            <!-- Dynamically populated by JavaScript -->
+          </div>
         </div>
+
+        <details class="filter-advanced">
+          <summary class="filter-advanced-toggle">Advanced</summary>
+          <div class="filter-group filter-group-advanced">
+            <h4 class="filter-heading">tag logic</h4>
+            <div class="filter-pills" id="tag-match-toggle">
+              <button class="pill" type="button" data-tag-match="any">any</button>
+              <button class="pill" type="button" data-tag-match="all">all</button>
+            </div>
+          </div>
+        </details>
       </div>
 
       <!-- Active Filters Display -->
