@@ -18,28 +18,34 @@
 }
 
 .filter-helper {
-  margin: 0 0 24px;
+  margin: 0 0 18px;
   text-align: center;
-  color: rgba(245, 245, 245, 0.55);
-  font-size: 13px;
-  letter-spacing: 0.03em;
+  color: rgba(245, 245, 245, 0.42);
+  font-size: 12px;
+  letter-spacing: 0.02em;
 }
 
 .filter-zone {
-  margin-bottom: 28px;
-  padding: 22px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.015);
+  margin-bottom: 24px;
+  padding: 0 0 4px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.filter-zone:last-of-type {
+  border-bottom: 0;
+  margin-bottom: 16px;
 }
 
 .filter-zone-heading {
-  margin-bottom: 18px;
-  opacity: 0.62;
+  margin-bottom: 16px;
+  opacity: 0.5;
+  font-size: clamp(14px, 1.6vw, 17px);
+  letter-spacing: 0.1em;
 }
 
 .filter-zone .filter-group {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .filter-zone .filter-group:last-child {
@@ -47,7 +53,7 @@
 }
 
 .filter-advanced {
-  margin-top: 8px;
+  margin-top: 6px;
   text-align: center;
 }
 
@@ -56,10 +62,11 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  color: rgba(245, 245, 245, 0.6);
-  font-size: 13px;
-  letter-spacing: 0.03em;
+  color: rgba(245, 245, 245, 0.5);
+  font-size: 12px;
+  letter-spacing: 0.04em;
   list-style: none;
+  text-transform: lowercase;
 }
 
 .filter-advanced-toggle::-webkit-details-marker {
@@ -78,9 +85,9 @@
 }
 
 .filter-group-advanced {
-  margin-top: 14px;
-  padding-top: 16px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
 }
 
 .filter-heading {
@@ -359,17 +366,17 @@
   }
 
   .filter-helper {
-    font-size: 12px;
-    margin-bottom: 18px;
+    font-size: 11px;
+    margin-bottom: 14px;
   }
 
   .filter-zone {
-    padding: 18px 14px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
+    padding-bottom: 2px;
   }
 
   .filter-zone .filter-group {
-    margin-bottom: 22px;
+    margin-bottom: 20px;
   }
 
   .filter-pills {
