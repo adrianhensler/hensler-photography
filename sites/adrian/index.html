@@ -439,9 +439,9 @@
       <p class="filter-helper">Start broad, then add tags to refine.</p>
 
       <div class="filter-zone">
-        <h3 class="filter-heading filter-zone-heading">scope</h3>
+        <h3 class="filter-heading filter-zone-heading" id="scope-filter-heading">scope</h3>
         <div class="filter-group">
-          <div class="filter-pills" id="featured-toggle">
+          <div class="filter-pills" id="featured-toggle" aria-labelledby="scope-filter-heading">
             <button class="pill" type="button" data-featured="true">featured</button>
             <button class="pill" type="button" data-featured="false">all</button>
           </div>
@@ -452,15 +452,15 @@
         <h3 class="filter-heading filter-zone-heading">refine</h3>
 
         <div class="filter-group">
-          <h4 class="filter-heading">categories</h4>
-          <div class="filter-pills" id="category-pills">
+          <h4 class="filter-heading" id="categories-filter-heading">categories</h4>
+          <div class="filter-pills" id="category-pills" aria-labelledby="categories-filter-heading">
             <!-- Dynamically populated by JavaScript -->
           </div>
         </div>
 
         <div class="filter-group">
-          <h4 class="filter-heading">tags</h4>
-          <div class="filter-pills" id="tag-pills">
+          <h4 class="filter-heading" id="tags-filter-heading">tags</h4>
+          <div class="filter-pills" id="tag-pills" aria-labelledby="tags-filter-heading">
             <!-- Dynamically populated by JavaScript -->
           </div>
         </div>
@@ -468,8 +468,8 @@
         <details class="filter-advanced">
           <summary class="filter-advanced-toggle">Advanced</summary>
           <div class="filter-group filter-group-advanced">
-            <h4 class="filter-heading">tag logic</h4>
-            <div class="filter-pills" id="tag-match-toggle">
+            <h4 class="filter-heading" id="tag-logic-filter-heading">tag logic</h4>
+            <div class="filter-pills" id="tag-match-toggle" aria-labelledby="tag-logic-filter-heading">
               <button class="pill" type="button" data-tag-match="any">any</button>
               <button class="pill" type="button" data-tag-match="all">all</button>
             </div>
