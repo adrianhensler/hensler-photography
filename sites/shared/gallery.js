@@ -952,7 +952,7 @@
         if (allData.length > 0) {
           suggestions.push({
             text: `Switch to "all" to see ${allData.length} more images`,
-            action: 'GalleryApp.GalleryFilter.setFeaturedOnly(false)'
+            action: () => GalleryApp.GalleryFilter.setFeaturedOnly(false)
           });
         }
       }
