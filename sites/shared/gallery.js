@@ -1085,21 +1085,60 @@
     const activeFiltersDiv = document.getElementById('active-filters');
     const activeFilterText = document.getElementById('active-filter-text');
 
+    const renderFilterChip = (label, onRemove) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'active-filter-chip';
+      chip.setAttribute('aria-label', `Remove ${label} filter`);
+
+      const chipLabel = document.createElement('span');
+      chipLabel.className = 'active-filter-chip-label';
+      chipLabel.textContent = label;
+
+      const chipRemove = document.createElement('span');
+      chipRemove.className = 'active-filter-chip-remove';
+      chipRemove.setAttribute('aria-hidden', 'true');
+      chipRemove.textContent = '×';
+
+      chip.append(chipLabel, chipRemove);
+      chip.addEventListener('click', () => {
+        markFilterInteraction();
+        onRemove();
+        applyFilters();
+      });
+
+      return chip;
+    };
+
     if (activeFiltersDiv && activeFilterText) {
       if (featuredOnly || activeCategory || activeTags.length > 0 || activeIntent !== 'start') {
         activeFiltersDiv.style.display = 'flex';
 
-        const parts = [];
-        if (activeIntent !== 'start') parts.push(`intent: ${activeIntent}`);
-        if (featuredOnly) parts.push('featured only');
-        if (activeCategory) parts.push(`category: ${activeCategory}`);
-        if (activeTags.length > 0) {
-          const tagSummary = activeTags.length >= 2
-            ? `tags: ${activeTags.join(', ')} (${tagMatchMode})`
-            : `tags: ${activeTags.join(', ')}`;
-          parts.push(tagSummary);
+        activeFilterText.textContent = '';
+
+        if (activeIntent !== 'start') {
+          activeFilterText.appendChild(renderFilterChip(`intent: ${activeIntent}`, () => {
+            activeIntent = 'start';
+          }));
         }
-        activeFilterText.textContent = parts.join('  •  ');
+
+        if (featuredOnly) {
+          activeFilterText.appendChild(renderFilterChip('featured only', () => {
+            featuredOnly = false;
+          }));
+        }
+
+        if (activeCategory) {
+          activeFilterText.appendChild(renderFilterChip(`category: ${activeCategory}`, () => {
+            activeCategory = null;
+          }));
+        }
+
+        activeTags.forEach((tag) => {
+          activeFilterText.appendChild(renderFilterChip(`tag: ${tag}`, () => {
+            activeTags = activeTags.filter((activeTag) => activeTag !== tag);
+          }));
+        });
 
         ensureCopyLinkButton(activeFiltersDiv);
       } else {
