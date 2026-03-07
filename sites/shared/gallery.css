@@ -53,20 +53,30 @@
 }
 
 .filter-advanced {
-  margin-top: 6px;
+  margin-top: 4px;
   text-align: center;
 }
 
 .filter-advanced-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  color: rgba(245, 245, 245, 0.5);
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  color: rgba(245, 245, 245, 0.42);
+  font-size: 11px;
+  letter-spacing: 0.03em;
   list-style: none;
   text-transform: lowercase;
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.filter-advanced-toggle:hover {
+  color: rgba(245, 245, 245, 0.62);
+  border-color: rgba(232, 213, 181, 0.24);
+  background: rgba(232, 213, 181, 0.05);
 }
 
 .filter-advanced-toggle::-webkit-details-marker {
@@ -85,9 +95,31 @@
 }
 
 .filter-group-advanced {
-  margin-top: 12px;
-  padding-top: 14px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.06);
+  opacity: 0.82;
+}
+
+.filter-group-advanced .filter-heading {
+  margin-bottom: 12px;
+  font-size: clamp(13px, 1.5vw, 15px);
+  opacity: 0.4;
+}
+
+.filter-group-advanced .pill {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(245, 245, 245, 0.52);
+}
+
+.filter-group-advanced .pill.active,
+.filter-group-advanced .pill[aria-pressed="true"] {
+  border-color: rgba(232, 213, 181, 0.45);
+  background: rgba(232, 213, 181, 0.08);
+  color: rgba(232, 213, 181, 0.9);
+  box-shadow: none;
 }
 
 .filter-heading {

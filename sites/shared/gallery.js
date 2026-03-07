@@ -1002,6 +1002,11 @@
 
   function applyFilters(options = {}) {
     const { historyMode = 'push' } = options;
+
+    if (activeTags.length < 2) {
+      tagMatchMode = 'any';
+    }
+
     // Filter galleryData using shared criteria function
     const filteredData = applyFilterCriteria(window.galleryData, {
       featuredOnly,
@@ -1044,7 +1049,27 @@
     setPillPressedState('.pill[data-intent]', false);
 
     setPillPressedState(`.pill[data-featured="${featuredOnly}"]`, true);
-    setPillPressedState(`.pill[data-tag-match="${tagMatchMode}"]`, true);
+
+    const shouldShowTagMatchToggle = activeTags.length >= 2;
+    const tagMatchToggle = document.getElementById('tag-match-toggle');
+    const tagMatchGroup = tagMatchToggle ? tagMatchToggle.closest('.filter-group-advanced') : null;
+    const advancedDetails = tagMatchToggle ? tagMatchToggle.closest('.filter-advanced') : null;
+
+    if (tagMatchGroup) {
+      tagMatchGroup.hidden = !shouldShowTagMatchToggle;
+    }
+
+    if (advancedDetails) {
+      advancedDetails.hidden = !shouldShowTagMatchToggle;
+      if (!shouldShowTagMatchToggle) {
+        advancedDetails.open = false;
+      }
+    }
+
+    if (shouldShowTagMatchToggle) {
+      setPillPressedState(`.pill[data-tag-match="${tagMatchMode}"]`, true);
+    }
+
     setPillPressedState(`.pill[data-intent="${activeIntent}"]`, true);
 
     if (activeCategory) {
@@ -1067,7 +1092,12 @@
         if (activeIntent !== 'start') parts.push(`intent: ${activeIntent}`);
         if (featuredOnly) parts.push('featured only');
         if (activeCategory) parts.push(`category: ${activeCategory}`);
-        if (activeTags.length > 0) parts.push(`tags: ${activeTags.join(', ')} (${tagMatchMode})`);
+        if (activeTags.length > 0) {
+          const tagSummary = activeTags.length >= 2
+            ? `tags: ${activeTags.join(', ')} (${tagMatchMode})`
+            : `tags: ${activeTags.join(', ')}`;
+          parts.push(tagSummary);
+        }
         activeFilterText.textContent = parts.join('  •  ');
 
         ensureCopyLinkButton(activeFiltersDiv);
@@ -1215,7 +1245,7 @@
       }
     }
 
-    if (tagMatchMode === 'all') {
+    if (activeTags.length >= 2 && tagMatchMode === 'all') {
       params.set('tagMatch', 'all');
     }
 
@@ -1321,6 +1351,10 @@
       }
     }
 
+    if (activeTags.length < 2) {
+      tagMatchMode = 'any';
+    }
+
     const hasConfiguredFilters = featuredOnly !== true || Boolean(activeCategory) || activeTags.length > 0 || tagMatchMode !== 'any';
     hasUserInteracted = hasConfiguredFilters;
     activeIntent = 'start';
@@ -1339,6 +1373,12 @@
   }
 
   function setTagMatchMode(mode) {
+    if (activeTags.length < 2) {
+      tagMatchMode = 'any';
+      applyFilters();
+      return;
+    }
+
     markFilterInteraction();
     tagMatchMode = mode === 'all' ? 'all' : 'any';
     applyFilters();
