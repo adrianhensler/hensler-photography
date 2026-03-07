@@ -370,6 +370,20 @@
   max-width: 90%;
 }
 
+.suggestion-btn-primary {
+  background: rgba(232, 213, 181, 0.2);
+  border-color: rgba(232, 213, 181, 0.62);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.2);
+}
+
+.suggestion-btn-secondary {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(245, 245, 245, 0.78);
+}
+
 .suggestion-btn:hover {
   background: rgba(232, 213, 181, 0.12);
   border-color: rgba(232, 213, 181, 0.35);
@@ -378,8 +392,23 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.suggestion-btn-primary:hover {
+  background: rgba(232, 213, 181, 0.32);
+  border-color: rgba(232, 213, 181, 0.75);
+}
+
+.suggestion-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
 .suggestion-btn:active {
   transform: translateY(0);
+}
+
+.low-results-state {
+  margin-bottom: 12px;
+  padding-bottom: 28px;
 }
 
 /* Disabled pill state (zero-count filters) */
