@@ -156,6 +156,27 @@
     }
 
     /* Gallery Grid */
+    .gallery-heading {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin: 0 0 20px;
+    }
+
+    .gallery-heading h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4vw, 36px);
+      font-weight: 600;
+      margin: 0;
+      color: #f5f5f5;
+    }
+
+    .gallery-heading .filter-pills {
+      gap: 8px;
+    }
+
     #gallery-grid {
       column-count: 3;
       column-gap: 20px;
@@ -295,6 +316,13 @@
     </div>
 
     <!-- Gallery Grid -->
+    <div class="gallery-heading">
+      <h2>Browse Gallery</h2>
+      <div class="filter-pills" id="discovery-mode-toggle" aria-label="Discovery mode">
+        <button class="pill" type="button" data-mode="browse">Browse</button>
+        <button class="pill" type="button" data-mode="refine">Refine</button>
+      </div>
+    </div>
     <div id="gallery-grid"></div>
 
     <!-- Category/Tag Filter Section -->
@@ -378,7 +406,7 @@
   </script>
 
   <!-- Shared gallery application (slideshow, gallery, analytics, filtering) -->
-  <script src="/shared/gallery.js?v=20251211"></script>
+  <script src="/shared/gallery.js?v=20260307"></script>
 
   <script>
     // Set copyright year

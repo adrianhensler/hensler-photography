@@ -39,6 +39,7 @@
   let featuredOnly = true;
   let tagMatchMode = 'any';
   let activeIntent = 'start';
+  let discoveryMode = 'browse';
   let hasUserInteracted = false;
   const LOW_RESULTS_THRESHOLD = 8;
 
@@ -892,9 +893,29 @@
   function markFilterInteraction() {
     hasUserInteracted = true;
     const refineDetails = document.getElementById('refine-results');
-    if (refineDetails) {
+    if (refineDetails && discoveryMode === 'refine') {
       refineDetails.open = true;
     }
+  }
+
+  function setDiscoveryMode(mode, options = {}) {
+    const { historyMode = 'push' } = options;
+    const nextMode = mode === 'refine' ? 'refine' : 'browse';
+
+    if (discoveryMode === nextMode) {
+      return;
+    }
+
+    discoveryMode = nextMode;
+
+    if (discoveryMode === 'browse') {
+      const refineDetails = document.getElementById('refine-results');
+      if (refineDetails) {
+        refineDetails.open = false;
+      }
+    }
+
+    applyFilters({ historyMode });
   }
 
   function normalizeFacetValue(value) {
@@ -1048,6 +1069,14 @@
     setPillPressedState('.pill[data-category]', false);
     setPillPressedState('.pill[data-tag]', false);
     setPillPressedState('.pill[data-intent]', false);
+    setPillPressedState('.pill[data-mode]', false);
+
+    setPillPressedState(`.pill[data-mode="${discoveryMode}"]`, true);
+
+    const refineDetails = document.getElementById('refine-results');
+    if (refineDetails) {
+      refineDetails.hidden = discoveryMode !== 'refine';
+    }
 
     setPillPressedState(`.pill[data-featured="${featuredOnly}"]`, true);
 
@@ -1111,6 +1140,11 @@
     };
 
     if (activeFiltersDiv && activeFilterText) {
+      if (discoveryMode !== 'refine') {
+        activeFiltersDiv.style.display = 'none';
+        return;
+      }
+
       if (featuredOnly || activeCategory || activeTags.length > 0 || activeIntent !== 'start') {
         activeFiltersDiv.style.display = 'flex';
 
@@ -1249,7 +1283,8 @@
     grid.innerHTML = ''; // Clear existing
 
     if (filteredData.length === 0) {
-      const suggestions = buildDeltaActions(0);
+      const shouldShowSuggestions = discoveryMode === 'refine';
+      const suggestions = shouldShowSuggestions ? buildDeltaActions(0) : [];
 
       const noResults = document.createElement('div');
       noResults.className = 'gallery-placeholder enhanced-empty-state';
@@ -1262,7 +1297,9 @@
         </p>
       `;
 
-      renderDeltaActions(noResults, suggestions, 'Best next actions');
+      if (shouldShowSuggestions) {
+        renderDeltaActions(noResults, suggestions, 'Best next actions');
+      }
 
       const clearAllButton = document.createElement('button');
       clearAllButton.className = 'suggestion-btn suggestion-btn-secondary';
@@ -1275,7 +1312,7 @@
       return;
     }
 
-    if (filteredData.length <= LOW_RESULTS_THRESHOLD) {
+    if (discoveryMode === 'refine' && filteredData.length <= LOW_RESULTS_THRESHOLD) {
       const lowResultActions = buildDeltaActions(filteredData.length);
 
       if (lowResultActions.length > 0) {
@@ -1338,6 +1375,10 @@
       params.set('tagMatch', 'all');
     }
 
+    if (discoveryMode === 'refine') {
+      params.set('mode', 'refine');
+    }
+
     const queryString = params.toString();
     const basePath = window.location.pathname;
     const hash = window.location.hash || '';
@@ -1393,6 +1434,19 @@
   function loadFiltersFromURL() {
     const params = new URLSearchParams(window.location.search);
 
+    // Reset all filters to defaults before applying URL state
+    featuredOnly = true;
+    activeCategory = null;
+    activeTags = [];
+    tagMatchMode = 'any';
+    activeIntent = 'start';
+    discoveryMode = 'browse';
+
+    if (params.has('mode')) {
+      const requestedMode = params.get('mode');
+      discoveryMode = requestedMode === 'refine' ? 'refine' : 'browse';
+    }
+
     // Load featured filter from URL (default is true)
     if (params.has('featured')) {
       featuredOnly = params.get('featured') !== 'false';
@@ -1446,7 +1500,11 @@
 
     const hasConfiguredFilters = featuredOnly !== true || Boolean(activeCategory) || activeTags.length > 0 || tagMatchMode !== 'any';
     hasUserInteracted = hasConfiguredFilters;
-    activeIntent = 'start';
+    const refineDetails = document.getElementById('refine-results');
+    if (refineDetails) {
+      refineDetails.open = discoveryMode === 'refine' && hasUserInteracted;
+      refineDetails.hidden = discoveryMode !== 'refine';
+    }
 
     if (hasConfiguredFilters) {
       applyFilters({ historyMode: 'replace' });
@@ -1507,7 +1565,17 @@
 
     const refineDetails = document.getElementById('refine-results');
     if (refineDetails) {
-      refineDetails.open = hasUserInteracted;
+      refineDetails.open = discoveryMode === 'refine' && hasUserInteracted;
+      refineDetails.hidden = discoveryMode !== 'refine';
+    }
+
+    const modeToggle = document.getElementById('discovery-mode-toggle');
+    if (modeToggle) {
+      modeToggle.querySelectorAll('[data-mode]').forEach((button) => {
+        button.addEventListener('click', () => {
+          setDiscoveryMode(button.dataset.mode);
+        });
+      });
     }
 
     const intentPills = document.getElementById('intent-pills');
@@ -1613,7 +1681,8 @@
       setTagMatchMode: setTagMatchMode,
       clearFilters: clearFilters,
       filterFromLightbox: filterFromLightbox,
-      loadFiltersFromURL: loadFiltersFromURL
+      loadFiltersFromURL: loadFiltersFromURL,
+      setDiscoveryMode: setDiscoveryMode
     }
   };
 
