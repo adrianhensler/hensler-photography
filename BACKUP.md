@@ -2,628 +2,184 @@
 
 ## Overview
 
-This project uses [restic](https://restic.net/) for automated backups of critical data including Docker volumes (TLS certificates) and site content. Automated daily backups run at 2 AM with a retention policy of 7 daily, 4 weekly, and 6 monthly snapshots.
+Backups use a simple shell script with no external dependencies. The script runs twice weekly (Mon/Thu at 2 AM), copies the SQLite database and gallery images, and keeps the 2 most recent backups. No container downtime — SQLite's online backup mode is used.
+
+**Disaster recovery** is provided by Hostinger's weekly VPS snapshots (full server image). Local backups protect against accidental data deletion or database corruption between snapshots.
 
 ---
 
 ## What Gets Backed Up
 
-### Docker Volumes
-- **caddy-data**: TLS certificates from Let's Encrypt
-- **caddy-config**: Caddy server configuration cache
-- **gallery-db**: SQLite database with image metadata, users, analytics (when API is deployed)
-- **gallery-images**: Uploaded image files (when API is deployed)
+| Data | Location | Notes |
+|------|----------|-------|
+| SQLite database | `/opt/backups/hensler_photography/<timestamp>/gallery.db` | Image metadata, users, analytics |
+| Gallery images | `/opt/backups/hensler_photography/<timestamp>/gallery-images/` | Originals + WebP variants |
 
-### Site Content
-- `sites/` directory (all three sites)
-- `Caddyfile` (production configuration)
-- `docker-compose.yml` (production orchestration)
-
-### What's NOT Backed Up
-- Git repository (backed up to GitHub)
-- Node modules (reinstall with `npm install`)
-- Test environment (docker-compose.local.yml)
-- Logs and temporary files
+**Not backed up locally** (covered by GitHub or Hostinger):
+- Git repository → GitHub
+- Site static files (`sites/`) → GitHub
+- Docker/Caddy config → GitHub
+- Full server state → Hostinger weekly VPS snapshot
 
 ---
 
-## Initial Setup
+## Automated Backups
 
-### 1. Install Restic
+Scheduled via root crontab (Mon and Thu at 2 AM):
 
-```bash
-# On Ubuntu/Debian
-sudo apt update
-sudo apt install restic
-
-# Verify installation
-restic version
+```
+0 2 * * 1,4 /opt/prod/hensler_photography/scripts/backup.sh >> /opt/prod/hensler_photography/scripts/backup.log 2>&1
 ```
 
-### 2. Set Backup Password
-
-Choose a strong password for encrypting backups:
-
+Verify the cron is set:
 ```bash
-# Create password file (secure location)
-echo "YOUR-STRONG-PASSWORD" | sudo tee /root/.restic-password > /dev/null
-sudo chmod 600 /root/.restic-password
-
-# Or export for current session
-export RESTIC_PASSWORD="YOUR-STRONG-PASSWORD"
-```
-
-**Important**: Store this password securely. Without it, backups cannot be restored.
-
-### 3. Initialize Backup Repository
-
-```bash
-# Create backup directory
-sudo mkdir -p /opt/backups/hensler_photography
-
-# Initialize restic repository
-sudo RESTIC_PASSWORD=$(cat /root/.restic-password) \
-  restic -r /opt/backups/hensler_photography init
-```
-
-### 4. Setup Automated Backups
-
-Add cron job for daily backups:
-
-```bash
-# Edit root's crontab
-sudo crontab -e
-
-# Add this line (runs daily at 2 AM):
-0 2 * * * export RESTIC_PASSWORD=$(cat /root/.restic-password) && cd /opt/testing/hensler_photography && /opt/testing/hensler_photography/scripts/backup.sh >> /opt/testing/hensler_photography/scripts/backup.log 2>&1
+sudo crontab -l
 ```
 
 ---
 
 ## Manual Backup
 
-To create a backup immediately:
-
 ```bash
-# Export password
-export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
-
-# Run backup script
-cd /opt/testing/hensler_photography
-sudo -E ./scripts/backup.sh
+sudo /opt/prod/hensler_photography/scripts/backup.sh
 ```
 
-**What happens:**
-1. Production container stops (prevents data corruption)
-2. Docker volumes backed up (TLS certificates, configuration)
-3. API data backed up (database and uploaded images, if deployed)
-4. Site content backed up (static files)
-5. Production container restarts
-6. Retention policy applied
-7. Repository health check performed
-
-**Downtime**: ~30 seconds while container is stopped.
-
-**Note**: If the API is not deployed yet, the database backup step will be skipped automatically.
+Output example:
+```
+[2026-03-07 18:28:16] Backup started -> /opt/backups/hensler_photography/20260307_182816
+[2026-03-07 18:28:16] Database backed up (1.5M)
+[2026-03-07 18:28:16] Images backed up (181 files, 137M)
+[2026-03-07 18:28:16] Backup complete: 20260307_182816
+[2026-03-07 18:28:16] Backups retained: 2
+```
 
 ---
 
 ## Viewing Backups
 
-### List All Snapshots
-
 ```bash
-export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
-restic -r /opt/backups/hensler_photography snapshots
-```
+# List all backups
+ls /opt/backups/hensler_photography/
 
-Example output:
-```
-ID        Time                 Host                  Tags             Paths
-----------------------------------------------------------------------------------
-a1b2c3d4  2025-10-13 02:00:15  hensler-photography  docker-volumes   /var/lib/docker/volumes/...
-e5f6g7h8  2025-10-13 02:00:30  hensler-photography  site-content     /opt/testing/hensler_photography/sites
-```
+# Check backup logs
+tail -50 /opt/prod/hensler_photography/scripts/backup.log
 
-### Show Snapshot Details
-
-```bash
-restic -r /opt/backups/hensler_photography snapshots <snapshot-id>
-```
-
-### List Files in Snapshot
-
-```bash
-restic -r /opt/backups/hensler_photography ls <snapshot-id>
-```
-
-### Check Repository Stats
-
-```bash
-restic -r /opt/backups/hensler_photography stats
+# Check backup sizes
+du -sh /opt/backups/hensler_photography/*/
 ```
 
 ---
 
-## Restoring from Backup
+## Restore Database
 
-### Full Restore
-
-Use the restore script to restore everything:
+**When to use**: Database corrupted, images accidentally deleted, data rolled back.
 
 ```bash
-# Export password
-export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
-
 # List available backups
-sudo -E ./scripts/restore.sh
+ls /opt/backups/hensler_photography/
 
-# Restore from specific snapshot
-sudo -E ./scripts/restore.sh <snapshot-id>
-```
+# Copy backup db over the live db (container keeps running)
+BACKUP=/opt/backups/hensler_photography/<timestamp>
+DB_VOLUME=/var/lib/docker/volumes/hensler_photography_gallery-db/_data
 
-**What happens:**
-1. Shows snapshot details and asks for confirmation
-2. Production container stops
-3. Data restored to temporary location
-4. Docker volumes overwritten
-5. Site content optionally overwritten
-6. Production container restarts
+sudo cp "$DB_VOLUME/gallery.db" "$DB_VOLUME/gallery.db.pre-restore"
+sudo cp "$BACKUP/gallery.db" "$DB_VOLUME/gallery.db"
 
-### Selective Restore
-
-To restore only specific files:
-
-```bash
-export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
-
-# Restore to temporary location
-restic -r /opt/backups/hensler_photography restore <snapshot-id> \
-  --target /tmp/restore
-
-# Copy specific files you need
-sudo cp -a /tmp/restore/path/to/file /destination/
-
-# Clean up
-rm -rf /tmp/restore
-```
-
-### Restore Only TLS Certificates
-
-```bash
-# Find volume mount point
-VOLUME_PATH=$(docker volume inspect hensler_photography_caddy-data --format '{{ .Mountpoint }}')
-
-# Stop container
-docker compose down
-
-# Restore volume
-restic -r /opt/backups/hensler_photography restore <snapshot-id> \
-  --target /tmp/restore \
-  --path "$VOLUME_PATH"
-
-# Copy data
-sudo cp -a /tmp/restore"$VOLUME_PATH"/* "$VOLUME_PATH"/
-
-# Restart container
-docker compose up -d
-
-# Clean up
-rm -rf /tmp/restore
-```
-
-### Restore Database (API Data)
-
-**When to use**: Recover from database corruption, restore deleted images or data, roll back to previous state.
-
-#### 1. Find the Snapshot with Database Data
-
-```bash
-export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
-
-# List snapshots with database tag
-restic -r /opt/backups/hensler_photography snapshots --tag database
-```
-
-#### 2. Stop API Container
-
-```bash
+# Restart API to pick up restored database
 cd /opt/prod/hensler_photography
-docker compose down api
-```
+docker compose restart api
 
-#### 3. Restore Database Volume
-
-```bash
-# Get volume mount point
-DB_VOLUME=$(docker volume inspect hensler_photography_gallery-db --format '{{ .Mountpoint }}')
-IMAGES_VOLUME=$(docker volume inspect hensler_photography_gallery-images --format '{{ .Mountpoint }}')
-
-# Restore to temporary location
-restic -r /opt/backups/hensler_photography restore <snapshot-id> \
-  --target /tmp/restore
-
-# Backup current data (safety measure)
-sudo cp -a "$DB_VOLUME" "$DB_VOLUME.backup-$(date +%Y%m%d-%H%M%S)"
-
-# Copy restored database
-sudo cp -a /tmp/restore"$DB_VOLUME"/* "$DB_VOLUME"/
-
-# Optionally restore images too
-sudo cp -a /tmp/restore"$IMAGES_VOLUME"/* "$IMAGES_VOLUME"/
-
-# Clean up
-rm -rf /tmp/restore
-```
-
-#### 4. Restart API Container
-
-```bash
-docker compose up -d api
-
-# Verify database integrity
+# Verify
 docker compose exec api python3 -c "
-from api.database import get_db_connection
-import asyncio
-async def check():
-    async with get_db_connection() as db:
-        cursor = await db.execute('SELECT COUNT(*) FROM images')
-        count = (await cursor.fetchone())[0]
-        print(f'Database OK: {count} images found')
-asyncio.run(check())
+import sqlite3
+conn = sqlite3.connect('/data/gallery.db')
+count = conn.execute('SELECT COUNT(*) FROM images').fetchone()[0]
+print(f'Database OK: {count} images')
 "
 ```
 
-#### 5. Verify Restoration
+---
+
+## Restore Gallery Images
 
 ```bash
-# Check API health
-curl http://localhost:4100/api/health
+BACKUP=/opt/backups/hensler_photography/<timestamp>
+IMAGES_VOLUME=/var/lib/docker/volumes/hensler_photography_gallery-images/_data
 
-# Check gallery endpoint
-curl http://localhost:4100/api/gallery/published?user_id=1
-```
-
-### Database-Only Backup (Manual)
-
-To create an emergency database export:
-
-```bash
-# SQLite dump (human-readable SQL)
-docker compose exec api sqlite3 /data/gallery.db .dump > gallery_backup_$(date +%Y%m%d).sql
-
-# Or copy database file directly
-docker compose cp api:/data/gallery.db ./gallery_backup_$(date +%Y%m%d).db
-```
-
-**Restore from manual dump:**
-```bash
-# From SQL dump
-cat gallery_backup_20250110.sql | docker compose exec -T api sqlite3 /data/gallery.db
-
-# From database file
-docker compose cp gallery_backup_20250110.db api:/data/gallery.db
-docker compose restart api
+# Copy restored images into the volume
+sudo cp -a "$BACKUP/gallery-images/." "$IMAGES_VOLUME/"
 ```
 
 ---
 
-## Retention Policy
+## Complete Server Rebuild
 
-Automated backups follow this retention schedule:
-
-- **Daily**: Keep last 7 days
-- **Weekly**: Keep last 4 weeks
-- **Monthly**: Keep last 6 months
-
-Older snapshots are automatically pruned.
-
-### Modifying Retention
-
-Edit `scripts/backup.sh` and change these variables:
+If the VPS is lost entirely, restore from the Hostinger weekly snapshot (preferred), or rebuild manually:
 
 ```bash
-RETENTION_DAYS=7    # Daily snapshots to keep
-RETENTION_WEEKS=4   # Weekly snapshots to keep
-RETENTION_MONTHS=6  # Monthly snapshots to keep
-```
-
-### Manual Cleanup
-
-To manually apply retention policy:
-
-```bash
-export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
-
-restic -r /opt/backups/hensler_photography forget \
-  --keep-daily 7 \
-  --keep-weekly 4 \
-  --keep-monthly 6 \
-  --prune
-```
-
----
-
-## Backup Storage
-
-### Current Setup
-
-Backups stored locally at `/opt/backups/hensler_photography/`
-
-### Recommended: Add Remote Backup
-
-For additional safety, sync backups to remote storage:
-
-**Option 1: rsync to another server**
-```bash
-# After backup runs, sync to remote server
-rsync -avz --delete /opt/backups/hensler_photography/ \
-  user@backup-server:/backups/hensler_photography/
-```
-
-**Option 2: Restic to S3/B2/other cloud**
-```bash
-# Initialize remote repository
-restic -r s3:s3.amazonaws.com/bucket-name init
-
-# Copy snapshots to remote
-restic -r /opt/backups/hensler_photography copy \
-  --repo2 s3:s3.amazonaws.com/bucket-name
-```
-
-**Option 3: Automated cloud sync via cron**
-```bash
-# Add to crontab after backup job
-30 2 * * * rsync -avz /opt/backups/hensler_photography/ user@remote:/backups/
-```
-
----
-
-## Monitoring Backups
-
-### Check Last Backup
-
-```bash
-export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
-restic -r /opt/backups/hensler_photography snapshots --last 1
-```
-
-### View Backup Logs
-
-```bash
-tail -n 50 /opt/testing/hensler_photography/scripts/backup.log
-```
-
-### Email Notifications
-
-To get notified of backup failures, modify the cron job:
-
-```bash
-# Install mailutils
-sudo apt install mailutils
-
-# Update crontab to send email on failure:
-0 2 * * * cd /opt/testing/hensler_photography && export RESTIC_PASSWORD=$(sudo cat /root/.restic-password) && /opt/testing/hensler_photography/scripts/backup.sh || echo "Backup failed!" | mail -s "Hensler Photography Backup Failed" your@email.com
-```
-
-### External Monitoring
-
-Consider using [Healthchecks.io](https://healthchecks.io) for backup monitoring:
-
-```bash
-# Add to backup.sh at the end
-curl -fsS -m 10 --retry 5 https://hc-ping.com/YOUR-UUID
-```
-
----
-
-## Disaster Recovery Scenarios
-
-### Scenario 1: Accidental File Deletion
-
-```bash
-# List recent backups
-sudo -E ./scripts/restore.sh
-
-# Restore from yesterday's backup
-sudo -E ./scripts/restore.sh <snapshot-id>
-
-# Selectively copy back deleted files
-```
-
-### Scenario 2: Corrupted TLS Certificates
-
-```bash
-# Stop container
-docker compose down
-
-# Restore caddy-data volume from backup
-# (see "Restore Only TLS Certificates" above)
-
-# Restart
-docker compose up -d
-```
-
-### Scenario 3: Complete Server Failure
-
-On new server:
-
-```bash
-# Install Docker
+# 1. Provision new VPS, install Docker
 curl -fsSL https://get.docker.com | sh
 
-# Install restic
-sudo apt install restic
+# 2. Clone repository
+git clone https://github.com/adrianhensler/hensler-photography.git /opt/prod/hensler_photography
 
-# Clone repository
-git clone https://github.com/adrianhensler/hensler-photography.git
-cd hensler-photography
-
-# Copy backup repository from old server (or restore from remote)
+# 3. Transfer backup files from old server (or Hostinger snapshot)
 rsync -avz old-server:/opt/backups/hensler_photography/ /opt/backups/hensler_photography/
 
-# Restore using script
-export RESTIC_PASSWORD="your-password"
-sudo -E ./scripts/restore.sh <snapshot-id>
-
-# Start production
+# 4. Start production stack
+cd /opt/prod/hensler_photography
 docker compose up -d
+
+# 5. Restore database and images (see sections above)
+
+# 6. Verify health
+curl -I https://hensler.photography/healthz
+curl -I https://adrian.hensler.photography/healthz
 ```
 
 ---
 
-## Backup Best Practices
+## Retention
 
-### Do's
-- ✅ Test restore procedures regularly (quarterly)
-- ✅ Monitor backup success (check logs weekly)
-- ✅ Keep backups in multiple locations (local + remote)
-- ✅ Secure backup password (password manager, encrypted file)
-- ✅ Verify backup integrity with `restic check`
-- ✅ Document restore procedures (this file!)
+The script keeps the **2 most recent backups** and deletes older ones automatically. Each backup is approximately 140MB based on current data (1.5MB database + ~137MB images).
 
-### Don'ts
-- ❌ Don't rely only on local backups (disk failure risk)
-- ❌ Don't forget backup password (unrecoverable without it)
-- ❌ Don't skip testing restores (backup untested = backup broken)
-- ❌ Don't store backup password in plaintext in git
-- ❌ Don't ignore backup failure notifications
-- ❌ Don't delete old snapshots manually (use retention policy)
+To change retention, edit `KEEP=2` in `scripts/backup.sh`.
 
 ---
 
 ## Troubleshooting
 
-### Backup Script Fails
-
+**Script fails: "sqlite3 not installed"**
 ```bash
-# Check logs
-tail -n 100 /opt/testing/hensler_photography/scripts/backup.log
+sudo apt install sqlite3
+```
 
-# Common issues:
-# 1. RESTIC_PASSWORD not set
-export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
+**Script fails: "Database not found"**
+```bash
+# Check the volume exists and has data
+ls /var/lib/docker/volumes/hensler_photography_gallery-db/_data/
+```
 
-# 2. Repository locked (previous backup interrupted)
-restic -r /opt/backups/hensler_photography unlock
-
-# 3. Insufficient disk space
+**Check disk space before backup**
+```bash
 df -h /opt/backups
-
-# 4. Docker not running
-docker info
 ```
 
-### Restore Fails
-
+**Out of disk space — emergency prune**
 ```bash
-# Check repository integrity
-restic -r /opt/backups/hensler_photography check
-
-# Repair repository if needed
-restic -r /opt/backups/hensler_photography rebuild-index
-```
-
-### Repository Locked
-
-```bash
-# If backup was interrupted, repository may be locked
-restic -r /opt/backups/hensler_photography unlock
-```
-
-### Out of Disk Space
-
-```bash
-# Check usage
-df -h /opt/backups
-
-# Remove old snapshots manually
-restic -r /opt/backups/hensler_photography forget <snapshot-id>
-restic -r /opt/backups/hensler_photography prune
+# Remove oldest backup manually
+ls /opt/backups/hensler_photography/
+sudo rm -rf /opt/backups/hensler_photography/<oldest-timestamp>
 ```
 
 ---
 
-## Recovery Time Objectives (RTO)
+## Recovery Time Objectives
 
-Expected recovery times:
+| Scenario | Method | Est. Time |
+|----------|--------|-----------|
+| Accidental image/data deletion | Local backup restore | 5 minutes |
+| Database corruption | Local backup restore | 5 minutes |
+| Full server loss | Hostinger VPS snapshot | 30–60 minutes |
 
-| Scenario | Recovery Time | Data Loss |
-|----------|---------------|-----------|
-| Single file restore | 5 minutes | None (from last backup) |
-| Full site restore | 15 minutes | None (from last backup) |
-| TLS certificate restore | 10 minutes | None (from last backup) |
-| Complete server rebuild | 1-2 hours | None (from last backup) |
-
-**Maximum data loss**: 24 hours (time since last backup)
-
-To reduce data loss window, increase backup frequency:
-```bash
-# Backup every 6 hours instead of daily
-0 */6 * * * ...backup command...
-```
-
----
-
-## Security Considerations
-
-### Backup Encryption
-
-Restic encrypts all backups with AES-256. Your `RESTIC_PASSWORD` is the encryption key.
-
-**Important**: Anyone with access to the backup files AND the password can read your backups.
-
-### Password Security
-
-```bash
-# Secure the password file
-sudo chmod 600 /root/.restic-password
-sudo chown root:root /root/.restic-password
-
-# Verify permissions
-ls -l /root/.restic-password
-# Should show: -rw------- 1 root root
-```
-
-### Backup Location Security
-
-```bash
-# Secure backup directory
-sudo chmod 700 /opt/backups
-sudo chown root:root /opt/backups
-```
-
----
-
-## Additional Resources
-
-- **Restic Documentation**: https://restic.readthedocs.io/
-- **Restic Forum**: https://forum.restic.net/
-- **GitHub Issues**: https://github.com/restic/restic/issues
-
----
-
-## Quick Reference
-
-```bash
-# Export password (required for all commands)
-export RESTIC_PASSWORD=$(sudo cat /root/.restic-password)
-
-# Manual backup
-sudo -E ./scripts/backup.sh
-
-# List backups
-restic -r /opt/backups/hensler_photography snapshots
-
-# Restore
-sudo -E ./scripts/restore.sh <snapshot-id>
-
-# Check repository health
-restic -r /opt/backups/hensler_photography check
-
-# View backup size
-restic -r /opt/backups/hensler_photography stats
-
-# Unlock locked repository
-restic -r /opt/backups/hensler_photography unlock
-```
+**Maximum data loss**: 3–4 days (worst case between local backups, covered by Hostinger weekly snapshot).
