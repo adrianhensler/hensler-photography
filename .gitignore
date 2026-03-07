@@ -40,6 +40,13 @@ scripts/*.pid
 # Local testing artifacts
 .restic-password
 
+# Local Claude/MCP config (machine-specific)
+.mcp.json
+.playwright-mcp/
+
+# Local scripts (may contain credentials)
+reset_password.py
+
 # Python
 __pycache__/
 *.pyc
