@@ -228,10 +228,52 @@
   font-weight: 300;
 }
 
+.active-filter-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .active-filter-text {
-  color: rgba(232, 213, 181, 0.9);
-  font-size: 14px;
-  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(232, 213, 181, 0.28);
+  border-radius: 999px;
+  background: rgba(232, 213, 181, 0.08);
+  color: rgba(232, 213, 181, 0.95);
+  padding: 6px 12px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.active-filter-chip:hover {
+  background: rgba(232, 213, 181, 0.14);
+  border-color: rgba(232, 213, 181, 0.45);
+  transform: translateY(-1px);
+}
+
+.active-filter-chip:focus-visible {
+  outline: 2px solid rgba(232, 213, 181, 0.55);
+  outline-offset: 2px;
+}
+
+.active-filter-chip-remove {
+  font-size: 16px;
+  line-height: 0.8;
+  opacity: 0.9;
 }
 
 .clear-filters-btn {
@@ -252,6 +294,11 @@
   background: rgba(232, 213, 181, 0.08);
   border-color: rgba(232, 213, 181, 0.45);
   color: #e8d5b5;
+}
+
+.clear-filters-btn:focus-visible {
+  outline: 2px solid rgba(232, 213, 181, 0.55);
+  outline-offset: 2px;
 }
 
 /* Lightbox Description Pills */
