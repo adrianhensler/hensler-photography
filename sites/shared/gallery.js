@@ -40,6 +40,7 @@
   let tagMatchMode = 'any';
   let activeIntent = 'start';
   let hasUserInteracted = false;
+  const LOW_RESULTS_THRESHOLD = 8;
 
   // ===== SECURITY HELPERS =====
 
@@ -1117,6 +1118,88 @@
     applyFilters();
   }
 
+  function buildDeltaActions(currentCount) {
+    const deltaActions = [];
+
+    if (featuredOnly) {
+      const allPhotosCount = applyFilterCriteria(window.galleryData, {
+        featuredOnly: false,
+        category: activeCategory,
+        tags: activeTags,
+        tagMatchMode
+      }).length;
+      const gain = allPhotosCount - currentCount;
+
+      if (gain > 0) {
+        deltaActions.push({
+          gain,
+          text: `Switch to all photos (+${gain})`,
+          action: () => GalleryApp.GalleryFilter.setFeaturedOnly(false)
+        });
+      }
+    }
+
+    if (activeCategory) {
+      const categoryClearedCount = applyFilterCriteria(window.galleryData, {
+        featuredOnly,
+        category: null,
+        tags: activeTags,
+        tagMatchMode
+      }).length;
+      const gain = categoryClearedCount - currentCount;
+
+      if (gain > 0) {
+        deltaActions.push({
+          gain,
+          text: `Clear category (+${gain})`,
+          action: () => GalleryApp.GalleryFilter.filterByCategory(activeCategory)
+        });
+      }
+    }
+
+    activeTags.forEach((tag) => {
+      const tagsWithoutCurrent = activeTags.filter((activeTag) => activeTag !== tag);
+      const tagRemovedCount = applyFilterCriteria(window.galleryData, {
+        featuredOnly,
+        category: activeCategory,
+        tags: tagsWithoutCurrent,
+        tagMatchMode
+      }).length;
+      const gain = tagRemovedCount - currentCount;
+
+      if (gain > 0) {
+        deltaActions.push({
+          gain,
+          text: `Remove tag: ${tag} (+${gain})`,
+          action: () => GalleryApp.GalleryFilter.filterByTag(tag)
+        });
+      }
+    });
+
+    return deltaActions.sort((a, b) => b.gain - a.gain);
+  }
+
+  function renderDeltaActions(container, actions, heading) {
+    if (!container || actions.length === 0) return;
+
+    const actionsWrapper = document.createElement('div');
+    actionsWrapper.className = 'empty-state-suggestions';
+
+    const title = document.createElement('p');
+    title.textContent = heading;
+    actionsWrapper.appendChild(title);
+
+    actions.forEach((suggestion, index) => {
+      const button = document.createElement('button');
+      button.className = `suggestion-btn ${index === 0 ? 'suggestion-btn-primary' : 'suggestion-btn-secondary'}`;
+      button.textContent = suggestion.text;
+      button.addEventListener('click', suggestion.action);
+      actionsWrapper.appendChild(button);
+    });
+
+    container.appendChild(actionsWrapper);
+  }
+
   function rerenderGallery(filteredData) {
     const grid = document.getElementById('gallery-grid');
     if (!grid) {
@@ -1127,50 +1210,8 @@
     grid.innerHTML = ''; // Clear existing
 
     if (filteredData.length === 0) {
-      // Enhanced zero results message with contextual suggestions
-      const suggestions = [];
+      const suggestions = buildDeltaActions(0);
 
-      // Check if switching to "all" would help
-      if (featuredOnly) {
-        const allData = applyFilterCriteria(window.galleryData, {
-          featuredOnly: false,
-          category: activeCategory,
-          tags: activeTags,
-          tagMatchMode
-        });
-
-        if (allData.length > 0) {
-          suggestions.push({
-            text: `Switch to "all" to see ${allData.length} more images`,
-            action: () => GalleryApp.GalleryFilter.setFeaturedOnly(false)
-          });
-        }
-      }
-
-      // Suggest removing specific filters
-      if (activeCategory) {
-        suggestions.push({
-          text: `Remove category: ${escapeHtml(activeCategory)}`,
-          action: () => GalleryApp.GalleryFilter.filterByCategory(activeCategory)
-        });
-      }
-
-      if (activeTags.length > 0) {
-        activeTags.forEach(tag => {
-          suggestions.push({
-            text: `Remove tag: ${escapeHtml(tag)}`,
-            action: () => GalleryApp.GalleryFilter.filterByTag(tag)
-          });
-        });
-      }
-
-      // Always offer clear all
-      suggestions.push({
-        text: 'Clear all filters',
-        action: () => GalleryApp.GalleryFilter.clearFilters()
-      });
-
-      // Build enhanced UI (using escapeHtml to prevent XSS)
       const noResults = document.createElement('div');
       noResults.className = 'gallery-placeholder enhanced-empty-state';
       noResults.innerHTML = `
@@ -1180,26 +1221,35 @@
           ${activeCategory ? `<br>Category: <strong>${escapeHtml(activeCategory)}</strong>` : ''}
           ${activeTags.length > 0 ? `<br>Tags: <strong>${escapeHtml(activeTags.join(', '))}</strong>` : ''}
         </p>
-        <div class="empty-state-suggestions">
-          <p>Try this:</p>
-          ${suggestions.map((s, i) => `
-            <button class="suggestion-btn" data-suggestion-index="${i}">
-              ${s.text}
-            </button>
-          `).join('')}
-        </div>
       `;
+
+      renderDeltaActions(noResults, suggestions, 'Best next actions');
+
+      const clearAllButton = document.createElement('button');
+      clearAllButton.className = 'suggestion-btn suggestion-btn-secondary';
+      clearAllButton.textContent = 'Clear all filters';
+      clearAllButton.addEventListener('click', () => GalleryApp.GalleryFilter.clearFilters());
+      noResults.appendChild(clearAllButton);
+
       grid.appendChild(noResults);
 
-      // Attach event listeners safely (avoiding onclick XSS)
-      suggestions.forEach((s, i) => {
-        const btn = noResults.querySelector(`[data-suggestion-index="${i}"]`);
-        if (btn && typeof s.action === 'function') {
-          btn.addEventListener('click', s.action);
-        }
-      });
-
       return;
+    }
+
+    if (filteredData.length <= LOW_RESULTS_THRESHOLD) {
+      const lowResultActions = buildDeltaActions(filteredData.length);
+
+      if (lowResultActions.length > 0) {
+        const lowResultsNotice = document.createElement('div');
+        lowResultsNotice.className = 'gallery-placeholder enhanced-empty-state low-results-state';
+        lowResultsNotice.innerHTML = `
+          <h3>Only ${filteredData.length} photo${filteredData.length === 1 ? '' : 's'} match</h3>
+          <p class="empty-state-context">Want to broaden this view? Try the highest-impact change first.</p>
+        `;
+
+        renderDeltaActions(lowResultsNotice, lowResultActions, 'Prioritized actions');
+        grid.appendChild(lowResultsNotice);
+      }
     }
 
     // Re-render gallery items with category/tags in lightbox description
