@@ -1,0 +1,16 @@
+{
+  "models": {
+    "deepseek": "deepseek/deepseek-chat-v3.1",
+    "mistral": "mistralai/mistral-large-2512",
+    "qwen": "qwen/qwen3.5-122b-a10b",
+    "sonnet_synthesis": "anthropic/claude-sonnet-4.6"
+  },
+  "repo_head": "f102a8a",
+  "status": {
+    "deepseek": "ok",
+    "mistral": "ok",
+    "qwen": "ok"
+  },
+  "debate_status": "ok",
+  "synthesis_status": "ok"
+}
