@@ -1018,7 +1018,6 @@
             return new Promise((resolve, reject) => {
                 const formData = new FormData();
                 formData.append('file', fileData.file);
-                formData.append('user_id', CURRENT_USER_ID);
 
                 const xhr = new XMLHttpRequest();
 
@@ -1651,7 +1650,6 @@
 
             try {
                 const formData = new FormData();
-                formData.append('user_id', CURRENT_USER_ID);
 
                 const response = await fetch(`/api/images/${imageId}/regenerate-ai`, {
                     method: 'POST',

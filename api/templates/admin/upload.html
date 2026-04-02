@@ -747,7 +747,7 @@
         async function uploadFile(fileData) {
             const formData = new FormData();
             formData.append('file', fileData.file);
-            formData.append('user_id', photographerSelect.value);
+            formData.append('target_user_id', photographerSelect.value);
 
             updateStatus(fileData.id, 'processing', 'Processing with AI...');
             updateProgress(fileData.id, 30);
@@ -755,6 +755,7 @@
             try {
                 const response = await fetch('/api/images/ingest', {
                     method: 'POST',
+                    credentials: 'include',
                     body: formData
                 });
 

@@ -4,7 +4,7 @@ Image ingestion routes with AI-powered metadata generation
 Enhanced with structured error handling for AI and human users.
 """
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from fastapi.responses import JSONResponse
 import traceback
 from datetime import datetime
@@ -19,6 +19,7 @@ from api.errors import (
 )
 from api.logging_config import get_logger
 from api.models import ImageMetadataUpdate
+from api.routes.auth import get_current_user, User
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -26,12 +27,34 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/images", tags=["images"])
 
 
+async def verify_image_ownership(image_id: int, current_user: User) -> None:
+    """
+    Verify that the authenticated user owns the image, or is an admin.
+    Returns 404 (not 403) to avoid leaking existence of other users' images.
+    """
+    from api.database import get_db_connection
+
+    async with get_db_connection() as db:
+        cursor = await db.execute("SELECT user_id FROM images WHERE id = ?", (image_id,))
+        row = await cursor.fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Image not found")
+
+        if current_user.role != "admin" and row[0] != current_user.id:
+            raise HTTPException(status_code=404, detail="Image not found")
+
+
 # ROUTE ORDER MATTERS: Specific literal paths MUST come before generic path parameters
 # Otherwise FastAPI will match /{image_id} before /ingest
 
 
 @router.post("/ingest")
-async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
+async def ingest_image(
+    file: UploadFile = File(...),
+    target_user_id: int = Form(None),
+    current_user: User = Depends(get_current_user),
+):
     """
     Upload and process an image with AI analysis
 
@@ -45,6 +68,13 @@ async def ingest_image(file: UploadFile = File(...), user_id: int = Form(...)):
 
     Returns structured response with success status, data, and any warnings.
     """
+    # Admin may upload on behalf of another user via target_user_id.
+    # Non-admins always use their own ID regardless of what was submitted.
+    if target_user_id is not None and current_user.role == "admin":
+        user_id = target_user_id
+    else:
+        user_id = current_user.id
+
     context = {
         "original_filename": file.filename,
         "user_id": user_id,
@@ -399,12 +429,13 @@ async def list_images(
     limit: int = 100,
     offset: int = 0,
     with_analytics: bool = False,
+    current_user: User = Depends(get_current_user),
 ):
     """
     List all images with optional filters
 
     Query parameters:
-    - user_id: Filter by photographer
+    - user_id: Filter by photographer (admins only; photographers always see their own)
     - published: Filter by published status (true/false)
     - featured: Filter by featured status (true/false)
     - category: Filter by category
@@ -413,6 +444,10 @@ async def list_images(
     - offset: Pagination offset (default 0)
     - with_analytics: Include engagement analytics for each image (default false)
     """
+    # Photographers can only list their own images; admins may filter by any user_id
+    if current_user.role != "admin":
+        user_id = current_user.id
+
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
@@ -554,11 +589,17 @@ async def list_images(
 
 
 @router.post("/{image_id}/publish")
-async def set_visibility(image_id: int, published: bool = True):
+async def set_visibility(
+    image_id: int,
+    published: bool = True,
+    current_user: User = Depends(get_current_user),
+):
     """
     Set image visibility: published=True (public), published=False (private).
     Public images appear on user.hensler.photography, private remain in management interface only.
     """
+    await verify_image_ownership(image_id, current_user)
+
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
@@ -572,7 +613,11 @@ async def set_visibility(image_id: int, published: bool = True):
 
 
 @router.post("/{image_id}/exif-sharing")
-async def set_exif_sharing(image_id: int, share: bool = True):
+async def set_exif_sharing(
+    image_id: int,
+    share: bool = True,
+    current_user: User = Depends(get_current_user),
+):
     """
     Toggle EXIF data sharing for public gallery.
 
@@ -585,6 +630,8 @@ async def set_exif_sharing(image_id: int, share: bool = True):
     - Camera/lens info can be hidden
     - Exposure settings can be hidden
     """
+    await verify_image_ownership(image_id, current_user)
+
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
@@ -598,8 +645,14 @@ async def set_exif_sharing(image_id: int, share: bool = True):
 
 
 @router.post("/{image_id}/featured")
-async def toggle_featured(image_id: int, featured: bool = True):
+async def toggle_featured(
+    image_id: int,
+    featured: bool = True,
+    current_user: User = Depends(get_current_user),
+):
     """Toggle featured status of an image"""
+    await verify_image_ownership(image_id, current_user)
+
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
@@ -614,8 +667,10 @@ async def toggle_featured(image_id: int, featured: bool = True):
 
 # Generic path parameter routes come AFTER specific literal paths
 @router.get("/{image_id}")
-async def get_image(image_id: int):
-    """Get image details"""
+async def get_image(image_id: int, current_user: User = Depends(get_current_user)):
+    """Get image details (own images only, or any image for admins)"""
+    await verify_image_ownership(image_id, current_user)
+
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
@@ -702,13 +757,19 @@ async def get_image(image_id: int):
 
 
 @router.patch("/{image_id}")
-async def update_image_metadata(image_id: int, metadata: ImageMetadataUpdate):
+async def update_image_metadata(
+    image_id: int,
+    metadata: ImageMetadataUpdate,
+    current_user: User = Depends(get_current_user),
+):
     """
     Update image metadata (title, caption, tags, etc.)
 
     Uses Pydantic ImageMetadataUpdate model for validation.
     When a user edits a field, also marks it as human-reviewed (ai_generated = 0).
     """
+    await verify_image_ownership(image_id, current_user)
+
     from api.database import get_db_connection
 
     # Mapping of content fields to their ai_generated tracking columns
@@ -758,8 +819,10 @@ async def update_image_metadata(image_id: int, metadata: ImageMetadataUpdate):
 
 
 @router.delete("/{image_id}")
-async def delete_image(image_id: int):
+async def delete_image(image_id: int, current_user: User = Depends(get_current_user)):
     """Delete an image and its variants"""
+    await verify_image_ownership(image_id, current_user)
+
     from api.database import get_db_connection
     from pathlib import Path
 
@@ -801,13 +864,15 @@ async def delete_image(image_id: int):
 
 
 @router.post("/{image_id}/reextract-exif")
-async def reextract_exif(image_id: int):
+async def reextract_exif(image_id: int, current_user: User = Depends(get_current_user)):
     """
     Re-extract EXIF data from the original image file.
     Useful if original data was missing or corrupted.
     """
     from api.database import get_db_connection
     from api.services.exif import extract_exif
+
+    await verify_image_ownership(image_id, current_user)
 
     context = {"image_id": image_id}
     logger.info(f"Re-extracting EXIF for image {image_id}", extra={"context": context})
@@ -906,8 +971,8 @@ async def reextract_exif(image_id: int):
 @router.post("/{image_id}/regenerate-ai")
 async def regenerate_ai_metadata(
     image_id: int,
-    user_id: int = Form(...),
     style: str = Form("balanced"),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Re-run Claude Vision analysis on an existing image.
@@ -928,6 +993,9 @@ async def regenerate_ai_metadata(
     if style not in valid_styles:
         style = "balanced"
 
+    await verify_image_ownership(image_id, current_user)
+
+    user_id = current_user.id
     context = {"image_id": image_id, "user_id": user_id, "style": style}
     logger.info(
         f"Regenerating AI metadata for image {image_id} with style '{style}'",
