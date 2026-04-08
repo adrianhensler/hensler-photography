@@ -100,7 +100,7 @@ See `DEVELOPMENT.md` for setup instructions and coding standards.
 ## Project Overview
 
 Multi-site static photography portfolio deployment using a **single Caddy container** serving three domains:
-- `hensler.photography` → sites/main/ (Coming Soon landing page)
+- `hensler.photography` → sites/main/ (directory hub linking to Adrian and Liam portfolios)
 - `liam.hensler.photography` → sites/liam/ (Instagram portfolio)
 - `adrian.hensler.photography` → sites/adrian/ (Flickr portfolio)
 
@@ -760,7 +760,7 @@ docker compose up -d
 - Adrian's Flickr: `sites/adrian/index.html` line 27
 
 ### Main Landing Page
-- `sites/main/index.html` (currently "Coming Soon" placeholder)
+- `sites/main/index.html` — directory hub with photographer cards (Adrian + Liam), each linking to their portfolio
 
 ## Testing Architecture
 

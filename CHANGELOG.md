@@ -5,9 +5,52 @@ All notable changes to the Hensler Photography multi-site portfolio will be docu
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] — candidate for v2.2.0
 
-(Empty - next release in progress)
+### Added
+- **Browse/Refine discovery mode toggle** — two-mode gallery UX: Browse (curated,
+  intent chips) vs. Refine (advanced filters expanded); shipped PR #41
+- **Intent chips** — "start here / popular / landscapes / people / recent" one-tap
+  presets that configure featured scope, category, and tags together; PR #35
+- **Collapsible "Refine results" panel** — advanced tag matching filters hidden until
+  needed, reducing visual noise; PR #35
+- **Active filter chips** — current filters rendered as removable inline chips with
+  one-click clear; PR #39
+- **Prioritized filter suggestions** — when gallery results are low/empty, system
+  suggests specific filter adjustments ranked by result count; PR #38
+- **Self vs. other analytics tracking** — photographer visits filtered separately
+  from visitor traffic in analytics dashboard
+- **Consolidated TODO list** — `docs/TODO.md` as single source of truth for planned
+  work, replacing scattered notes across ROADMAP, README, and planning docs
+- **Multi-model site audit artifacts** — DeepSeek/Mistral/Qwen/Sonnet review docs
+  added to `docs/reviews/photography-site-2026-03-02/`; PR #40
+- **hensler.photography** — replaced Coming Soon placeholder with a real directory hub
+  page (photographer cards with CTAs linking to Adrian and Liam portfolios)
+
+### Changed
+- **Reorganized filter UI** — filters grouped into Scope/Refine zones with collapsed
+  advanced tag logic for cleaner default state; PR #33
+- **Facet count aggregation** — zero-count filter options preserved (shown greyed out)
+  instead of disappearing when no results match; PR #32
+- **"Switch to all" suggestion** — converted to function callback for reliable
+  triggering across filter states; PR #31
+- **Advanced tag matching** — refined multi-tag intersection/union logic and edge-case
+  handling; PR #37
+- **Backup system** — replaced restic with simple sqlite+copy script; reduces
+  dependencies while covering the primary need (database + assets)
+
+### Fixed
+- Filter pill accessibility states and labels (ARIA pressed state, descriptive labels);
+  PR #34
+- Photographer tracking authentication detection (correctly excludes logged-in users
+  from visitor analytics)
+- Browser cache not busting after gallery.js updates
+- Family relationship text on Adrian's about page
+
+### Documentation
+- HTTP cache strategy review added to improvement roadmap
+- Public analytics feature planning document
+- Local MCP config and credential scripts added to .gitignore
 
 ---
 
@@ -486,7 +529,8 @@ Examples:
 
 ---
 
-[Unreleased]: https://github.com/adrianhensler/hensler-photography/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/adrianhensler/hensler-photography/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/adrianhensler/hensler-photography/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/adrianhensler/hensler-photography/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/adrianhensler/hensler-photography/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/adrianhensler/hensler-photography/releases/tag/v1.0.0
