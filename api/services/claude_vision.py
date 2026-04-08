@@ -112,7 +112,7 @@ Guidelines:
 - Write in a neutral, journalistic tone focused on accuracy and information
 
 Return ONLY valid JSON, no other text.""",
-        "balanced": """You are an experienced photography expert analyzing this image for a professional portfolio.
+        "balanced": """You are an experienced photographer writing descriptions for your own portfolio website.
 
 CRITICAL: You MUST provide an alt_text field for accessibility compliance.
 
@@ -120,20 +120,29 @@ Provide a JSON response with the following fields:
 
 {
   "alt_text": "REQUIRED: Accessible description for screen readers (1 sentence, factual description of what is visible)",
-  "title": "A compelling, descriptive title (3-8 words)",
-  "caption": "A 1-2 sentence caption balancing what is shown with how it makes viewers feel",
-  "description": "A detailed description (2-3 sentences) covering both technical execution and artistic qualities",
+  "title": "A specific, concrete title (3-8 words)",
+  "caption": "A 1-2 sentence caption describing what is shown and one notable quality about the shot",
+  "description": "2-3 sentences: what the image shows, the light/conditions, and one technical observation about the composition or exposure",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "category": "one of: landscape, portrait, street, nature, architecture, abstract, wildlife, urban, night, or other"
 }
 
 Guidelines:
-- Alt text (REQUIRED): One factual sentence describing key visual elements for accessibility. Example: "A person in a red coat walking through a snowy forest at dusk"
-- Title should be both descriptive and engaging
-- Caption should describe the scene while acknowledging its mood or appeal
-- Description should balance technical observations (lighting, composition) with artistic qualities (mood, impact)
-- Tags should include: subject matter, mood, technical aspects, compositional elements, time of day
-- Write in a professional tone that respects both craft and creativity
+- Alt text (REQUIRED): One factual sentence. Example: "A person in a red coat walking through a snowy forest at dusk"
+- Title: Name the specific subject and context. "Bald Eagle at Lake Shore" not "Solitary Sentinel". "Breaking Wave on Rocky Coast" not "Poseidon's Fury"
+- Caption: State what is in the frame and one honest observation. No metaphors.
+- Description: Describe what you see — subject, light quality, conditions, and one specific compositional or technical choice. Be grounded.
+- Tags: Subject, location type, conditions, technique. Factual only.
+
+AVOID these patterns — they weaken the writing:
+- "captures the essence / raw energy / primal power"
+- "invites the viewer" / "masterful use of" / "draws the eye to"
+- "ephemeral" / "fleeting moment" / "timeless wonder"
+- "evokes a sense of" / "conveys" + abstract noun
+- Personifying nature ("whispers", "dances", "sleeps")
+- Titles that are metaphors or allusions instead of descriptions
+
+Write like a photographer explaining their work to another photographer — specific, honest, unpretentious.
 
 Return ONLY valid JSON, no other text.""",
         "minimal": """You are describing a photograph for a portfolio website. Be factual and direct.
@@ -271,7 +280,7 @@ async def analyze_image(
         logger.info(f"Using AI style: {style}", extra={"context": {**context, "ai_style": style}})
 
         # Call Claude Vision API
-        model_name = "claude-3-opus-20240229"
+        model_name = "claude-sonnet-4-6"
         message = client.messages.create(
             model=model_name,
             max_tokens=1024,
@@ -297,9 +306,9 @@ async def analyze_image(
         input_tokens = message.usage.input_tokens
         output_tokens = message.usage.output_tokens
 
-        # Claude 3 Opus pricing (as of 2024)
-        input_cost_per_mtok = 15.00  # $15 per 1M input tokens
-        output_cost_per_mtok = 75.00  # $75 per 1M output tokens
+        # Claude Sonnet 4.6 pricing
+        input_cost_per_mtok = 3.00   # $3 per 1M input tokens
+        output_cost_per_mtok = 15.00  # $15 per 1M output tokens
 
         cost_usd = (input_tokens / 1_000_000) * input_cost_per_mtok + (
             output_tokens / 1_000_000
