@@ -17,7 +17,6 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 import os
 import time
-import traceback
 from pathlib import Path
 
 # Import error handling and logging
@@ -113,10 +112,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     """Catch-all handler for unhandled exceptions"""
-    # Get stack trace
-    stack_trace = traceback.format_exc()
-
-    # Log the error with full context
+    # Log the error with full context (stack trace stays server-side only)
     logger.error(
         f"Unhandled exception: {str(exc)}",
         exc_info=exc,
@@ -129,15 +125,14 @@ async def general_exception_handler(request: Request, exc: Exception):
         },
     )
 
-    # Create structured error response
+    # Create structured error response — no internal details in the response body
     error = internal_error(
-        error_message=str(exc),
+        error_message="An internal error occurred.",
         context={
             "path": str(request.url.path),
             "method": request.method,
             "exception_type": type(exc).__name__,
         },
-        stack_trace=stack_trace,
     )
 
     return JSONResponse(status_code=error.http_status, content=error.to_dict())
@@ -407,7 +402,6 @@ async def track_event(request: Request, event: TrackingEvent):
     """
     from api.database import get_db_connection
     import hashlib
-    import os
 
     # Get client IP and hash it for privacy
     client_ip = request.client.host if request.client else None

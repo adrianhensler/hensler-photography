@@ -1122,6 +1122,8 @@
                 // Start upload
                 xhr.open('POST', '/api/images/ingest');
                 xhr.withCredentials = true;
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                if (csrfMeta) xhr.setRequestHeader('X-CSRF-Token', csrfMeta.getAttribute('content'));
                 xhr.send(formData);
             });
         }

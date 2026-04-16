@@ -1,4 +1,29 @@
 (function() {
+    function getCsrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    }
+
+    // Automatically attach X-CSRF-Token to all mutating fetch requests
+    // so individual call sites don't need to be updated manually.
+    function installCsrfInterceptor() {
+        const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+        const origFetch = window.fetch;
+        window.fetch = function(url, options) {
+            options = options || {};
+            const method = (options.method || 'GET').toUpperCase();
+            if (MUTATING.has(method)) {
+                const headers = new Headers(options.headers || {});
+                if (!headers.has('X-CSRF-Token')) {
+                    headers.set('X-CSRF-Token', getCsrfToken());
+                }
+                options = Object.assign({}, options, { headers });
+            }
+            return origFetch.call(this, url, options);
+        };
+    }
+
+
     function initTheme() {
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
@@ -74,6 +99,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        installCsrfInterceptor();
         initTheme();
         setupThemeToggle();
         setupDropdown();
@@ -82,4 +108,5 @@
 
     // Expose for inline handlers if needed
     window.toggleTheme = toggleTheme;
+    window.getCsrfToken = getCsrfToken;
 })();

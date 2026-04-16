@@ -10,6 +10,7 @@ owns the resource they're trying to modify.
 
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
+from api.csrf import verify_csrf_token
 from api.routes.auth import get_current_user
 from api.database import get_db_connection
 
@@ -113,6 +114,7 @@ async def update_image(
     tags: Optional[str] = None,
     category: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Update image metadata (photographer's own images only).
@@ -169,7 +171,11 @@ async def update_image(
 
 
 @router.delete("/images/{image_id}")
-async def delete_image(image_id: int, current_user: dict = Depends(get_current_user)):
+async def delete_image(
+    image_id: int,
+    current_user: dict = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
+):
     """
     Delete an image (photographer's own images only).
 
@@ -192,7 +198,10 @@ async def delete_image(image_id: int, current_user: dict = Depends(get_current_u
 
 @router.patch("/images/{image_id}/publish")
 async def toggle_publish(
-    image_id: int, published: bool, current_user: dict = Depends(get_current_user)
+    image_id: int,
+    published: bool,
+    current_user: dict = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Publish or unpublish an image (photographer's own images only).

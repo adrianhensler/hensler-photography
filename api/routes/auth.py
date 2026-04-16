@@ -18,6 +18,7 @@ from api.logging_config import get_logger
 from api.rate_limit import limiter, RATE_LIMITS
 from api.models import UserCreate, PasswordChange
 from api.audit import audit_login, audit_logout, audit_password_change, audit_user_create
+from api.csrf import verify_csrf_token
 from api.security import get_jwt_secret_key
 
 # Initialize logger
@@ -159,7 +160,8 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
         await db.execute("PRAGMA foreign_keys = ON")
         cursor = await db.execute(
             """
-            SELECT id, username, display_name, email, role, subdomain, bio, ai_style, track_own_activity
+            SELECT id, username, display_name, email, role, subdomain,
+                   bio, ai_style, track_own_activity
             FROM users
             WHERE id = ?
             """,
@@ -349,7 +351,10 @@ async def login(
 
 @router.post("/logout")
 async def logout(
-    request: Request, response: Response, current_user: User = Depends(get_current_user)
+    request: Request,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Log out the current user by clearing the session cookie.

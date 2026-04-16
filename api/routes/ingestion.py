@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 import hashlib
 
+from api.csrf import verify_csrf_token
 from api.errors import (
     file_too_large_error,
     invalid_file_type_error,
@@ -54,6 +55,7 @@ async def ingest_image(
     file: UploadFile = File(...),
     target_user_id: int = Form(None),
     current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Upload and process an image with AI analysis
@@ -593,6 +595,7 @@ async def set_visibility(
     image_id: int,
     published: bool = True,
     current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Set image visibility: published=True (public), published=False (private).
@@ -617,6 +620,7 @@ async def set_exif_sharing(
     image_id: int,
     share: bool = True,
     current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Toggle EXIF data sharing for public gallery.
@@ -649,6 +653,7 @@ async def toggle_featured(
     image_id: int,
     featured: bool = True,
     current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """Toggle featured status of an image"""
     await verify_image_ownership(image_id, current_user)
@@ -761,6 +766,7 @@ async def update_image_metadata(
     image_id: int,
     metadata: ImageMetadataUpdate,
     current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Update image metadata (title, caption, tags, etc.)
@@ -819,7 +825,11 @@ async def update_image_metadata(
 
 
 @router.delete("/{image_id}")
-async def delete_image(image_id: int, current_user: User = Depends(get_current_user)):
+async def delete_image(
+    image_id: int,
+    current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
+):
     """Delete an image and its variants"""
     await verify_image_ownership(image_id, current_user)
 
@@ -864,7 +874,11 @@ async def delete_image(image_id: int, current_user: User = Depends(get_current_u
 
 
 @router.post("/{image_id}/reextract-exif")
-async def reextract_exif(image_id: int, current_user: User = Depends(get_current_user)):
+async def reextract_exif(
+    image_id: int,
+    current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
+):
     """
     Re-extract EXIF data from the original image file.
     Useful if original data was missing or corrupted.
@@ -973,6 +987,7 @@ async def regenerate_ai_metadata(
     image_id: int,
     style: str = Form("balanced"),
     current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Re-run Claude Vision analysis on an existing image.

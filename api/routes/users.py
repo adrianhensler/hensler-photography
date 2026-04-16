@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 
+from api.csrf import verify_csrf_token
 from api.routes.auth import get_current_user, User
 from api.database import get_db_connection
 from api.logging_config import get_logger
@@ -20,8 +21,12 @@ class UserUpdate(BaseModel):
 
     display_name: Optional[str] = Field(None, max_length=200)
     bio: Optional[str] = Field(None, max_length=1000)
-    ai_style: Optional[str] = Field(None, pattern="^(technical|artistic|documentary|balanced|minimal)$")
-    track_own_activity: Optional[bool] = Field(None, description="Whether to track own activity in analytics")
+    ai_style: Optional[str] = Field(
+        None, pattern="^(technical|artistic|documentary|balanced|minimal)$"
+    )
+    track_own_activity: Optional[bool] = Field(
+        None, description="Whether to track own activity in analytics"
+    )
 
 
 @router.get("/me")
@@ -42,7 +47,9 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
 
 @router.patch("/me")
 async def update_current_user_profile(
-    updates: UserUpdate, current_user: User = Depends(get_current_user)
+    updates: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """Update current user's profile"""
     # Convert to dict, exclude None values

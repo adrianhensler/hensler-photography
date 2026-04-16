@@ -104,9 +104,6 @@ class ErrorResponse:
         if self.docs_url:
             error_dict["error"]["details"]["docs_url"] = self.docs_url
 
-        if self.stack_trace:
-            error_dict["error"]["details"]["stack_trace"] = self.stack_trace
-
         return error_dict
 
     def to_log_dict(self) -> Dict[str, Any]:
