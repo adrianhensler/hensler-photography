@@ -17,29 +17,18 @@ logger = get_logger(__name__)
 
 def get_client_ip(request: Request) -> Optional[str]:
     """
-    Extract client IP address from request, handling proxies.
+    Extract client IP address from request.
 
-    Args:
-        request: FastAPI request object
+    ProxyHeadersMiddleware (configured in main.py) already rewrites
+    request.client to the real client IP from X-Forwarded-For, so reading
+    request.client.host here is both safe and correct. Parsing X-Forwarded-For
+    directly would be spoofable — attackers control the leftmost entries.
 
     Returns:
         IP address string or None
     """
-    # Check X-Forwarded-For header (set by proxies)
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        # X-Forwarded-For can contain multiple IPs, take the first (original client)
-        return forwarded_for.split(",")[0].strip()
-
-    # Check X-Real-IP header (set by some proxies)
-    real_ip = request.headers.get("X-Real-IP")
-    if real_ip:
-        return real_ip.strip()
-
-    # Fall back to direct connection IP
     if request.client:
         return request.client.host
-
     return None
 
 

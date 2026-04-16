@@ -8,7 +8,7 @@ Multi-tenant photography portfolio management system with:
 - Admin interface
 """
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +27,7 @@ from api.rate_limit import limiter
 from api.csrf import add_csrf_token_to_context
 from api.models import TrackingEvent
 from api.security import get_jwt_secret_key
+from api.routes.auth import get_current_user, get_current_user_for_subdomain, User
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -167,19 +168,13 @@ async def root():
     }
 
 
-# Detailed health check endpoint
+# Detailed health check endpoint (authenticated — contains internal paths/metrics)
 @app.get("/api/health")
-async def health_check_detailed():
+async def health_check_detailed(current_user: User = Depends(get_current_user)):
     """
-    Comprehensive health check for system diagnostics.
+    Comprehensive health check for system diagnostics. Requires authentication.
 
-    Checks:
-    - Database connectivity
-    - Claude API configuration
-    - Storage availability
-    - Service status
-
-    Useful for both human admins and AI assistants to diagnose issues.
+    Checks: database connectivity, Claude API config, storage availability.
     """
     from api.database import DATABASE_PATH
     import aiosqlite
@@ -286,11 +281,6 @@ async def manage_login(request: Request):
     context = {"request": request}
     context = add_csrf_token_to_context(request, context)
     return templates.TemplateResponse("admin/login.html", context)
-
-
-# Import auth dependencies
-from api.routes.auth import get_current_user, get_current_user_for_subdomain, User
-from fastapi import Depends
 
 
 # Photographer dashboard (protected - subdomain validated)

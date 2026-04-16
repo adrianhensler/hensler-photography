@@ -156,24 +156,23 @@ async def ingest_image(
                 context["actual_format"] = actual_format
                 context["actual_media_type"] = actual_media_type
 
-                # If format doesn't match extension, log as warning (will notify user)
-                if actual_media_type != file.content_type:
-                    warning_msg = (
-                        f"Format mismatch: uploaded as {file.content_type}, "
-                        f"actual format is {actual_media_type}"
+                # Enforce allowlist against the actual detected format, not the
+                # browser-supplied Content-Type header (which is client-controlled).
+                if actual_media_type not in allowed_types:
+                    logger.warning(
+                        f"Actual format {actual_media_type!r} not in allowlist",
+                        extra={"context": context},
                     )
-                    logger.warning(warning_msg, extra={"context": context})
-                    warnings.append(
-                        {
-                            "code": "FORMAT_MISMATCH",
-                            "message": warning_msg,
-                            "user_message": (
-                                f"File format corrected: detected "
-                                f"{actual_format.upper()} "
-                                f"(browser reported {file.content_type})"
-                            ),
-                        }
+                    if file_path and file_path.exists():
+                        file_path.unlink()
+                        file_path = None
+                    error = invalid_file_type_error(
+                        filename=file.filename,
+                        file_type=actual_media_type,
+                        allowed_types=allowed_types,
+                        context=context,
                     )
+                    return JSONResponse(status_code=error.http_status, content=error.to_dict())
         except Exception as e:
             logger.warning(
                 f"Could not detect image format, using content-type: {e}",
