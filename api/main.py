@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import os
 import time
 from pathlib import Path
@@ -35,22 +36,25 @@ app = FastAPI(
     title="Hensler Photography API",
     description="Backend API for photography portfolio management",
     version="2.0.0",
+    docs_url=None,
+    redoc_url=None,
 )
 
 # Add rate limiter to app state
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Trust X-Forwarded-For from Caddy so rate limiting keys on real client IPs.
+# Safe because port 8000 is only reachable via the internal Docker network.
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+
 # CORS middleware for frontend requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://adrian.hensler.photography:8080",
-        "https://liam.hensler.photography:8080",
-        "https://hensler.photography:8080",
-        "https://hensler.photography:4100",
-        "http://localhost:8080",
-        "http://localhost:4100",
+        "https://adrian.hensler.photography",
+        "https://liam.hensler.photography",
+        "https://hensler.photography",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -141,7 +145,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="api/static"), name="static")
 app.mount("/assets/gallery", StaticFiles(directory="/app/assets/gallery"), name="gallery")
-templates = Jinja2Templates(directory="api/templates")
+templates = Jinja2Templates(directory="api/templates", autoescape=True)
 
 
 # Health check endpoint

@@ -4,7 +4,7 @@ Image ingestion routes with AI-powered metadata generation
 Enhanced with structured error handling for AI and human users.
 """
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, Depends
 from fastapi.responses import JSONResponse
 import traceback
 from datetime import datetime
@@ -12,6 +12,7 @@ from pathlib import Path
 import hashlib
 
 from api.csrf import verify_csrf_token
+from api.rate_limit import limiter, RATE_LIMITS
 from api.errors import (
     file_too_large_error,
     invalid_file_type_error,
@@ -51,7 +52,9 @@ async def verify_image_ownership(image_id: int, current_user: User) -> None:
 
 
 @router.post("/ingest")
+@limiter.limit(RATE_LIMITS["upload"])
 async def ingest_image(
+    request: Request,
     file: UploadFile = File(...),
     target_user_id: int = Form(None),
     current_user: User = Depends(get_current_user),
