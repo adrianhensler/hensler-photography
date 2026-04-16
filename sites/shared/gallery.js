@@ -110,7 +110,7 @@
 
     // Caption + AI disclosure
     if (imageData.caption) {
-      description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${imageData.caption}</p>`;
+      description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${escapeHtml(imageData.caption)}</p>`;
       if (imageData.ai_disclosure && imageData.ai_disclosure.caption) {
         description += `<p style="margin: 0 0 0.75rem 0; font-size: 0.7rem; color: #999; font-style: italic; opacity: 0.7;">AI-generated description</p>`;
       }
@@ -123,34 +123,35 @@
 
       if (exif.camera_make || exif.camera_model) {
         const camera = [exif.camera_make, exif.camera_model].filter(Boolean).join(' ');
-        if (camera) exifParts.push(camera);
+        if (camera) exifParts.push(escapeHtml(camera));
       }
-      if (exif.lens) exifParts.push(exif.lens);
-      if (exif.focal_length) exifParts.push(exif.focal_length);
-      if (exif.aperture) exifParts.push(exif.aperture);
-      if (exif.shutter_speed) exifParts.push(exif.shutter_speed);
-      if (exif.iso) exifParts.push(`ISO ${exif.iso}`);
+      if (exif.lens) exifParts.push(escapeHtml(exif.lens));
+      if (exif.focal_length) exifParts.push(escapeHtml(exif.focal_length));
+      if (exif.aperture) exifParts.push(escapeHtml(exif.aperture));
+      if (exif.shutter_speed) exifParts.push(escapeHtml(exif.shutter_speed));
+      if (exif.iso) exifParts.push(`ISO ${escapeHtml(exif.iso)}`);
 
       if (exifParts.length > 0) {
         description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666; font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; letter-spacing: 0.02em;">${exifParts.join(' · ')}</p>`;
       }
 
       if (exif.location) {
-        description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">📍 ${exif.location}</p>`;
+        description += `<p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">📍 ${escapeHtml(exif.location)}</p>`;
       }
     }
 
     // Category/tag pills (only when rerendering with filters)
+    // data-filter-* attributes are used by the delegated click handler — no inline onclick.
     if (includePills) {
       description += '<div class="lightbox-pills">';
       if (imageData.category) {
-        description += `<span class="lightbox-pill" onclick="GalleryApp.GalleryFilter.filterFromLightbox('category', '${imageData.category}')">${imageData.category}</span>`;
+        description += `<span class="lightbox-pill" data-filter-type="category" data-filter-value="${escapeHtml(imageData.category)}">${escapeHtml(imageData.category)}</span>`;
       }
       if (imageData.tags) {
         imageData.tags.split(',').forEach(tag => {
           tag = tag.trim();
           if (tag) {
-            description += `<span class="lightbox-pill" onclick="GalleryApp.GalleryFilter.filterFromLightbox('tag', '${tag}')">${tag}</span>`;
+            description += `<span class="lightbox-pill" data-filter-type="tag" data-filter-value="${escapeHtml(tag)}">${escapeHtml(tag)}</span>`;
           }
         });
       }
@@ -824,7 +825,11 @@
         pill.dataset.category = category;
         pill.setAttribute('role', 'button');
         pill.setAttribute('tabindex', '0');
-        pill.innerHTML = `${category} <span class="count">(${count})</span>`;
+        pill.append(category, ' ');
+        const countSpan = document.createElement('span');
+        countSpan.className = 'count';
+        countSpan.textContent = `(${count})`;
+        pill.appendChild(countSpan);
 
         const isUnavailable = count === 0;
         const isActive = activeCategory === category;
@@ -863,7 +868,11 @@
         pill.dataset.tag = tag;
         pill.setAttribute('role', 'button');
         pill.setAttribute('tabindex', '0');
-        pill.innerHTML = `${tag} <span class="count">(${count})</span>`;
+        pill.append(tag, ' ');
+        const countSpan = document.createElement('span');
+        countSpan.className = 'count';
+        countSpan.textContent = `(${count})`;
+        pill.appendChild(countSpan);
 
         const isUnavailable = count === 0;
         const isActive = activeTags.includes(tag);
@@ -1557,6 +1566,15 @@
 
   function initFiltering() {
     console.log('Initializing gallery filters...');
+
+    // Delegated handler for lightbox pills — reads safe data-* attributes,
+    // never executes user content as code.
+    document.addEventListener('click', function(e) {
+      const pill = e.target.closest('.lightbox-pill[data-filter-type]');
+      if (pill) {
+        filterFromLightbox(pill.dataset.filterType, pill.dataset.filterValue);
+      }
+    });
 
     // Aggregate and render
     aggregateFilters();
