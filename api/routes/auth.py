@@ -5,8 +5,9 @@ Provides JWT-based authentication with httpOnly cookies for secure session manag
 """
 
 from fastapi import APIRouter, Request, Response, HTTPException, Depends, Form
-from jose import jwt, JWTError
-from datetime import datetime, timedelta
+import jwt
+from jwt.exceptions import InvalidTokenError
+from datetime import datetime, timedelta, timezone
 import os
 import bcrypt
 import aiosqlite
@@ -188,7 +189,7 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
 # JWT token functions
 def create_access_token(user: User) -> str:
     """Create a JWT access token for a user"""
-    expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     to_encode = {"user_id": user.id, "username": user.username, "role": user.role, "exp": expire}
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -228,7 +229,7 @@ async def get_current_user(request: Request) -> User:
 
         return user
 
-    except JWTError as e:
+    except InvalidTokenError as e:
         logger.warning(
             f"Authentication failed: Invalid JWT token: {e}",
             extra={"context": {"path": str(request.url.path)}},
