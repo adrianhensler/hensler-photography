@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>About | Adrian Hensler Photography</title>
+  <title>About | Adrian Hensler</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Learn about this photography portfolio and how it was built with AI assistance using Claude Code.">
+  <meta name="description" content="Adrian Hensler is a photographer and technologist based in Halifax, Nova Scotia. This portfolio is also a working example of AI-assisted web development.">
 
   <!-- Google Fonts: Playfair Display for headings, Inter for body -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,6 +59,9 @@
     /* Site Navigation */
     .site-nav {
       margin-top: 24px;
+      display: flex;
+      gap: 24px;
+      justify-content: center;
     }
 
     .nav-link {
@@ -77,6 +80,11 @@
     .nav-link:hover {
       color: rgba(232, 213, 181, 0.7);
       border-bottom-color: rgba(232, 213, 181, 0.3);
+    }
+
+    .nav-link[aria-current="page"] {
+      color: rgba(232, 213, 181, 0.6);
+      border-bottom-color: rgba(232, 213, 181, 0.2);
     }
 
     /* About Page Content */
@@ -316,8 +324,8 @@
     }
   </style>
 
-  <meta property="og:title" content="About | Adrian Hensler Photography">
-  <meta property="og:description" content="Learn about this photography portfolio and how it was built with AI assistance.">
+  <meta property="og:title" content="About | Adrian Hensler">
+  <meta property="og:description" content="Photographer and technologist based in Halifax, Nova Scotia. This portfolio is also a working example of AI-assisted web development.">
   <meta property="og:type" content="website">
 </head>
 <body>
@@ -326,7 +334,8 @@
       <h1>adrian hensler</h1>
       <p class="subtitle">photography</p>
       <nav class="site-nav">
-        <a href="/" class="nav-link">back to gallery</a>
+        <a href="/" class="nav-link">gallery</a>
+        <a href="/about" class="nav-link" aria-current="page">about</a>
       </nav>
     </header>
 
@@ -334,7 +343,7 @@
 
       <!-- Section 1: What is this? -->
       <section class="about-section">
-        <h2>what is this?</h2>
+        <h2>about this site</h2>
         <p>
           This is a photography portfolio showcasing images from Halifax, Nova Scotia and surrounding areas.
           But it's also something else: a working example of what happens when you build an entire website
