@@ -77,6 +77,12 @@ CREATE TABLE IF NOT EXISTS images (
     -- Display order
     sort_order INTEGER DEFAULT 0,
 
+    -- Soft delete: set when the image is deleted via the API. Soft-deleted
+    -- images are excluded from all listing/lookup queries. Physical files
+    -- are only removed later by api.cleanup.purge_expired_deletes(), not
+    -- synchronously at delete time.
+    deleted_at DATETIME DEFAULT NULL,
+
     -- Timestamps
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -192,6 +198,7 @@ CREATE TABLE IF NOT EXISTS ai_costs (
 CREATE INDEX IF NOT EXISTS idx_images_user ON images(user_id);
 CREATE INDEX IF NOT EXISTS idx_images_published ON images(published);
 CREATE INDEX IF NOT EXISTS idx_images_slug ON images(user_id, slug);
+CREATE INDEX IF NOT EXISTS idx_images_deleted_at ON images(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_events_image ON image_events(image_id);
 CREATE INDEX IF NOT EXISTS idx_events_timestamp ON image_events(timestamp);
 CREATE INDEX IF NOT EXISTS idx_variants_image ON image_variants(image_id);
@@ -312,6 +319,15 @@ def run_migrations():
                 print(f"Running migration: Adding {col} column to images table")
                 cursor.execute(f"ALTER TABLE images ADD COLUMN {col} BOOLEAN DEFAULT 1")
                 print(f"✓ Migration complete: {col} column added")
+
+        # Soft delete support (see api/migrations/004_add_soft_delete.py)
+        if "deleted_at" not in image_columns:
+            print("Running migration: Adding deleted_at column to images table")
+            cursor.execute("ALTER TABLE images ADD COLUMN deleted_at DATETIME DEFAULT NULL")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_images_deleted_at ON images(deleted_at)"
+            )
+            print("✓ Migration complete: deleted_at column added")
 
 
 def init_database():

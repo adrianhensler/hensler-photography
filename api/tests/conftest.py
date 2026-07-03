@@ -78,6 +78,7 @@ async def test_db():
                 published BOOLEAN DEFAULT 0,
                 share_exif BOOLEAN DEFAULT 0,
                 sort_order INTEGER DEFAULT 0,
+                deleted_at TIMESTAMP DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id),

@@ -32,7 +32,9 @@ async def verify_image_ownership(image_id: int, user_id: int) -> None:
         HTTPException: 404 if image doesn't exist or doesn't belong to user
     """
     async with get_db_connection() as db:
-        cursor = await db.execute("SELECT user_id FROM images WHERE id = ?", (image_id,))
+        cursor = await db.execute(
+            "SELECT user_id FROM images WHERE id = ? AND deleted_at IS NULL", (image_id,)
+        )
         row = await cursor.fetchone()
 
         if not row:
@@ -66,7 +68,7 @@ async def get_image(image_id: int, current_user: dict = Depends(get_current_user
                 aperture, shutter_speed, iso, date_taken, location,
                 sort_order, created_at, updated_at
             FROM images
-            WHERE id = ? AND user_id = ?
+            WHERE id = ? AND user_id = ? AND deleted_at IS NULL
         """,
             (image_id, user_id),
         )
@@ -177,21 +179,27 @@ async def delete_image(
     _csrf: str = Depends(verify_csrf_token),
 ):
     """
-    Delete an image (photographer's own images only).
+    Soft-delete an image (photographer's own images only).
 
     Security: CRITICAL - Prevents photographers from deleting each other's work.
+
+    Shares the same soft-delete behavior as DELETE /api/images/{id}
+    (api/routes/ingestion.py): the row is marked deleted (deleted_at) and
+    excluded from all listings immediately, but files and the row itself
+    are only removed later by api.cleanup's grace-period purge — never
+    silently orphaned, and never unrecoverably destroyed synchronously in
+    the request path.
     """
+    from api.services.image_deletion import soft_delete_image
+
     user_id = current_user.id
 
     # ⚠️ CRITICAL SECURITY CHECK ⚠️
     await verify_image_ownership(image_id, user_id)
 
-    async with get_db_connection() as db:
-        # Delete the image record
-        await db.execute("DELETE FROM images WHERE id = ? AND user_id = ?", (image_id, user_id))
-        await db.commit()
-
-    # TODO: Also delete physical image files from /app/assets/gallery/
+    deleted = await soft_delete_image(image_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Image {image_id} not found")
 
     return {"success": True, "message": f"Image {image_id} deleted"}
 
@@ -245,7 +253,7 @@ async def list_images(
                 id, filename, slug, title, caption, published,
                 width, height, aspect_ratio, created_at
             FROM images
-            WHERE user_id = ?
+            WHERE user_id = ? AND deleted_at IS NULL
         """
         params = [user_id]
 

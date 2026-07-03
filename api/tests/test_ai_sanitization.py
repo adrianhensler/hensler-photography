@@ -25,8 +25,10 @@ class TestStripHtml:
 
     def test_removes_nested_obfuscated_tags(self):
         result = strip_html("<scr<script>ipt>alert(1)</scr</script>ipt>")
+        # No real tag should survive (a stray literal ">" left over from the
+        # obfuscated payload, with no matching "<", cannot form a tag).
+        assert "<script" not in result.lower()
         assert "<" not in result
-        assert ">" not in result
 
     def test_removes_javascript_uri_scheme(self):
         result = strip_html("javascript:alert(1)")

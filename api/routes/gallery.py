@@ -67,7 +67,7 @@ async def get_published_gallery(user_id: int, response: Response):
                 AND medium.format = 'webp' AND medium.size = 'medium'
             LEFT JOIN image_variants large ON i.id = large.image_id
                 AND large.format = 'webp' AND large.size = 'large'
-            WHERE i.user_id = ? AND i.published = 1
+            WHERE i.user_id = ? AND i.published = 1 AND i.deleted_at IS NULL
             ORDER BY i.sort_order ASC, i.created_at DESC
         """,
             (user_id,),
@@ -175,7 +175,7 @@ async def get_published_image(user_id: int, slug: str):
                 aperture, shutter_speed, iso, date_taken, location,
                 created_at
             FROM images
-            WHERE user_id = ? AND slug = ? AND published = 1
+            WHERE user_id = ? AND slug = ? AND published = 1 AND deleted_at IS NULL
         """,
             (user_id, slug),
         )
