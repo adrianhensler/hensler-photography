@@ -27,6 +27,14 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
+      - name: Create external Caddy volumes
+        # docker-compose.local.yml expects hensler_photography_caddy-data/-config to
+        # already exist, since on the real dev host they're shared with the production
+        # Caddy stack. A CI runner has no such volumes, so create empty ones here.
+        run: |
+          docker volume create hensler_photography_caddy-data
+          docker volume create hensler_photography_caddy-config
+
       - name: Start test server
         run: |
           docker compose -f docker-compose.local.yml up -d
