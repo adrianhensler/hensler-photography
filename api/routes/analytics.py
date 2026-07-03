@@ -349,6 +349,7 @@ async def get_analytics_highlights(
                 LEFT JOIN image_variants iv ON i.id = iv.image_id AND iv.format = 'webp' AND iv.size = 'thumbnail'
                 WHERE i.user_id = ?
                 AND i.published = 1
+                AND i.deleted_at IS NULL
                 GROUP BY i.id
                 ORDER BY clicks DESC
                 LIMIT 3
@@ -396,6 +397,7 @@ async def get_analytics_highlights(
                 LEFT JOIN image_events e ON i.id = e.image_id AND e.timestamp >= ?
                 WHERE i.user_id = ?
                 AND i.published = 1
+                AND i.deleted_at IS NULL
                 AND i.category IS NOT NULL
                 GROUP BY i.category
                 ORDER BY impressions DESC
@@ -711,6 +713,7 @@ async def get_top_images(
                     AND iv.size = 'thumbnail'
                 WHERE i.user_id = ?
                 AND i.published = 1
+                AND i.deleted_at IS NULL
                 GROUP BY i.id
                 ORDER BY COUNT(CASE WHEN e.event_type = ? THEN 1 END) DESC
                 LIMIT ?
@@ -875,6 +878,7 @@ async def get_category_performance(
                 LEFT JOIN image_events e ON i.id = e.image_id AND e.timestamp >= ?
                 WHERE i.user_id = ?
                 AND i.published = 1
+                AND i.deleted_at IS NULL
                 AND i.category IS NOT NULL
                 GROUP BY i.category
                 ORDER BY impressions DESC

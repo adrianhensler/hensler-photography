@@ -37,7 +37,9 @@ async def verify_image_ownership(image_id: int, current_user: User) -> None:
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
-        cursor = await db.execute("SELECT user_id FROM images WHERE id = ?", (image_id,))
+        cursor = await db.execute(
+            "SELECT user_id FROM images WHERE id = ? AND deleted_at IS NULL", (image_id,)
+        )
         row = await cursor.fetchone()
 
         if not row:
@@ -460,7 +462,7 @@ async def list_images(
             SELECT id, user_id, filename, slug, title, caption, tags, category,
                    published, featured, share_exif, width, height, created_at, updated_at
             FROM images
-            WHERE 1=1
+            WHERE deleted_at IS NULL
         """
         params = []
 
@@ -493,7 +495,7 @@ async def list_images(
 
         # Get total count
         count_query = """
-            SELECT COUNT(*) FROM images WHERE 1=1
+            SELECT COUNT(*) FROM images WHERE deleted_at IS NULL
         """
         count_params = params[:-2]  # Remove limit and offset
 
@@ -832,45 +834,23 @@ async def delete_image(
     current_user: User = Depends(get_current_user),
     _csrf: str = Depends(verify_csrf_token),
 ):
-    """Delete an image and its variants"""
+    """
+    Soft-delete an image (own images only, or any image for admins).
+
+    The image is marked deleted (deleted_at) and immediately excluded from
+    all listings and lookups, but its DB row and files are not removed
+    synchronously — see api.services.image_deletion for why, and
+    api.cleanup for the periodic step that purges them after a grace
+    period. This is the same delete behavior used by
+    DELETE /api/photographer/images/{id}.
+    """
+    from api.services.image_deletion import soft_delete_image
+
     await verify_image_ownership(image_id, current_user)
 
-    from api.database import get_db_connection
-    from pathlib import Path
-
-    async with get_db_connection() as db:
-        # Get image filename
-        cursor = await db.execute("SELECT filename FROM images WHERE id = ?", (image_id,))
-        row = await cursor.fetchone()
-
-        if not row:
-            raise HTTPException(404, "Image not found")
-
-        filename = row[0]
-
-        # Get variant filenames
-        cursor = await db.execute(
-            "SELECT filename FROM image_variants WHERE image_id = ?", (image_id,)
-        )
-        variants = await cursor.fetchall()
-
-        # Delete from database (variants will cascade)
-        await db.execute("DELETE FROM images WHERE id = ?", (image_id,))
-        await db.commit()
-
-    # Delete files
-    upload_dir = Path("/app/assets/gallery")
-
-    # Delete original
-    original_path = upload_dir / filename
-    if original_path.exists():
-        original_path.unlink()
-
-    # Delete variants
-    for variant_row in variants:
-        variant_path = upload_dir / variant_row[0]
-        if variant_path.exists():
-            variant_path.unlink()
+    deleted = await soft_delete_image(image_id)
+    if not deleted:
+        raise HTTPException(404, "Image not found")
 
     return {"success": True, "image_id": image_id, "deleted": True}
 

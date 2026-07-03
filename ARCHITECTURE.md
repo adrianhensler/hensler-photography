@@ -1,50 +1,67 @@
 # Hensler Photography - System Architecture
 
-**Version**: 2.0.0
-**Last Updated**: 2025-11-02
-**Current Sprint**: Sprint 3 (Error Handling & Logging) - Complete
-**Next Sprint**: Sprint 4 (Multi-User Reorganization)
+**Version**: 2.2.0
+**Last Updated**: 2026-07-03
 
 ## Executive Summary
 
-Multi-photographer portfolio management system with AI-powered image analysis, multi-tenant database architecture, WebP optimization, and planned authentication system for photographer-specific dashboards.
+Multi-photographer portfolio management system with JWT-based authentication,
+role-based (admin/photographer) access control, AI-powered image analysis, a
+multi-tenant SQLite database, and WebP responsive image optimization.
 
-**Current State**: Admin interface with image upload, Claude Vision analysis, EXIF extraction, gallery management, and comprehensive error handling.
+**Current State**: Authenticated photographer management interface
+(`/manage/*`) is live in production and has been since roughly late 2025.
+Both Adrian (admin) and Liam (photographer) authenticate with username +
+password, get httpOnly JWT session cookies, and manage their own galleries
+through `/manage/dashboard`, `/manage/upload`, `/manage/gallery`,
+`/manage/analytics`, and `/manage/settings`. A separate admin-only surface
+remains at `/admin` and `/admin/upload` for Adrian.
 
-**Next Phase**: Multi-user authentication, photographer dashboards, admin interface migration to main domain, and future AI chatbot assistant.
-
-**Roadmap Visibility**: High-level milestones are published in `docs/ROADMAP_PUBLIC.md`. Detailed sprint notes, task breakdowns, and retrospectives now live in private storage; see `docs/planning/README.md` for access guidance.
+**Roadmap Visibility**: High-level milestones are published in
+`docs/ROADMAP_PUBLIC.md`. Detailed sprint notes, task breakdowns, and
+retrospectives live in private storage; see `docs/planning/README.md` for
+access guidance.
 
 ---
 
 ## Technology Stack
 
 ### Backend
-- **Framework**: FastAPI 0.115.4 (Python 3.11+)
-- **Database**: SQLite with multi-tenant schema
-- **Image Processing**: Pillow (PIL) for WebP variant generation
+- **Framework**: FastAPI 0.115.6 (Python 3.11+)
+- **Database**: SQLite with multi-tenant schema (`aiosqlite` for async access)
+- **Image Processing**: Pillow (PIL) 11.1.0 for WebP variant generation
 - **EXIF Extraction**: piexif library
-- **AI Analysis**: Anthropic Claude 3.5 Sonnet (Claude Vision API)
-- **Authentication**: JWT tokens with httpOnly cookies (Sprint 4 - planned)
-- **Password Hashing**: bcrypt via passlib (Sprint 4 - planned)
-- **Server**: Uvicorn ASGI server
+- **AI Analysis**: Anthropic Claude (Claude Vision API)
+- **Authentication**: JWT tokens (PyJWT) in httpOnly cookies — **live in production**
+- **Password Hashing**: bcrypt (direct, cost factor 12) — **live in production**
+- **CSRF Protection**: token-based, via `itsdangerous` — **live in production**
+- **Rate Limiting**: `slowapi` (per-IP limits on login, register, uploads, etc.) — **live in production**
+- **Server**: Uvicorn ASGI server, behind Caddy which sets `X-Forwarded-For`
 - **Logging**: JSON structured logging for AI-assisted debugging
 
 ### Frontend
 - **Static Sites**: Vanilla HTML/CSS/JavaScript (no framework)
   - **Adrian's Portfolio**: Ghost typography design, GLightbox, pure CSS animations
   - **Liam's Portfolio**: Instagram-style portfolio
-  - **Main Landing**: Coming Soon page
-- **Admin Interface**: Jinja2 server-side templates
-- **Styling**: Apple-inspired design system
+  - **Main Landing**: Directory hub linking to both portfolios
+- **Management Interface**: Jinja2 server-side templates (autoescape on) under
+  `api/templates/photographer/` (and a smaller `api/templates/admin/` set)
+- **Styling**: Shared management shell (`api/static/css/manage-shell.css`,
+  `api/static/css/variables.css`) plus per-site CSS for the public portfolios
 - **Lightbox**: GLightbox for full-screen image viewing
 
 ### Infrastructure
 - **Web Server**: Caddy 2 (automatic HTTPS, reverse proxy)
 - **Container Orchestration**: Docker Compose
 - **Deployment**: Dual environment (dev: port 8080, prod: ports 80/443)
-- **Storage**: Docker volumes for persistent data
-- **Backup**: Restic with 7-day retention (automated daily backups)
+- **Storage**: Docker volumes for persistent data (database + gallery images)
+- **Backup**: Shell script (`scripts/backup.sh`) — `sqlite3 .backup` of the
+  database plus `cp -a` of the gallery images volume, run via cron Mon/Thu
+  2 AM, retaining only the **2 most recent backups** on the same host. See
+  **BACKUP.md** for full detail (retention, restore steps, RTO). This is
+  *not* Restic and there is no offsite/incremental history beyond those two
+  snapshots — disaster recovery for full host loss relies on the hosting
+  provider's periodic VPS snapshot.
 
 ---
 
@@ -53,42 +70,49 @@ Multi-photographer portfolio management system with AI-powered image analysis, m
 ```
 /opt/dev/hensler_photography/          # Development environment
 ├── api/                               # FastAPI backend
-│   ├── main.py                        # Application entry point, CORS, routes
-│   ├── database.py                    # SQLite schema and initialization
+│   ├── main.py                        # App entry point, routes for /admin, /manage, CORS, error handlers
+│   ├── database.py                    # SQLite schema, connection helpers, inline migrations
+│   ├── security.py                    # JWT_SECRET_KEY / CSRF_SECRET_KEY loading (fail-fast)
+│   ├── csrf.py                        # CSRF token generation/verification
+│   ├── rate_limit.py                  # slowapi limiter + per-endpoint rate limit presets
 │   ├── errors.py                      # Structured ErrorResponse class
 │   ├── logging_config.py              # JSON structured logging
+│   ├── models.py                      # Pydantic request/response models
+│   ├── audit.py                       # Audit log helpers (login, logout, password change, user create)
 │   ├── routes/
-│   │   ├── ingestion.py               # Image upload and management API
-│   │   └── auth.py                    # (Sprint 4) Authentication endpoints
+│   │   ├── ingestion.py               # Image upload, listing, metadata, publish, delete (admin/self)
+│   │   ├── auth.py                    # Login/logout/me/register/change-password, JWT dependency
+│   │   ├── gallery.py                 # Public, unauthenticated gallery read endpoints
+│   │   ├── photographer.py            # Photographer-scoped image CRUD (/api/photographer/*)
+│   │   ├── analytics.py               # Analytics dashboards (overview, timeline, top images, etc.)
+│   │   └── users.py                   # Current-user profile endpoints (/api/users/me)
 │   ├── services/
-│   │   ├── claude_vision.py           # Claude Vision API integration
+│   │   ├── claude_vision.py           # Claude Vision API integration, AI metadata sanitization
 │   │   ├── image_processor.py         # WebP variant generation
 │   │   └── exif.py                    # EXIF metadata extraction
 │   ├── templates/
-│   │   ├── admin/                     # Admin interface templates
-│   │   │   ├── dashboard.html
-│   │   │   ├── upload.html
-│   │   │   ├── gallery.html
-│   │   │   └── login.html             # (Sprint 4) Authentication
-│   │   └── photographer/              # (Sprint 4) Photographer dashboards
+│   │   ├── admin/                     # Admin-only templates (dashboard, upload, login)
+│   │   └── photographer/              # Photographer management templates (live)
+│   │       ├── base.html              # Shared layout, dark theme, FOUC prevention
+│   │       ├── _header.html           # Shared nav (Dashboard/Gallery/Upload/Analytics/Settings)
 │   │       ├── dashboard.html
 │   │       ├── upload.html
-│   │       └── gallery.html
-│   ├── static/                        # CSS, JavaScript assets
-│   ├── uploads/                       # Uploaded images (not in git)
-│   │   ├── 1/                         # Adrian's images (user_id=1)
-│   │   └── 2/                         # Liam's images (user_id=2)
-│   └── hensler_photography.db         # SQLite database (not in git)
+│   │       ├── gallery.html
+│   │       ├── analytics.html
+│   │       └── settings.html
+│   ├── static/                        # CSS, JavaScript assets (manage-shell.css, manage-header.js, ...)
+│   ├── migrations/                    # Standalone, idempotent migration scripts (001, 002, 003, ...)
+│   └── tests/                         # pytest suite (auth, security, gallery isolation, etc.)
 ├── sites/                             # Static portfolio sites
-│   ├── main/                          # hensler.photography
+│   ├── main/                          # hensler.photography (directory hub)
 │   │   └── index.html
 │   ├── adrian/                        # adrian.hensler.photography
 │   │   ├── index.html
-│   │   ├── assets/gallery/            # Symlink to api/uploads/1/
-│   │   └── README.md                  # Site maintenance guide
-│   └── liam/                          # liam.hensler.photography
-│       ├── index.html
-│       └── assets/gallery/            # Symlink to api/uploads/2/
+│   │   └── assets/gallery/            # Served via Caddy reverse proxy to the API container
+│   ├── liam/                          # liam.hensler.photography
+│   │   └── index.html
+│   └── shared/
+│       └── gallery.js                 # Shared gallery/lightbox/analytics module (both sites)
 ├── tests/                             # Playwright end-to-end tests
 │   ├── sites.spec.js
 │   └── screenshots/
@@ -99,16 +123,13 @@ Multi-photographer portfolio management system with AI-powered image analysis, m
 ├── ARCHITECTURE.md                    # This file
 ├── CLAUDE.md                          # Claude Code project instructions
 ├── DEVELOPMENT.md                     # Development best practices
-├── BACKUP.md                          # Backup and recovery procedures
+├── BACKUP.md                          # Backup and recovery procedures (source of truth for backups)
 ├── CHANGELOG.md                       # Version history
 └── docs/                              # Organized documentation
     ├── planning/                      # Public pointer to private planning docs
-    │   └── README.md                  # Notes on accessing private planning space
     ├── reviews/                       # Historical code/design reviews
     ├── setup/                         # One-time setup guides
     └── guides/                        # Implementation guides and operational runbooks
-        ├── GIT_WORKFLOW.md            # Protected branching/deployment guardrails (public)
-        └── OPERATIONS.md              # High-level ops runbook and cross-links
 
 /opt/prod/hensler_photography/         # Production environment (mirrors dev)
 ```
@@ -117,27 +138,42 @@ Multi-photographer portfolio management system with AI-powered image analysis, m
 
 ## Multi-Tenant Database Schema
 
-**Database File**: `hensler_photography.db` (SQLite)
+**Database File**: SQLite, path from `DATABASE_PATH` env var (`/data/gallery.db`
+in containers). Schema lives in `api/database.py`; incremental changes are
+applied two ways:
+1. `run_migrations()` in `api/database.py` — inline, idempotent
+   `ALTER TABLE ... ADD COLUMN` checks run automatically against the schema
+   defined at the top of that file.
+2. Standalone numbered scripts in `api/migrations/` (`001_add_password_hash.py`,
+   `002_add_google_oauth.py`, `003_add_photographer_tracking.py`, ...) for
+   larger, one-off changes that need custom seeding/verification logic and are
+   run manually (`python -m api.migrations.00N_...`).
 
 ### Users Table
 ```sql
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
-    display_name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
+    password_hash TEXT,             -- bcrypt hash; live in production
+    display_name TEXT,
     role TEXT DEFAULT 'photographer',  -- 'admin' or 'photographer'
+    subdomain TEXT,                 -- e.g. 'adrian', 'liam' — used for /manage access control
+    bio TEXT,
+    ai_style TEXT DEFAULT 'balanced',       -- Claude Vision prompt style preference
+    track_own_activity BOOLEAN DEFAULT 1,   -- whether photographer's own visits count in analytics
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    -- Sprint 4: password_hash TEXT (bcrypt hashed)
 );
 
 -- Seed data
-INSERT INTO users (id, username, display_name, email, role) VALUES
-(1, 'adrian', 'Adrian Hensler', 'adrian@hensler.photography', 'admin'),
-(2, 'liam', 'Liam Hensler', 'liam@hensler.photography', 'photographer');
+INSERT INTO users (id, username, email, display_name, role, subdomain, bio) VALUES
+(1, 'adrian', 'adrianhensler@gmail.com', 'Adrian Hensler', 'admin', 'adrian', '...'),
+(2, 'liam', 'liam@hensler.photography', 'Liam Hensler', 'photographer', 'liam', '...');
 ```
 
-**Current State**: No authentication implemented, password_hash column to be added in Sprint 4.
+Authentication is fully implemented (`api/routes/auth.py`): bcrypt-verified
+login, JWT session cookie, role + subdomain-scoped authorization on every
+`/manage/*` and `/api/photographer/*` route.
 
 ### Images Table
 ```sql
@@ -146,25 +182,35 @@ CREATE TABLE images (
     user_id INTEGER NOT NULL,               -- Foreign key to users.id
     filename TEXT NOT NULL,                 -- Generated filename: YYYYMMDD_HHMMSS_hash.jpg
     slug TEXT NOT NULL,                     -- URL-friendly slug for detail pages
-    original_filename TEXT NOT NULL,        -- User's original filename
+    original_filename TEXT,                 -- User's original filename
 
-    -- AI-generated metadata (Claude Vision)
-    title TEXT,                             -- Concise, evocative title
-    caption TEXT,                           -- Short description
-    description TEXT,                       -- Detailed 2-3 sentence description
-    tags TEXT,                              -- Comma-separated keywords
-    category TEXT,                          -- Primary category (landscape, portrait, etc.)
+    -- AI-generated metadata (Claude Vision; sanitized server-side before storage)
+    title TEXT,
+    caption TEXT,
+    description TEXT,
+    alt_text TEXT,                          -- required accessibility field
+    tags TEXT,                              -- comma-separated keywords
+    category TEXT,
+
+    -- Per-field AI-vs-human-reviewed tracking
+    ai_generated_title BOOLEAN DEFAULT 1,
+    ai_generated_caption BOOLEAN DEFAULT 1,
+    ai_generated_description BOOLEAN DEFAULT 1,
+    ai_generated_alt_text BOOLEAN DEFAULT 1,
+    ai_generated_tags BOOLEAN DEFAULT 1,
+    ai_generated_category BOOLEAN DEFAULT 1,
 
     -- EXIF metadata
     camera_make TEXT,
     camera_model TEXT,
     lens TEXT,
-    focal_length TEXT,                      -- e.g., "35mm"
-    aperture TEXT,                          -- e.g., "f/2.8"
-    shutter_speed TEXT,                     -- e.g., "1/250s"
+    focal_length TEXT,
+    aperture TEXT,
+    shutter_speed TEXT,
     iso INTEGER,
     date_taken DATETIME,
-    location TEXT,                          -- GPS coordinates (lat, lon)
+    location TEXT,
+    share_exif BOOLEAN DEFAULT 0,           -- whether EXIF is exposed on the public API
 
     -- Image properties
     width INTEGER,
@@ -174,21 +220,23 @@ CREATE TABLE images (
 
     -- Publishing controls
     published BOOLEAN DEFAULT 0,
-    featured BOOLEAN DEFAULT 0,             -- Weighted/curated for public gallery selection
+    featured BOOLEAN DEFAULT 0,
     available_for_sale BOOLEAN DEFAULT 0,
+    sort_order INTEGER DEFAULT 0,
+
+    -- Soft delete (grace-period trash; see "Image Deletion" below)
+    deleted_at DATETIME DEFAULT NULL,
 
     -- Timestamps
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE(user_id, slug)
 );
 
--- Indexes for performance
-CREATE INDEX idx_images_user_id ON images(user_id);
+CREATE INDEX idx_images_user ON images(user_id);
 CREATE INDEX idx_images_published ON images(published);
-CREATE INDEX idx_images_featured ON images(featured);
 CREATE INDEX idx_images_slug ON images(user_id, slug);
 ```
 
@@ -199,9 +247,9 @@ WebP responsive variants at different sizes for optimal performance.
 CREATE TABLE image_variants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     image_id INTEGER NOT NULL,
-    format TEXT NOT NULL,                  -- 'webp'
-    size TEXT NOT NULL,                    -- 'large' (1200w), 'medium' (800w), 'thumbnail' (400w)
-    filename TEXT NOT NULL,                -- e.g., "20241102_143045_abc123_large.webp"
+    format TEXT,                           -- 'webp'
+    size TEXT,                             -- 'large' (1200w), 'medium' (800w), 'thumbnail' (400w)
+    filename TEXT,
     width INTEGER,
     height INTEGER,
     file_size INTEGER,
@@ -209,286 +257,206 @@ CREATE TABLE image_variants (
     FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_variants_image_id ON image_variants(image_id);
+CREATE INDEX idx_variants_image ON image_variants(image_id);
 ```
 
-**Purpose**:
-- Serve appropriately sized images based on device (mobile, tablet, desktop)
-- WebP format provides 25-35% smaller file sizes than JPEG
-- Lazy loading optimizes page load performance
-
-### Image Events Table (Analytics - Future Sprint 6)
-Track views, clicks, shares for analytics dashboard.
+### Image Events Table (Analytics — live)
+Tracks impressions, clicks, lightbox opens/closes, scroll depth, and page
+views for the public sites and powers `/manage/analytics`.
 
 ```sql
 CREATE TABLE image_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     image_id INTEGER,
-    event_type TEXT NOT NULL,              -- 'view', 'click', 'share', 'download'
-    user_id INTEGER,                       -- NULL for anonymous visitors
-    session_id TEXT,
-    ip_address TEXT,
+    event_type TEXT,               -- 'image_impression', 'gallery_click', 'lightbox_open', ...
     user_agent TEXT,
     referrer TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    ip_hash TEXT,                  -- SHA256(ip + JWT secret salt) — never stores raw IP
+    session_id TEXT,               -- client-generated, ephemeral
+    metadata TEXT,
+    is_photographer BOOLEAN DEFAULT 0,  -- distinguishes owner's own visits from public traffic
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_events_image_id ON image_events(image_id);
-CREATE INDEX idx_events_created_at ON image_events(created_at);
+CREATE INDEX idx_events_image ON image_events(image_id);
+CREATE INDEX idx_events_timestamp ON image_events(timestamp);
+CREATE INDEX idx_is_photographer ON image_events(is_photographer);
 ```
 
-### Sessions Table (Authentication - Sprint 4)
-User authentication sessions via JWT tokens.
-
+### Audit Log Table (live)
 ```sql
-CREATE TABLE sessions (
-    id TEXT PRIMARY KEY,                   -- UUID or JWT ID
+CREATE TABLE audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
-    expires_at DATETIME NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    action TEXT NOT NULL,          -- 'login', 'logout', 'password_change', 'user_create', ...
+    resource_type TEXT,
+    resource_id INTEGER,
+    old_value TEXT,
+    new_value TEXT,
+    ip_address TEXT,
+    user_agent TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
-
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
 ```
+
+### AI Cost Tracking Table (live)
+```sql
+CREATE TABLE ai_costs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    operation TEXT NOT NULL,       -- 'analyze_image'
+    model TEXT NOT NULL,
+    input_tokens INTEGER NOT NULL,
+    output_tokens INTEGER NOT NULL,
+    cost_usd REAL NOT NULL,
+    image_path TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
+
+### Future / Not Yet Built
+`products`, `orders`, and `sessions` tables exist in the schema as forward
+scaffolding for a possible future print-sales feature; nothing in the
+application currently reads or writes them.
 
 ---
 
 ## URL Structure
 
-### Current State (Sprint 3)
-
 **Public Sites** (port 8080 locally, ports 80/443 in production):
-- `hensler.photography` → sites/main/ (Coming Soon landing page)
-- `liam.hensler.photography` → sites/liam/ (Liam's portfolio)
-- `adrian.hensler.photography` → sites/adrian/ (Adrian's portfolio)
+- `hensler.photography` → `sites/main/` (directory hub linking to both portfolios)
+- `liam.hensler.photography` → `sites/liam/` (Liam's portfolio)
+- `adrian.hensler.photography` → `sites/adrian/` (Adrian's portfolio)
+- Both portfolios load images dynamically via `GET /api/gallery/published?user_id=...`
 
-**Admin Interface** (port 4100, temporary - will be removed in Sprint 4):
-- `adrian.hensler.photography:4100/admin` → Admin dashboard
-- `adrian.hensler.photography:4100/admin/upload` → Image upload
-- `adrian.hensler.photography:4100/admin/gallery` → Gallery management
-- `adrian.hensler.photography:4100/api/*` → Backend API
-- `adrian.hensler.photography:4100/assets/gallery/*` → Image files
+**Photographer Management Interface** (JWT-authenticated, subdomain-scoped):
+- `/manage` → Dashboard
+- `/manage/upload` → Upload interface
+- `/manage/gallery` → Gallery management (publish, feature, edit, delete)
+- `/manage/analytics` → Engagement analytics
+- `/manage/settings` → Account/profile/theme settings
+- `/manage/login` → Login page (same template as `/admin/login`)
+- Enforced by `get_current_user_for_subdomain()`: a photographer can only
+  reach `/manage/*` on their own subdomain (e.g. Liam cannot access
+  `adrian.hensler.photography/manage`); the admin role can access any
+  subdomain's `/manage`.
 
-### Future State (Sprint 4+)
+**Admin-Only Interface** (JWT-authenticated, `role == 'admin'`):
+- `/admin` → Admin dashboard
+- `/admin/upload` → Upload interface (can target any user via `target_user_id`)
+- `/admin/login` → Login page
 
-**Public Sites** (unchanged):
-- Same as current
+**Backend API** (mounted on the same origin as the pages that call it):
+- `/api/auth/*`, `/api/images/*`, `/api/photographer/*`, `/api/gallery/*`,
+  `/api/analytics/*`, `/api/users/*`, `/api/track`
+- `/assets/gallery/*` → Static file serving of originals + WebP variants
 
-**Admin Interface** (main domain, authenticated):
-- `hensler.photography/admin` → Admin dashboard (Adrian only, all users visible)
-- `hensler.photography/admin/upload` → Upload for any user
-- `hensler.photography/admin/gallery` → View/edit all images
-- `hensler.photography/api/*` → Backend API
-
-**Photographer Dashboards** (subdomain /manage, authenticated):
-- `liam.hensler.photography/manage` → Liam's dashboard (filtered to user_id=2)
-- `liam.hensler.photography/manage/upload` → Upload to Liam's gallery
-- `liam.hensler.photography/manage/gallery` → View/edit Liam's images only
-- `adrian.hensler.photography/manage` → Adrian's photographer view (filtered to user_id=1)
-
-**Gallery Assets** (served via Caddy reverse proxy):
-- `liam.hensler.photography/assets/gallery/*` → Proxied from api/uploads/2/
-- `adrian.hensler.photography/assets/gallery/*` → Proxied from api/uploads/1/
-
-**Port 4100 removed entirely** (admin interface moves to main domain).
+**Gallery Assets** (served via Caddy reverse proxy to the API container in
+production; same path structure in dev):
+- `adrian.hensler.photography/assets/gallery/*`
+- `liam.hensler.photography/assets/gallery/*`
 
 ---
 
-## Authentication Flow (Sprint 4 - To Be Implemented)
-
-### Current State
-**No authentication.** Admin interface is unprotected on port 4100 (dev environment only).
-
-### Planned Implementation
+## Authentication Flow (Live)
 
 **Technology**:
-- **Password Hashing**: bcrypt via passlib (cost factor 12)
-- **Tokens**: JWT via python-jose
-- **Storage**: httpOnly cookies (XSS protection)
-- **Session Duration**: 24 hours (configurable)
-- **Security**: Secure flag in production (HTTPS-only), SameSite=Lax (CSRF protection)
+- **Password Hashing**: bcrypt (cost factor 12), called directly — no `passlib`
+- **Tokens**: JWT via `PyJWT` (`jwt.encode`/`jwt.decode`, `HS256`)
+- **Storage**: httpOnly cookies (`session_token`) — mitigates XSS token theft
+- **Session Duration**: 24 hours
+- **Security**: `secure=True` when `ENVIRONMENT=production`, `SameSite=Lax`
+- **Password policy**: minimum 12 characters, upper/lower/digit/special
+  character required, common-password blocklist (`validate_password()` in
+  `api/routes/auth.py`)
+- **Rate limiting**: login attempts limited to 5/minute per IP
+  (`RATE_LIMITS["auth_login"]` in `api/rate_limit.py`)
+- **CSRF**: state-changing routes (`logout`, uploads, edits, deletes,
+  publish/feature toggles, etc.) require a verified CSRF token
+  (`api/csrf.py`, `verify_csrf_token` dependency)
 
-**Login Flow**:
+**Login Flow** (`POST /api/auth/login`, `api/routes/auth.py`):
 ```
-1. User visits /admin or /manage
-2. If no valid session cookie → redirect to /admin/login
-3. User submits username + password
-4. Backend validates credentials (bcrypt verify)
-5. Generate JWT token: {user_id, username, role, exp: 24h}
-6. Set httpOnly cookie: session_token=<JWT>
-7. Redirect to original destination (/admin or /manage)
+1. User submits username + password (form-encoded) to /api/auth/login
+2. Backend fetches user by username, verifies bcrypt hash
+3. On success: generate JWT {user_id, username, role, exp: now+24h}
+4. Set httpOnly cookie: session_token=<JWT>
+5. Audit log entry written (api/audit.py: audit_login)
+6. Client redirects to /manage or /admin
 ```
 
-**Authorization Flow**:
-```
-Every protected route requires: current_user = Depends(get_current_user)
-
-get_current_user() function:
-1. Read session_token cookie
-2. Validate JWT signature and expiration
-3. Load user from database by user_id
-4. Return User object or raise HTTPException(401)
-
-Routes check:
-- Role: if current_user.role != 'admin': raise HTTPException(403)
-- Ownership: if image.user_id != current_user.id: raise HTTPException(403)
-```
+**Authorization** (`api/routes/auth.py`):
+- `get_current_user(request)` — FastAPI dependency; reads `session_token`
+  cookie, validates JWT, loads the user row, raises `HTTPException(401)` if
+  missing/invalid/expired.
+- `get_current_user_optional(request)` — same, but returns `None` instead of
+  raising (used where anonymous access is also valid).
+- `get_current_user_for_subdomain(request)` — wraps `get_current_user` and
+  additionally checks that the authenticated user's `subdomain` matches the
+  hostname being accessed, unless they are `admin`.
+- Route-level ownership checks: `verify_image_ownership()` is implemented
+  independently in both `api/routes/ingestion.py` and
+  `api/routes/photographer.py` (image belongs to `current_user.id`, or the
+  caller is `admin`); returns 404 rather than 403 to avoid confirming that a
+  given image ID exists for another user.
+- 401 responses to browser (HTML) requests for protected pages are redirected
+  to `/manage/login` (see the `HTTPException` handler in `api/main.py`).
 
 **Logout Flow**:
 ```
-1. User clicks "Logout"
-2. POST /api/auth/logout
-3. Clear session_token cookie
-4. Redirect to /admin/login
-```
-
-**Code Example** (Sprint 4):
-```python
-# api/routes/auth.py
-from passlib.context import CryptContext
-from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, Response
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-
-async def get_current_user(request: Request) -> User:
-    """Dependency that validates JWT and returns current user"""
-    token = request.cookies.get("session_token")
-    if not token:
-        raise HTTPException(401, "Not authenticated")
-
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        user = get_user_by_id(payload["user_id"])
-        if not user:
-            raise HTTPException(401, "User not found")
-        return user
-    except JWTError:
-        raise HTTPException(401, "Invalid token")
-
-@router.post("/api/auth/login")
-async def login(username: str, password: str, response: Response):
-    user = get_user_by_username(username)
-    if not user or not pwd_context.verify(password, user.password_hash):
-        raise HTTPException(401, "Invalid credentials")
-
-    # Generate JWT
-    token = jwt.encode(
-        {"user_id": user.id, "username": user.username, "role": user.role, "exp": datetime.utcnow() + timedelta(hours=24)},
-        SECRET_KEY,
-        algorithm="HS256"
-    )
-
-    # Set httpOnly cookie
-    response.set_cookie(
-        key="session_token",
-        value=token,
-        httponly=True,
-        secure=True,  # HTTPS only in production
-        samesite="lax",
-        max_age=86400  # 24 hours
-    )
-
-    return {"status": "success", "user": {"id": user.id, "username": user.username, "role": user.role}}
-
-# Usage in routes
-@app.get("/admin/dashboard")
-async def dashboard(request: Request, current_user: User = Depends(get_current_user)):
-    if current_user.role != 'admin':
-        raise HTTPException(403, "Admin only")
-    # Show all images from all users
-    return templates.TemplateResponse("admin/dashboard.html", {...})
+1. POST /api/auth/logout (requires valid session + CSRF token)
+2. response.delete_cookie("session_token")
+3. Audit log entry written (audit_logout)
 ```
 
 ---
 
-## Permission Model (Sprint 4)
+## Permission Model (Live)
 
 ### Roles
 
 **Admin** (Adrian):
-- Access /admin interface
-- View all images from all photographers
-- Upload images for any photographer
-- Edit/delete any image
-- Publish/unpublish any image
-- Manage user accounts (create, edit, delete users)
+- Access `/admin` and `/manage` on any subdomain
+- View/upload/edit/delete/publish images for any user
+- Create new users (`POST /api/auth/register`)
 - View all analytics
 
-**Photographer** (Liam, others):
-- Access /manage interface (subdomain only)
-- View only their own images
-- Upload images to their own gallery
-- Edit/delete their own images only
-- Publish/unpublish their own images
-- View their own analytics only
-- Cannot access /admin
-- Cannot see other photographers' images
-
-### Permission Matrix
-
-| Action                    | Admin | Photographer (Own) | Photographer (Other) |
-|---------------------------|-------|--------------------|----------------------|
-| Access /admin             |   ✓   |         ✗          |          ✗           |
-| Access /manage            |   ✓   |         ✓          |          ✗           |
-| View all images           |   ✓   |         ✗          |          ✗           |
-| View own images           |   ✓   |         ✓          |          ✗           |
-| Upload image              |   ✓   |         ✓ (own)    |          ✗           |
-| Edit own image            |   ✓   |         ✓          |          ✗           |
-| Edit other's image        |   ✓   |         ✗          |          ✗           |
-| Delete own image          |   ✓   |         ✓          |          ✗           |
-| Delete other's image      |   ✓   |         ✗          |          ✗           |
-| Publish/unpublish         |   ✓   |         ✓ (own)    |          ✗           |
-| Manage users              |   ✓   |         ✗          |          ✗           |
-| View all analytics        |   ✓   |         ✗          |          ✗           |
-| View own analytics        |   ✓   |         ✓          |          ✗           |
+**Photographer** (Liam, and any future non-admin users):
+- Access `/manage` only on their own subdomain
+- View only their own images (`/api/photographer/*` filters by `user_id`)
+- Upload/edit/publish/delete only their own images
+- View only their own analytics
+- Cannot access `/admin` or another photographer's `/manage`
 
 ### Enforcement Strategy
 
-**Database Level**:
-```sql
--- Non-admin users: Always filter by user_id
-SELECT * FROM images WHERE user_id = ? AND id = ?
+**Database Level**: every photographer-facing query filters by
+`user_id = ?`; admin-facing queries in `api/routes/ingestion.py` accept an
+optional `user_id` filter but are not forced to it.
 
--- Admin users: Can query without filter
-SELECT * FROM images WHERE id = ?
-```
-
-**API Level** (Sprint 4):
+**API Level** (as implemented, `api/routes/ingestion.py` /
+`api/routes/photographer.py`):
 ```python
-@router.get("/api/images/list")
-async def list_images(current_user: User = Depends(get_current_user)):
-    query = "SELECT * FROM images"
-    params = []
+async def verify_image_ownership(image_id: int, current_user: User) -> None:
+    # SELECT user_id FROM images WHERE id = ?
+    # 404 if missing, or if current_user.role != "admin" and row.user_id != current_user.id
+    ...
 
-    # If not admin, restrict to user's own images
-    if current_user.role != 'admin':
-        query += " WHERE user_id = ?"
-        params.append(current_user.id)
-
-    return execute_query(query, params)
-
-@router.put("/api/images/{id}")
-async def update_image(id: int, current_user: User = Depends(get_current_user)):
-    image = get_image_by_id(id)
-
-    # Check ownership if not admin
-    if current_user.role != 'admin' and image.user_id != current_user.id:
-        raise HTTPException(403, "You can only edit your own images")
-
-    # Update image...
+@router.delete("/{image_id}")
+async def delete_image(
+    image_id: int,
+    current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
+):
+    await verify_image_ownership(image_id, current_user)
+    ...
 ```
 
-**Frontend Level**:
-- Show /admin navigation only to admin role
-- Show /manage link on subdomain to all authenticated users
-- Hide "All Photographers" dropdown from non-admin users
-- Display only relevant images in gallery
+**Frontend Level**: the shared header (`_header.html`) shows/hides the admin
+console link based on `current_user.role`; each management page is still
+independently protected server-side regardless of what the UI renders.
 
 ---
 
@@ -497,445 +465,205 @@ async def update_image(id: int, current_user: User = Depends(get_current_user)):
 ### FastAPI Application Structure
 
 **Main Application** (`api/main.py`):
-- FastAPI instance with CORS middleware
-- Global exception handlers (structured error responses)
-- Health check endpoints
-- Admin UI routes (dashboard, upload, gallery HTML templates)
-- Static file serving
-- Includes routers from `api/routes/`
+- FastAPI instance with CORS middleware (restricted to the three production
+  origins), `ProxyHeadersMiddleware` (trusts `X-Forwarded-For` from Caddy —
+  safe because port 8000 is only reachable on the internal Docker network)
+- Global exception handlers: structured JSON error responses, browser-aware
+  401 → `/manage/login` redirect, catch-all handler that never leaks stack
+  traces to the client
+- Health check endpoints (`/healthz`, authenticated `/api/health`)
+- HTML routes for `/admin`, `/admin/upload`, `/manage`, `/manage/upload`,
+  `/manage/gallery`, `/manage/analytics`, `/manage/settings`, `/admin/login`,
+  `/manage/login`
+- Static file mounts: `/static` (CSS/JS), `/assets/gallery` (images)
+- Includes all routers from `api/routes/`
 
-**Routers**:
-- `api/routes/ingestion.py` - Image upload and management endpoints
-- `api/routes/auth.py` (Sprint 4) - Authentication endpoints
+**Routers** (`app.include_router(...)` in `api/main.py`):
+- `api/routes/ingestion.py` — `/api/images/*` (upload, list, get, patch,
+  publish, featured, exif-sharing, reextract-exif, regenerate-ai, delete)
+- `api/routes/auth.py` — `/api/auth/*`
+- `api/routes/gallery.py` — `/api/gallery/*` (public, unauthenticated)
+- `api/routes/photographer.py` — `/api/photographer/*`
+- `api/routes/analytics.py` — `/api/analytics/*`
+- `api/routes/users.py` — `/api/users/*`
 
 **Services** (business logic):
-- `api/services/claude_vision.py` - AI image analysis
-- `api/services/image_processor.py` - WebP variant generation
-- `api/services/exif.py` - EXIF metadata extraction
+- `api/services/claude_vision.py` — AI image analysis; sanitizes AI-returned
+  text fields before they are handed back to the caller for persistence
+- `api/services/image_processor.py` — WebP variant generation
+- `api/services/exif.py` — EXIF metadata extraction
 
 **Utilities**:
-- `api/errors.py` - Structured ErrorResponse class, error codes
-- `api/logging_config.py` - JSON structured logging
-- `api/database.py` - SQLite schema and helpers
+- `api/errors.py` — Structured `ErrorResponse` class, error codes
+- `api/logging_config.py` — JSON structured logging
+- `api/database.py` — SQLite schema, connection helpers, inline migrations
+- `api/security.py` — fail-fast loading of `JWT_SECRET_KEY` / `CSRF_SECRET_KEY`
+- `api/csrf.py` — CSRF token generation/verification
+- `api/rate_limit.py` — `slowapi` limiter + per-endpoint presets
+- `api/audit.py` — audit log writers
 
 ### Core API Endpoints
 
-**Image Management**:
+**Image Management** (`/api/images`, `api/routes/ingestion.py`):
 ```
-POST   /api/images/ingest                  # Upload and process image
-GET    /api/images/list                    # List images (filtered by user)
+POST   /api/images/ingest                  # Upload and process image (rate limited)
+GET    /api/images/list                    # List images (filtered by user/published/featured/category/search)
 GET    /api/images/{id}                    # Get image details
-PATCH  /api/images/{id}                    # Update metadata
+PATCH  /api/images/{id}                    # Update metadata (validated)
 POST   /api/images/{id}/publish            # Toggle published status
 POST   /api/images/{id}/featured           # Toggle featured status
-DELETE /api/images/{id}                    # Delete image and variants
+POST   /api/images/{id}/exif-sharing       # Toggle public EXIF exposure
+POST   /api/images/{id}/reextract-exif     # Re-extract EXIF (free)
+POST   /api/images/{id}/regenerate-ai      # Regenerate AI metadata (~$0.02)
+DELETE /api/images/{id}                    # Soft-delete image (marks deleted_at; see below)
 ```
 
-**Authentication** (Sprint 4):
+**Photographer-Scoped Image Management** (`/api/photographer`,
+`api/routes/photographer.py`) — same underlying delete semantics as above,
+scoped strictly to the caller's own images:
 ```
-POST   /api/auth/login                     # Username + password → JWT cookie
-POST   /api/auth/logout                    # Clear session
+GET    /api/photographer/images            # List own images
+GET    /api/photographer/images/{id}       # Get own image
+PUT    /api/photographer/images/{id}       # Update own image metadata
+PATCH  /api/photographer/images/{id}/publish
+DELETE /api/photographer/images/{id}       # Soft-delete own image
+```
+
+**Authentication** (`/api/auth`, `api/routes/auth.py`):
+```
+POST   /api/auth/login                     # Username + password → JWT cookie (5/min rate limit)
+POST   /api/auth/logout                    # Clear session (CSRF-protected)
 GET    /api/auth/me                        # Get current user info
 POST   /api/auth/register                  # Create user (admin only)
 POST   /api/auth/change-password           # Update password
 ```
 
+**Public Gallery** (`/api/gallery`, `api/routes/gallery.py`, no auth):
+```
+GET    /api/gallery/published?user_id=1    # Published images with WebP variant URLs
+GET    /api/gallery/published/{slug}       # Single published image by slug
+```
+
+**Analytics** (`/api/analytics`, `api/routes/analytics.py`, authenticated):
+```
+GET    /api/analytics/overview
+GET    /api/analytics/highlights
+GET    /api/analytics/timeline
+GET    /api/analytics/recent-engagement
+GET    /api/analytics/top-images
+GET    /api/analytics/referrers
+GET    /api/analytics/category-performance
+GET    /api/analytics/scroll-depth
+GET    /api/analytics/image/{image_id}
+```
+
+**Tracking** (public, no auth):
+```
+POST   /api/track                          # Record engagement events (100/min rate limit)
+```
+
 **Health & Status**:
 ```
 GET    /healthz                            # Simple health check (Docker)
-GET    /api/health                         # Detailed diagnostics
+GET    /api/health                         # Detailed diagnostics (authenticated)
 ```
 
-### Image Ingest API Example
+### Image Ingest Flow
 
-**Request**:
-```http
-POST /api/images/ingest
-Content-Type: multipart/form-data
-
-Body:
-- file: <binary image data>
-- user_id: 1 (admin can specify, otherwise current_user.id)
-- auto_publish: true (optional, default false)
+```
+1. User uploads image via drag-and-drop or file picker (/manage/upload or /admin/upload)
+2. JavaScript validates file type and size client-side
+3. POST /api/images/ingest (multipart/form-data), CSRF-protected, rate-limited
+4. FastAPI validates file type (MIME allowlist via python-magic) and size server-side
+5. Generate unique filename: YYYYMMDD_HHMMSS_<hash>.jpg
+6. Save original to /app/assets/gallery/{filename}
+7. Extract EXIF metadata — failure is non-fatal, returns a warning
+8. Analyze with Claude Vision API (title, caption, description, alt_text, tags, category)
+   using the photographer's preferred style — failure falls back to filename-derived metadata
+9. Sanitize AI-returned text fields server-side (strip HTML/script content) before persisting
+10. Generate WebP variants at 3 sizes (1200px/800px/400px) — failure is non-fatal
+11. Insert image row + variant rows
+12. Return success response with image_id, metadata, and any warnings
 ```
 
-**Response** (Success):
-```json
-{
-  "success": true,
-  "image_id": 123,
-  "filename": "20241102_143045_abc123.jpg",
-  "slug": "sunset-over-mountains",
-  "ai_analysis": {
-    "title": "Sunset Over Mountains",
-    "caption": "Golden hour illuminates the peaks",
-    "description": "A dramatic sunset bathes the mountain range in warm golden light, creating striking contrast between the illuminated peaks and shadowed valleys below.",
-    "tags": ["landscape", "sunset", "mountains", "golden-hour", "dramatic"],
-    "category": "landscape"
-  },
-  "exif": {
-    "camera_make": "Canon",
-    "camera_model": "EOS R5",
-    "lens": "RF 24-70mm F2.8 L IS USM",
-    "focal_length": "35mm",
-    "aperture": "f/2.8",
-    "shutter_speed": "1/250s",
-    "iso": 200,
-    "date_taken": "2024-10-15T14:30:22Z"
-  },
-  "variants": [
-    {"size": "large", "width": 1200, "filename": "20241102_143045_abc123_large.webp"},
-    {"size": "medium", "width": 800, "filename": "20241102_143045_abc123_medium.webp"},
-    {"size": "thumbnail", "width": 400, "filename": "20241102_143045_abc123_thumbnail.webp"}
-  ]
-}
+**Structured Error Response** (`api/errors.py`):
+```python
+class ErrorResponse:
+    success: bool = False
+    error_code: str          # e.g. "VALIDATION_FILE_TOO_LARGE"
+    user_message: str        # Human-readable explanation
+    technical_details: str   # For developers/AI diagnosis
+    context: dict            # Additional context (user_id, filename, etc.)
 ```
 
-**Response** (Partial Success with Warnings):
-```json
-{
-  "success": true,
-  "image_id": 124,
-  "filename": "20241102_150123_def456.jpg",
-  "warnings": [
-    {
-      "code": "PROCESSING_EXIF_FAILED",
-      "user_message": "Could not extract camera metadata from this image",
-      "technical_details": "No EXIF data found in image headers"
-    },
-    {
-      "code": "AUTH_MISSING_KEY",
-      "user_message": "AI captions unavailable - please configure Anthropic API key in environment",
-      "technical_details": "ANTHROPIC_API_KEY not set"
-    }
-  ]
-}
-```
+### AI Metadata Sanitization
 
-**Response** (Error):
-```json
-{
-  "success": false,
-  "error_code": "VALIDATION_FILE_TOO_LARGE",
-  "user_message": "Image file is too large (32.5 MB). Maximum size is 20 MB",
-  "technical_details": "file_size=34078720 bytes, max_size=20971520 bytes",
-  "context": {
-    "filename": "huge_photo.jpg",
-    "user_id": 1
-  }
-}
-```
+`api/services/claude_vision.py` calls the Claude Vision API and parses its
+JSON response. Before that metadata is returned to callers (and subsequently
+written to the `images` table), text fields (`title`, `caption`,
+`description`, `alt_text`, `tags`, `category`) are run through a server-side
+sanitizer that strips HTML tags and neutralizes obviously dangerous content
+(`<script>`, inline event-handler attributes, `javascript:` URIs) before
+persistence. This is defense in depth: the public sites also
+HTML-escape every field at render time via `escapeHtml()` in
+`sites/shared/gallery.js`, and Jinja2 templates auto-escape by default — but
+neither of those previously protected data stored via the `PATCH
+/api/images/{id}` / `PUT /api/photographer/images/{id}` metadata-edit paths
+or any future consumer that renders these fields without escaping.
+
+### Image Deletion (Soft Delete)
+
+Both delete endpoints (`DELETE /api/images/{id}` and
+`DELETE /api/photographer/images/{id}`) share the same behavior: they set
+`images.deleted_at = CURRENT_TIMESTAMP` rather than removing the row or
+unlinking files immediately. Soft-deleted images are excluded from
+`/api/gallery/published`, `/api/images/list`, `/api/photographer/images`, and
+all ownership/ID lookups (`verify_image_ownership()` treats a soft-deleted
+image as not found). Physical files (original + WebP variants) are removed
+by a separate cleanup step after a grace period, rather than synchronously
+in the request path — this avoids the previous behavior where a delete
+request could unrecoverably destroy image files with no undo.
 
 ---
 
 ## Caddy Reverse Proxy Configuration
 
-### Current Configuration (Sprint 3)
+**Development** (`Caddyfile.local`): single `localhost:8080` block per
+domain name, using path-based routing (`/liam`, `/adrian`) with
+`uri strip_prefix` before serving static files; `/manage`, `/admin`, `/api`,
+and `/assets/gallery` are reverse-proxied to `api:8000`.
 
-**Development** (`Caddyfile.local`):
-```caddy
-# Public sites (port 8080)
-hensler.photography:8080 {
-    root * /srv/sites/main
-    file_server
-    encode zstd gzip
-}
+**Production** (`Caddyfile`): three separate domain blocks
+(`hensler.photography`, `liam.hensler.photography`,
+`adrian.hensler.photography`), automatic HTTPS via Let's Encrypt, separate
+TLS certificates per domain. Each domain proxies `/manage`, `/admin` (where
+applicable), `/api`, and `/assets/gallery` to `api:8000` and serves its own
+static site for everything else. Access logging is enabled on all three
+domain blocks to support fail2ban-style abuse detection.
 
-liam.hensler.photography:8080 {
-    root * /srv/sites/liam
-    file_server
-    encode zstd gzip
-}
-
-adrian.hensler.photography:8080 {
-    root * /srv/sites/adrian
-    file_server
-    encode zstd gzip
-}
-
-# Admin interface (port 4100, temporary)
-adrian.hensler.photography:4100 {
-    handle /admin* {
-        reverse_proxy api:8000
-    }
-    handle /api/* {
-        reverse_proxy api:8000
-    }
-    handle /assets/gallery/* {
-        reverse_proxy api:8000
-    }
-}
-```
-
-### Future Configuration (Sprint 4)
-
-**Development** (`Caddyfile.local`):
-```caddy
-# Main domain with admin interface (port 8080)
-hensler.photography:8080 {
-    handle /admin* {
-        reverse_proxy api:8000  # Admin interface (authenticated)
-    }
-    handle /api/* {
-        reverse_proxy api:8000  # API endpoints
-    }
-    handle /assets/gallery/* {
-        reverse_proxy api:8000  # Serve gallery images
-    }
-    handle {
-        root * /srv/sites/main
-        file_server
-        encode zstd gzip
-    }
-}
-
-# Subdomains with photographer dashboards (port 8080)
-liam.hensler.photography:8080 {
-    handle /manage* {
-        reverse_proxy api:8000  # Liam's dashboard (user_id=2)
-    }
-    handle /assets/gallery/* {
-        reverse_proxy api:8000  # Liam's images only
-    }
-    handle {
-        root * /srv/sites/liam
-        file_server
-        encode zstd gzip
-    }
-}
-
-adrian.hensler.photography:8080 {
-    handle /manage* {
-        reverse_proxy api:8000  # Adrian's dashboard (user_id=1)
-    }
-    handle /assets/gallery/* {
-        reverse_proxy api:8000  # Adrian's images only
-    }
-    handle {
-        root * /srv/sites/adrian
-        file_server
-        encode zstd gzip
-    }
-}
-
-# Port 4100 removed entirely
-```
-
-**Production** (`Caddyfile`):
-- Same structure as development
-- No port numbers (Caddy handles 80/443 automatically)
-- Automatic HTTPS via Let's Encrypt
-- Separate TLS certificates per domain
-
-**Security Headers** (applied to all routes):
+**Security Headers** (applied to all routes in both Caddyfiles):
 ```caddy
 header {
     Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     X-Frame-Options "DENY"
     X-Content-Type-Options "nosniff"
     Referrer-Policy "strict-origin-when-cross-origin"
+    Content-Security-Policy "..."
 }
 ```
-
----
-
-## Image Processing Pipeline
-
-### Upload Flow
-
-```
-1. User uploads image via drag-and-drop or file picker
-2. JavaScript validates file type (JPEG, PNG, WebP) and size (<20MB) client-side
-3. POST to /api/images/ingest with multipart/form-data
-4. FastAPI validates file type and size server-side
-5. Generate unique filename: YYYYMMDD_HHMMSS_<hash>.jpg
-6. Save original to /app/uploads/{user_id}/{filename}
-7. Extract EXIF metadata (camera, lens, settings, GPS)
-   - If fails: Log warning, continue with null values
-8. Analyze with Claude Vision API (title, caption, description, tags, category)
-   - If fails: Use fallback metadata, return warning
-9. Generate WebP variants at 3 sizes:
-   - Large: 1200px width (desktop)
-   - Medium: 800px width (tablet)
-   - Thumbnail: 400px width (mobile)
-   - If fails: Continue without variants, return warning
-10. Insert record into images table with all metadata
-11. Insert records into image_variants table (one per variant)
-12. Return success response with image_id, metadata, warnings (if any)
-13. Frontend displays preview with editable metadata fields
-```
-
-### Error Handling Strategy
-
-**Graceful Degradation**:
-- **EXIF extraction fails**: Continue with null metadata, return warning
-- **Claude Vision fails**: Use fallback metadata ("Untitled", "No description"), return warning
-- **WebP generation fails**: Keep original only, return warning
-- **Database insert fails**: Clean up files, return error, rollback
-
-**Structured Error Response** (`api/errors.py`):
-```python
-class ErrorResponse:
-    success: bool = False
-    error_code: str          # e.g., "VALIDATION_FILE_TOO_LARGE"
-    user_message: str        # Human-readable explanation
-    technical_details: str   # For developers/AI diagnosis
-    context: dict            # Additional context (user_id, filename, etc.)
-```
-
-### Claude Vision Prompt
-
-**System Prompt** (`services/claude_vision.py`):
-```
-You are an expert photography curator analyzing images for a professional
-portfolio website. Analyze this image and provide:
-
-1. **Title** (5-10 words max): Concise, evocative, captures the essence
-2. **Caption** (1 sentence): Brief description for thumbnail hover
-3. **Description** (2-3 sentences): Detailed analysis focusing on:
-   - Subject and composition
-   - Lighting and mood
-   - Technical excellence or artistic merit
-4. **Tags** (5-10 keywords): Relevant categorization keywords:
-   - Subject matter: landscape, portrait, architecture, wildlife, etc.
-   - Style: black-and-white, long-exposure, minimalist, dramatic, etc.
-   - Mood: serene, vibrant, moody, ethereal, etc.
-   - Technical: golden-hour, blue-hour, bokeh, reflection, etc.
-5. **Category** (single word): Primary category (landscape, portrait, architecture,
-   wildlife, abstract, street, event, macro, aerial)
-
-Return JSON format:
-{
-    "title": "...",
-    "caption": "...",
-    "description": "...",
-    "tags": ["tag1", "tag2", ...],
-    "category": "landscape"
-}
-```
-
-**Response Handling**:
-- Parse JSON response
-- Store in `title`, `caption`, `description`, `tags`, `category` columns
-- Log to structured JSON logs with analysis_time_ms
-
----
-
-## Security Model
-
-### Current Security Posture (Sprint 3)
-
-**Strengths**:
-- Docker container isolation (non-root user)
-- Separate dev/prod environments
-- Security headers on all responses (HSTS, X-Frame-Options, etc.)
-- Structured error handling (no stack trace leaks to frontend)
-- Input validation (file type, size limits)
-- Parameterized SQL queries (SQL injection prevention)
-- Jinja2 auto-escaping (XSS prevention)
-
-**Weaknesses** (to be addressed in Sprint 4):
-- ❌ No authentication on admin interface
-- ❌ Admin port (4100) open to network (dev only, but still vulnerable)
-- ❌ No rate limiting
-- ❌ No CSRF protection
-- ❌ No user isolation (photographers can theoretically access other's images)
-
-### Planned Security Improvements (Sprint 4)
-
-**Authentication**:
-- bcrypt password hashing (cost factor 12)
-- JWT tokens with 24-hour expiration
-- httpOnly cookies (prevents XSS attacks on tokens)
-- Secure flag in production (HTTPS-only cookies)
-- SameSite=Lax (CSRF protection)
-
-**Authorization**:
-- Role-based access control (admin, photographer)
-- User ownership checks on all image operations
-- Admin-only endpoints (user management, global analytics)
-- Database-level filtering by user_id for non-admin users
-
-**Input Validation**:
-- File type whitelist (JPEG, PNG, WebP only)
-- File size limit (20MB max, configurable)
-- Filename sanitization (prevent path traversal)
-- Metadata sanitization (XSS prevention in descriptions/tags)
-- SQL injection protection (parameterized queries)
-
-**Rate Limiting** (Sprint 5 - Future):
-- Login attempts: 5 failures/hour per IP → lockout
-- Image upload: 100 uploads/day per user
-- API requests: 1000 requests/hour per user
-- Chatbot messages: 20 messages/hour per user
-
-**CSRF Protection** (Sprint 4):
-- CSRF tokens for state-changing operations (POST, PUT, DELETE)
-- SameSite=Lax on session cookies
-- Origin/Referer header validation
 
 ---
 
 ## Structured Logging for AI Diagnosis
 
-### JSON Log Format
+**Configuration**: `api/logging_config.py` — JSON logs to stdout, captured by
+`docker compose logs`. Every log call accepts an `extra={"context": {...}}`
+payload (image_id, user_id, error_code, timing, etc.) so that both humans and
+AI assistants can search/filter by field.
 
-**Configuration**: `api/logging_config.py`
-
-**Info Log Example**:
-```json
-{
-    "timestamp": "2025-11-02T14:30:45.123Z",
-    "level": "INFO",
-    "logger": "hensler_photography.services.claude_vision",
-    "message": "Claude Vision analysis complete",
-    "module": "claude_vision",
-    "function": "analyze_image",
-    "line": 87,
-    "context": {
-        "image_id": 42,
-        "filename": "sunset_mountains.jpg",
-        "user_id": 1,
-        "analysis_time_ms": 1234,
-        "tags_count": 7
-    }
-}
-```
-
-**Error Log Example**:
-```json
-{
-    "timestamp": "2025-11-02T14:31:12.456Z",
-    "level": "ERROR",
-    "logger": "hensler_photography.routes.ingestion",
-    "message": "Image upload failed",
-    "module": "ingestion",
-    "function": "ingest_image",
-    "line": 156,
-    "error_code": "PROCESSING_CLAUDE_FAILED",
-    "context": {
-        "user_id": 1,
-        "filename": "test.jpg",
-        "file_size": 12345678
-    },
-    "exception": {
-        "type": "AnthropicAPIError",
-        "message": "Rate limit exceeded (429)",
-        "traceback": "Traceback (most recent call last):\n  File..."
-    }
-}
-```
-
-**Purpose**:
-- Enable Claude Code to quickly diagnose issues
-- Machine-readable format for log analysis tools
-- Preserve context across service boundaries
-- Track performance metrics (analysis_time_ms, file_size, etc.)
-
-**View Logs**:
 ```bash
 # Development
-docker compose -p hensler_test logs -f api
+docker compose -p hensler_test -f docker-compose.local.yml logs -f api
 
 # Production
 docker compose logs -f api
@@ -948,125 +676,28 @@ docker compose logs api | grep "PROCESSING_CLAUDE_FAILED"
 
 ## Performance Considerations
 
-### Image Optimization
+**Image Optimization**: WebP variants at 3 sizes (1200px/800px/400px),
+25–35% smaller than equivalent JPEGs; native lazy loading; responsive
+`srcset` on the public sites.
 
-**WebP Variants**:
-- 25-35% smaller file sizes compared to JPEG
-- Three sizes for responsive images:
-  - Large (1200w): Desktop displays
-  - Medium (800w): Tablets and small laptops
-  - Thumbnail (400w): Mobile devices and grid previews
-- Lazy loading: Images load only when scrolled into viewport
-- CDN-ready: Static assets can be moved to CDN for global distribution
+**Database**: SQLite is appropriate at this scale (single-digit thousands of
+images, low write volume, embedded — no network latency). Indexes exist on
+`user_id`, `published`, `slug`, `image_id` (variants/events), and audit/AI
+cost timestamps.
 
-**Gallery Performance**:
-- Grid uses `object-fit: contain` to preserve aspect ratios
-- IntersectionObserver for staggered reveal animations
-- Preload critical images above the fold
-- Fade-in animations for progressive enhancement
-
-### Database Performance
-
-**SQLite Suitability**:
-- Ideal for read-heavy, low-write workloads
-- Handles thousands of images efficiently
-- Single-file database simplifies backups
-- No network latency (embedded database)
-
-**Indexes**:
-```sql
-CREATE INDEX idx_images_user_id ON images(user_id);
-CREATE INDEX idx_images_published ON images(published);
-CREATE INDEX idx_images_featured ON images(featured);
-CREATE INDEX idx_images_slug ON images(user_id, slug);
-CREATE INDEX idx_variants_image_id ON image_variants(image_id);
-```
-
-**Future Optimization** (if needed):
-- Connection pooling (currently not implemented)
-- Read replicas for public site queries
-- Migration to PostgreSQL for multi-server deployments
-
-### Caching Strategy
-
-**Browser Caching**:
-- Static assets: `Cache-Control: max-age=31536000` (1 year)
-- Images: `Cache-Control: max-age=2592000` (30 days)
-- HTML: `Cache-Control: no-cache` (always revalidate)
-
-**CDN Integration** (Future):
-- Cloudflare or AWS CloudFront for image delivery
-- Edge caching for global performance
-- Automatic WebP conversion at edge
-
-**API Caching** (Future - Sprint 6):
-- Redis for frequently accessed data (featured images, popular tags)
-- Cache invalidation on image updates
-- TTL-based expiration
+**Caching**: `GET /api/gallery/published` sets
+`Cache-Control: public, max-age=300, stale-while-revalidate=60`. Static
+assets are cached long-term by Caddy's defaults.
 
 ---
 
 ## Monitoring & Observability
 
-### Logging
-
-**Structured JSON Logs** (`api/logging_config.py`):
-- All requests logged with context (user_id, image_id, etc.)
-- Errors include full stack traces
-- Performance metrics (processing_time_ms, file_size, etc.)
-- Searchable by error code, user, timestamp
-- Output to stdout (Docker Compose captures to docker logs)
-
-### Health Checks
-
-**Simple** (`GET /healthz`):
-```json
-{"status": "ok"}
-```
-- Used by Docker Compose health checks
-- Returns 200 if application is running
-
-**Detailed** (`GET /api/health`):
-```json
-{
-    "status": "healthy",
-    "database": {
-        "status": "ok",
-        "latency_ms": 2.3,
-        "images_count": 127,
-        "users_count": 2
-    },
-    "storage": {
-        "status": "ok",
-        "total_gb": 50.0,
-        "used_gb": 12.5,
-        "free_gb": 37.5
-    },
-    "ai": {
-        "status": "configured",
-        "api_key_set": true
-    },
-    "warnings": []
-}
-```
-- Comprehensive diagnostics for troubleshooting
-- Database connectivity and latency
-- Storage usage metrics
-- Claude API configuration status
-
-### Metrics (Future - Sprint 6)
-
-**Planned Metrics**:
-- Request counts and latency by endpoint
-- Error rates by error_code
-- Image processing times (EXIF, AI, WebP generation)
-- Storage usage trends
-- User activity metrics (uploads per day, etc.)
-
-**Potential Tools**:
-- Prometheus for metrics collection
-- Grafana for visualization
-- Alerts for error rate spikes, storage limits
+**Health Checks**:
+- `GET /healthz` — `{"status": "ok", "service": "api"}`, used by Docker
+  Compose health checks.
+- `GET /api/health` — authenticated, detailed diagnostics: database
+  connectivity/latency, Claude API key presence, gallery storage free space.
 
 ---
 
@@ -1075,185 +706,92 @@ CREATE INDEX idx_variants_image_id ON image_variants(image_id);
 ### Environments
 
 **Development** (`/opt/dev/hensler_photography/`):
-- Port 8080: Public sites
-- Port 4100: Admin interface (temporary, Sprint 4 will remove)
+- Port 8080 for public sites and `/manage`/`/admin`/`/api` (path- and
+  host-based routing via `Caddyfile.local`)
 - Docker Compose project: `hensler_test`
-- Database: `/opt/dev/hensler_photography/api/hensler_photography.db`
-- Images: `/opt/dev/hensler_photography/api/uploads/`
-- Purpose: Testing and iteration before production
+- Started with `docker compose -p hensler_test -f docker-compose.local.yml up -d`
 
 **Production** (`/opt/prod/hensler_photography/`):
-- Ports 80/443: All sites and admin
-- Docker Compose project: default
-- Database: `/opt/prod/hensler_photography/api/hensler_photography.db`
-- Images: `/opt/prod/hensler_photography/api/uploads/`
-- Purpose: Live site serving visitors
+- Ports 80/443, one Caddy container fronting all three domains plus the API
+- Docker Compose project: default (`docker-compose.yml`)
+- Deployed via `git pull` + `docker compose restart` after a PR merges to
+  `main` (direct pushes to `main` are blocked; CI must pass)
 
 ### Docker Compose Services
 
-**web** (Caddy):
-```yaml
-services:
-  web:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./sites:/srv/sites
-      - ./api/uploads:/srv/uploads  # Serve gallery images
-      - caddy-data:/data
-      - caddy-config:/config
-    restart: unless-stopped
-```
-
-**api** (FastAPI):
-```yaml
-  api:
-    build: ./api
-    volumes:
-      - ./api:/app
-    environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - DATABASE_PATH=/app/hensler_photography.db
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}  # Sprint 4
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
-
-**Networking**: Internal Docker network, Caddy reverse proxies to `api:8000`.
+- **web** (Caddy 2): terminates TLS, reverse-proxies to `api:8000`, serves
+  `sites/` as static files, mounts `caddy-data`/`caddy-config` volumes.
+- **api** (FastAPI/Uvicorn): built from `api/Dockerfile`, requires
+  `ANTHROPIC_API_KEY`, `DATABASE_PATH`, `JWT_SECRET_KEY`, and
+  `CSRF_SECRET_KEY` in the environment (the app fails fast at import time if
+  the JWT/CSRF secrets are missing or too short — see `api/security.py`).
 
 ### Deployment Workflow
 
 ```bash
-# 1. Make changes in development
+# 1. Work in dev, test on port 8080
 cd /opt/dev/hensler_photography
-# ... edit files ...
 
-# 2. Test locally
-docker compose -p hensler_test up -d
-curl http://localhost:8080/
+# 2. Create feature branch, commit, push
+git checkout -b feature/my-improvement
+git add <files>
+git commit -m "Description"
+git push origin feature/my-improvement
 
-# 3. Run Playwright tests
-npm test
+# 3. Open a PR (direct pushes to main are blocked; CI must pass)
+gh pr create --title "..." --body "..."
 
-# 4. Commit to git
-git add .
-git commit -m "Description of changes"
-git push origin feature/backend-api
-
-# 5. Deploy to production
+# 4. After merge, deploy
 cd /opt/prod/hensler_photography
 git pull origin main
 docker compose restart
 
-# 6. Verify production
+# 5. Verify
 curl -I https://hensler.photography/healthz
-curl -I https://adrian.hensler.photography/
+curl -I https://liam.hensler.photography/healthz
+curl -I https://adrian.hensler.photography/healthz
 ```
+
+---
+
+## Backup
+
+See **BACKUP.md** for the complete, authoritative procedure. Summary:
+- `scripts/backup.sh` runs `sqlite3 .backup` (online backup, no downtime)
+  plus `cp -a` of the gallery images volume.
+- Scheduled via root crontab, Monday and Thursday at 2 AM
+  (`0 2 * * 1,4 ... scripts/backup.sh`).
+- Keeps only the **2 most recent** backups in
+  `/opt/backups/hensler_photography/<timestamp>/` on the same host — this is
+  protection against accidental deletion/corruption, not a substitute for
+  offsite/disaster recovery.
+- Full server loss is covered separately by the hosting provider's weekly
+  VPS snapshot; worst-case data loss window is 3–4 days.
 
 ---
 
 ## Future Enhancements
 
-### Sprint 5: AI Chatbot Assistant (Planned)
+These are aspirational and **not yet implemented**. Check `docs/ROADMAP_PUBLIC.md`
+and grep the codebase before assuming any of the below exists.
 
-**Goal**: Give photographers an AI assistant to manage their galleries via natural conversation.
+### AI Chatbot Assistant (Planned)
+Natural-language gallery management assistant using Claude's tool/function
+calling, scoped to the authenticated user's own images, with guardrails
+against destructive actions (no direct delete access, confirmation required
+for publish/update).
 
-**Technology**:
-- Anthropic Claude 3.5 Sonnet API
-- Tool/function calling for gallery operations
-- Streaming responses for real-time interaction
-- Persistent conversation history per user
+### Static Site Generator (Planned)
+Pre-rendered SEO-friendly individual photo detail pages at `/photo/{slug}`
+with Open Graph metadata, sitemap generation.
 
-**Architecture**:
-```
-User types message → Chat Widget (JS) → POST /api/chat/message
-                                              ↓
-                                    Validate session (get_current_user)
-                                              ↓
-                                    Load conversation history
-                                              ↓
-                                    Call Claude API with tools
-                                              ↓
-                                    Claude analyzes request, calls tools
-                                              ↓
-                                    Execute tool functions (filtered by user_id)
-                                              ↓
-                                    Return tool results to Claude
-                                              ↓
-                                    Stream response to user
-                                              ↓
-                                    Save message to database
-```
+### E-Commerce Integration (Planned)
+Print sales via the existing (currently unused) `products`/`orders` schema,
+Stripe integration, order management.
 
-**Tool Functions**:
-- `list_images(filters)` - Search gallery with natural language
-- `get_image_details(image_id)` - Show full metadata
-- `suggest_tags(image_id)` - AI-powered tag suggestions
-- `update_metadata(image_id, changes)` - Edit title/description/tags
-- `publish_image(image_id)` - Make image visible on public site
-- `find_similar(image_id)` - Find similar images in gallery
-
-**Guardrails**:
-- System prompt explicitly restricts to authenticated user_id
-- All tool functions verify image ownership before executing
-- Cannot call DELETE endpoints (safety measure)
-- Requires confirmation for state-changing actions (publish, update)
-- Rate limiting: 20 messages/hour per user
-- Cannot access admin functions (user creation, other photographers' data)
-
-**UI Design**:
-- Persistent chat widget in /manage dashboard (bottom-right corner)
-- Expandable/collapsible panel
-- Message history preserved per session
-- Suggested prompts: "Show me unpublished images", "Find landscapes from October", "Suggest tags for image 42"
-
-**Implementation Estimate**: 20-25 hours (Sprint 5)
-
-### Sprint 6: Analytics Dashboard
-
-**Goal**: Track and visualize image performance metrics.
-
-**Features**:
-- Image views and clicks tracking
-- Popular images report (most viewed/clicked)
-- Geographic visitor distribution (if available)
-- Time-series charts (views over time)
-- Tag popularity analysis
-- Export analytics data to CSV
-
-**Technology**:
-- `image_events` table (already defined in schema)
-- Chart.js for visualization
-- Aggregation queries for reporting
-
-### Sprint 7+: Static Site Generator
-
-**Goal**: Generate SEO-friendly static photo detail pages.
-
-**Features**:
-- Pre-render individual photo pages at `/photo/{slug}`
-- Server-side generated HTML with Open Graph meta tags
-- Pagination for gallery grids
-- Export static JSON for frontend consumption
-- Sitemap generation for search engines
-
-### Future: E-Commerce Integration
-
-**Goal**: Enable print sales and ordering.
-
-**Features**:
-- Print size and framing options
-- Stripe payment integration
-- Order management dashboard
-- Shipping tracking
-- Customer communication
+### Metrics/Observability Tooling (Planned)
+Prometheus/Grafana or similar for request latency, error rate, and storage
+trend dashboards, beyond the current JSON-log-and-grep workflow.
 
 ---
 
@@ -1261,32 +799,23 @@ User types message → Chat Widget (JS) → POST /api/chat/message
 
 See **CHANGELOG.md** for detailed version history and release notes.
 
-**Current Version**: 2.0.0 (Sprint 3 Complete)
-- ✅ Sprint 1: Foundation (Database, FastAPI, Docker, Caddy)
-- ✅ Sprint 2: Image Ingestion (Upload, EXIF, Claude Vision, WebP variants)
-- ✅ Sprint 2.5: Gallery Management (View, edit, publish, bulk actions)
-- ✅ Sprint 3: Error Handling & Logging (Structured errors, JSON logs)
-- 📋 Sprint 4: Multi-User Auth & Dashboards (Planned)
-- 📋 Sprint 5: AI Chatbot Assistant (Planned)
-- 📋 Sprint 6: Analytics Dashboard (Planned)
-
 ---
 
 ## References
 
-- **CLAUDE.md**: Instructions for Claude Code AI assistant
+- **CLAUDE.md**: Instructions for Claude Code AI assistant (source of truth
+  for current architecture — keep this file in sync with it)
 - **docs/ROADMAP_PUBLIC.md**: Sanitized public roadmap with released and upcoming milestones
 - **docs/planning/README.md**: Access notes for private sprint planning and task tracking
-- **docs/guides/GIT_WORKFLOW.md**: Branching and deployment safeguards to avoid divergence
+- **docs/guides/GIT_WORKFLOW.md**: Branching and deployment safeguards
 - **DEVELOPMENT.md**: Development best practices and workflow
 - **CHANGELOG.md**: Version history and release notes
-- **BACKUP.md**: Backup and recovery procedures
+- **BACKUP.md**: Backup and recovery procedures (authoritative)
 - **sites/adrian/README.md**: Adrian's site maintenance guide
 - **docs/reviews/**: Historical code/design reviews (archived)
 
 ---
 
-**Last Updated**: 2025-11-02
+**Last Updated**: 2026-07-03
 **Maintained By**: Adrian Hensler
 **Repository**: Public (https://github.com/adrianhensler/hensler-photography)
-**License**: All Rights Reserved (consider adding LICENSE file to specify terms)

@@ -78,6 +78,7 @@ async def test_db():
                 published BOOLEAN DEFAULT 0,
                 share_exif BOOLEAN DEFAULT 0,
                 sort_order INTEGER DEFAULT 0,
+                deleted_at TIMESTAMP DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id),
@@ -170,11 +171,14 @@ def liam_token():
 
 @pytest.fixture
 def auth_headers_adrian(adrian_token):
-    """Authorization headers for Adrian"""
-    return {"Authorization": f"Bearer {adrian_token}"}
+    """Auth headers for Adrian. get_current_user reads the JWT from the
+    session_token cookie, not an Authorization header, so send it as a
+    raw Cookie header to match production auth behavior."""
+    return {"Cookie": f"session_token={adrian_token}"}
 
 
 @pytest.fixture
 def auth_headers_liam(liam_token):
-    """Authorization headers for Liam"""
-    return {"Authorization": f"Bearer {liam_token}"}
+    """Auth headers for Liam. See auth_headers_adrian for why this is a
+    Cookie header rather than Authorization: Bearer."""
+    return {"Cookie": f"session_token={liam_token}"}
