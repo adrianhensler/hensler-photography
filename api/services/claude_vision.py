@@ -20,6 +20,7 @@ from api.errors import (
     claude_api_error,
 )
 from api.logging_config import get_logger
+from api.sanitize import sanitize_ai_metadata
 from api.services.image_processor import generate_ai_analysis_image, cleanup_temp_file
 
 # Initialize logger
@@ -398,6 +399,15 @@ async def analyze_image(
                     f"Claude response missing required field: {field}", extra={"context": context}
                 )
                 metadata[field] = "" if field != "tags" else []
+
+        # Sanitize AI-returned text fields before they are persisted to the DB.
+        # Claude Vision output is untrusted input from the caller's perspective:
+        # nothing stops a crafted/compromised response (or a future model
+        # regression) from including HTML/script content. Client-side
+        # escapeHtml() in gallery.js protects the public render path, but this
+        # is the point where the data actually enters the database, so every
+        # future consumer is protected too.
+        metadata = sanitize_ai_metadata(metadata)
 
         logger.info(
             "Successfully analyzed image with Claude Vision",
