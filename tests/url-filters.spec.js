@@ -1,17 +1,26 @@
 /**
  * Quick test to verify URL filter functionality
+ *
+ * Uses the real adrian.hensler.photography hostname on the dev port
+ * (:8080) rather than playwright.config.js's shared localhost baseURL:
+ * the dev Caddy stack (Caddyfile.local) routes by domain name and
+ * requires HTTPS, so localhost:8080 doesn't resolve to any site block
+ * at all. This intentionally targets the dev/test stack, not
+ * production (production has no :8080 listener).
  */
 const { test, expect } = require('@playwright/test');
 
+const BASE_URL = 'https://adrian.hensler.photography:8080';
+
 test.describe('URL Filters', () => {
   test('should update URL when clicking featured toggle', async ({ page }) => {
-    await page.goto('https://adrian.hensler.photography/');
+    await page.goto(`${BASE_URL}/`);
 
     // Wait for gallery to load
     await page.waitForSelector('#gallery-grid');
 
     // Initial URL should have no query params (featured is default)
-    expect(page.url()).toBe('https://adrian.hensler.photography/');
+    expect(page.url()).toBe(`${BASE_URL}/`);
 
     // Click "all" button
     const allButton = page.locator('button[data-featured="false"]');
@@ -25,7 +34,7 @@ test.describe('URL Filters', () => {
   });
 
   test('should update URL when filtering by category', async ({ page }) => {
-    await page.goto('https://adrian.hensler.photography/');
+    await page.goto(`${BASE_URL}/`);
     await page.waitForSelector('#gallery-grid');
 
     // Click first category pill
@@ -41,7 +50,7 @@ test.describe('URL Filters', () => {
   });
 
   test('should show copy link button when filters are active', async ({ page }) => {
-    await page.goto('https://adrian.hensler.photography/');
+    await page.goto(`${BASE_URL}/`);
     await page.waitForSelector('#gallery-grid');
 
     // Click a category
@@ -56,7 +65,7 @@ test.describe('URL Filters', () => {
   });
 
   test('should restore state from URL on direct visit', async ({ page }) => {
-    await page.goto('https://adrian.hensler.photography/?featured=false&category=wildlife');
+    await page.goto(`${BASE_URL}/?featured=false&category=wildlife`);
     await page.waitForSelector('#gallery-grid');
 
     // Check that "all" button is active
