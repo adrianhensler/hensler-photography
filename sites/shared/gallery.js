@@ -338,6 +338,10 @@
 
   function startSlideshow() {
     if (slideshowPaused) return;
+    // Guard against stacking multiple intervals: this is called from
+    // mouseleave and from changeSlide()'s own timer reset, both of which
+    // can fire while a previous interval is still running.
+    clearInterval(slideshowInterval);
     slideshowInterval = setInterval(() => {
       changeSlide(1);
     }, 5000);
