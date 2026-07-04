@@ -194,7 +194,13 @@ CREATE TABLE IF NOT EXISTS ai_costs (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Indexes for performance
+"""
+
+# Indexes for performance. Run only after run_migrations() has had a chance
+# to add any columns they reference (e.g. deleted_at) — on a pre-existing
+# database the CREATE TABLE above is a no-op, so an index on a
+# migration-added column must not be created until that column exists.
+INDEXES = """
 CREATE INDEX IF NOT EXISTS idx_images_user ON images(user_id);
 CREATE INDEX IF NOT EXISTS idx_images_published ON images(published);
 CREATE INDEX IF NOT EXISTS idx_images_slug ON images(user_id, slug);
@@ -324,9 +330,6 @@ def run_migrations():
         if "deleted_at" not in image_columns:
             print("Running migration: Adding deleted_at column to images table")
             cursor.execute("ALTER TABLE images ADD COLUMN deleted_at DATETIME DEFAULT NULL")
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_images_deleted_at ON images(deleted_at)"
-            )
             print("✓ Migration complete: deleted_at column added")
 
 
@@ -338,7 +341,7 @@ def init_database():
     with get_db() as conn:
         cursor = conn.cursor()
 
-        # Execute schema
+        # Create tables (no-op on an existing database)
         cursor.executescript(SCHEMA)
 
         # Seed initial data
@@ -346,8 +349,12 @@ def init_database():
 
         print(f"✓ Database initialized at {DATABASE_PATH}")
 
-    # Run migrations for existing databases
+    # Add any columns missing from an existing database before creating
+    # indexes that reference them
     run_migrations()
+
+    with get_db() as conn:
+        conn.executescript(INDEXES)
 
 
 def get_user(username: str):
