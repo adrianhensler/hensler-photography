@@ -41,6 +41,14 @@ hensler.photography {
     Referrer-Policy "strict-origin-when-cross-origin"
     Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'"
   }
+
+  log {
+    output file /data/access.log {
+      roll_size 50mb
+      roll_keep 5
+    }
+    format json
+  }
 }
 
 liam.hensler.photography {
@@ -93,6 +101,14 @@ liam.hensler.photography {
     X-Frame-Options "DENY"
     Referrer-Policy "strict-origin-when-cross-origin"
     Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'"
+  }
+
+  log {
+    output file /data/access.log {
+      roll_size 50mb
+      roll_keep 5
+    }
+    format json
   }
 }
 
@@ -148,6 +164,14 @@ adrian.hensler.photography {
     Referrer-Policy "strict-origin-when-cross-origin"
     Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'"
   }
+
+  log {
+    output file /data/access.log {
+      roll_size 50mb
+      roll_keep 5
+    }
+    format json
+  }
 }
 
 gptresearcher.hensler.photography:4001 {
@@ -186,4 +210,12 @@ gptresearcher.hensler.photography:4001 {
 
   @health path /healthz
   respond @health "ok" 200
+
+  log {
+    output file /data/access.log {
+      roll_size 50mb
+      roll_keep 5
+    }
+    format json
+  }
 }
