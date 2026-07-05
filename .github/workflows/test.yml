@@ -35,12 +35,22 @@ jobs:
           docker volume create hensler_photography_caddy-data
           docker volume create hensler_photography_caddy-config
 
+      - name: Route site domains to the compose stack
+        # The dev Caddy routes by hostname over HTTPS. On the dev host the real
+        # domains already resolve to the machine and real certificates are shared
+        # from the production volume. A CI runner has neither, so point the
+        # domains at localhost and let Caddy mint local (self-signed) certs —
+        # playwright.config.js sets ignoreHTTPSErrors for exactly this case.
+        run: |
+          echo "127.0.0.1 hensler.photography adrian.hensler.photography liam.hensler.photography" | sudo tee -a /etc/hosts
+          sed -i '/auto_https disable_redirects/a\  local_certs' Caddyfile.local
+
       - name: Start test server
         run: |
           docker compose -f docker-compose.local.yml up -d
           # Wait for server to be ready
           sleep 5
-          curl --retry 10 --retry-delay 3 --retry-connrefused http://localhost:8080/healthz
+          curl -k --retry 10 --retry-delay 3 --retry-all-errors https://hensler.photography:8080/healthz
 
       - name: Run Playwright tests
         run: npm test
