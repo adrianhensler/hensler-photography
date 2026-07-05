@@ -1,0 +1,256 @@
+{% extends 'photographer/base.html' %}
+
+{% block page_title %}Inquiries — Hensler Photography{% endblock %}
+
+{% block styles %}
+<style>
+  .iq-admin-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .iq-admin-heading {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .iq-admin-sub {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+  }
+
+  .iq-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+  }
+
+  .iq-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .iq-table th {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .iq-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .iq-table tr:hover td {
+    background: var(--bg-hover, rgba(255,255,255,0.02));
+  }
+
+  .iq-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .iq-badge-new {
+    background: rgba(232, 213, 181, 0.12);
+    color: #e8d5b5;
+  }
+
+  .iq-badge-read {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-muted);
+  }
+
+  .iq-expand-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+  }
+
+  .iq-expand-btn:hover {
+    border-color: var(--accent, #e8d5b5);
+    color: var(--accent, #e8d5b5);
+  }
+
+  /* Transcript drawer */
+  .iq-transcript {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .iq-transcript-row {
+    margin-bottom: 10px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .iq-transcript-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .iq-transcript-role {
+    flex-shrink: 0;
+    font-weight: 600;
+    width: 48px;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    padding-top: 1px;
+  }
+
+  .iq-transcript-role.user {
+    color: #e8d5b5;
+  }
+
+  .iq-transcript-content {
+    color: var(--text-primary);
+  }
+
+  .iq-mark-read-btn {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    text-decoration: underline;
+    transition: color 0.15s;
+  }
+
+  .iq-mark-read-btn:hover {
+    color: var(--text-primary);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="iq-admin-wrap">
+  <h1 class="iq-admin-heading">Inquiries</h1>
+  <p class="iq-admin-sub">{{ inquiries|length }} total · {{ new_count }} new</p>
+
+  {% if not inquiries %}
+  <div class="iq-empty">
+    <p>No inquiries yet.</p>
+  </div>
+  {% else %}
+  <table class="iq-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Project</th>
+        <th>Timeframe</th>
+        <th>Received</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inq in inquiries %}
+      <tr id="inq-row-{{ inq.id }}">
+        <td><strong>{{ inq.name | e }}</strong></td>
+        <td>
+          <a href="mailto:{{ inq.email | e }}" style="color: var(--accent, #e8d5b5); text-decoration: none;">
+            {{ inq.email | e }}
+          </a>
+        </td>
+        <td>{{ inq.project_type | e }}</td>
+        <td>{{ inq.timeframe | e }}</td>
+        <td style="white-space: nowrap; color: var(--text-muted);">
+          {{ inq.submitted_at[:16] }}
+        </td>
+        <td>
+          <span class="iq-badge {% if inq.status == 'new' %}iq-badge-new{% else %}iq-badge-read{% endif %}" id="badge-{{ inq.id }}">
+            {{ inq.status }}
+          </span>
+        </td>
+        <td style="display: flex; gap: 6px; align-items: center;">
+          <button class="iq-expand-btn" onclick="toggleTranscript({{ inq.id }}, this)">view</button>
+          {% if inq.status == 'new' %}
+          <button class="iq-mark-read-btn" onclick="markRead({{ inq.id }}, this)">mark read</button>
+          {% endif %}
+        </td>
+      </tr>
+      <tr id="inq-detail-{{ inq.id }}" hidden>
+        <td colspan="7" style="padding: 0 14px 16px;">
+          {% set notes = [] %}
+          {% if inq.location %}{% set _ = notes.append('Location: ' ~ inq.location) %}{% endif %}
+          {% if inq.style_notes %}{% set _ = notes.append('Style: ' ~ inq.style_notes) %}{% endif %}
+          {% if inq.budget_range %}{% set _ = notes.append('Budget: ' ~ inq.budget_range) %}{% endif %}
+          {% if notes %}
+          <div style="margin-bottom: 10px; font-size: 13px; color: var(--text-muted);">
+            {% for note in notes %}
+            <span style="margin-right: 16px;">{{ note | e }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="iq-transcript" id="transcript-{{ inq.id }}">
+            {% set transcript = inq.transcript | from_json %}
+            {% for msg in transcript %}
+            <div class="iq-transcript-row">
+              <div class="iq-transcript-role {{ msg.role }}">{{ 'you' if msg.role == 'user' else 'ai' }}</div>
+              <div class="iq-transcript-content">{{ msg.content | e }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<script>
+function toggleTranscript(id, btn) {
+  var row = document.getElementById('inq-detail-' + id);
+  var hidden = row.hasAttribute('hidden');
+  if (hidden) {
+    row.removeAttribute('hidden');
+    btn.textContent = 'hide';
+  } else {
+    row.setAttribute('hidden', '');
+    btn.textContent = 'view';
+  }
+}
+
+async function markRead(id, btn) {
+  try {
+    var res = await fetch('/api/inquiries/' + id + '/read', { method: 'POST' });
+    if (res.ok) {
+      var badge = document.getElementById('badge-' + id);
+      if (badge) {
+        badge.className = 'iq-badge iq-badge-read';
+        badge.textContent = 'read';
+      }
+      btn.remove();
+    }
+  } catch (e) {
+    console.error('Could not mark as read', e);
+  }
+}
+</script>
+{% endblock %}
