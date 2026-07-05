@@ -35,3 +35,4 @@ What this makes easier, what it makes harder, what to revisit.
 ## Index
 
 - [0001](0001-gallery-default-scope-data-driven.md) — Gallery default scope is data-driven, not hardcoded featured-only
+- [0002](0002-visitor-first-gallery-redesign.md) — Visitor-first gallery redesign: delete the public filter system
