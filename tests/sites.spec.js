@@ -65,8 +65,8 @@ test.describe("Liam's portfolio site (liam.hensler.photography)", () => {
     await expect(page).toHaveTitle(/Liam Hensler Photography/);
     await expect(page.locator('h1')).toContainText(/liam hensler/i);
 
-    // Instagram link
-    const instagramLink = page.locator('a[href="https://www.instagram.com/scotiancapture"]');
+    // Instagram link (appears in both the about section and the footer)
+    const instagramLink = page.locator('a[href="https://www.instagram.com/scotiancapture"]').first();
     await expect(instagramLink).toBeVisible();
 
     await page.screenshot({ path: 'screenshots/liam-site.png', fullPage: true });

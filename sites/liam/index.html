@@ -9,13 +9,13 @@
   <!-- Google Fonts: Playfair Display for headings, Inter for body -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:wght@300;600&display=swap" rel="stylesheet">
 
   <!-- GLightbox for image lightbox -->
   <link rel="stylesheet" href="/shared/vendor/glightbox/glightbox.min.css">
 
-  <!-- Shared gallery filtering styles -->
-  <link rel="stylesheet" href="/shared/gallery.css">
+  <!-- Shared gallery styles (hero, category row, justified grid) -->
+  <link rel="stylesheet" href="/shared/gallery.css?v=20260705">
 
   <style>
     /* Base & Layout */
@@ -24,268 +24,70 @@
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background: #0a0a0a;
       color: #f5f5f5;
-      display: flex;
-      min-height: 100vh;
       line-height: 1.6;
     }
 
-    .wrap {
-      margin: auto;
-      max-width: 1000px;
-      padding: clamp(24px, 5vw, 48px);
+    /* About + contact */
+    .about {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: clamp(32px, 6vh, 72px) 24px;
       text-align: center;
     }
 
-    /* Typography - Ghost Effect Header */
-    .site-header {
-      margin: 0 0 48px;
-    }
-
-    h1 {
+    .about h2 {
       font-family: 'Playfair Display', Georgia, serif;
       font-weight: 300;
-      margin: 0;
-      font-size: clamp(56px, 8vw, 80px);
-      letter-spacing: 0.05em;
-      line-height: 1.0;
-      opacity: 0.45;
-      text-transform: lowercase;
-    }
-
-    .subtitle {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-weight: 300;
-      font-size: clamp(20px, 3vw, 28px);
+      font-size: clamp(24px, 3.4vw, 32px);
       letter-spacing: 0.08em;
-      margin: 8px 0 0;
-      opacity: 0.4;
       text-transform: lowercase;
+      opacity: 0.5;
+      margin: 0 0 18px;
     }
 
-    p {
-      margin: 0 0 24px;
-      line-height: 1.65;
-      font-size: clamp(16px, 2vw, 18px);
-      color: #f5f5f5;
-    }
-
-    /* Bio text */
-    .bio {
-      max-width: 650px;
-      margin: 0 auto 24px;
-      font-size: clamp(17px, 2.2vw, 19px);
-      line-height: 1.7;
-      color: rgba(245, 245, 245, 0.92);
-    }
-
-    /* Slideshow Carousel */
-    .slideshow {
-      margin: 48px 0;
-      position: relative;
-      max-width: 900px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .slideshow-container {
-      position: relative;
-      width: 100%;
-      height: 600px;
-      background: #0f0f0f;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,.5);
-    }
-
-    .slideshow-slide {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      transition: opacity 1s ease-in-out;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .slideshow-slide.active {
-      opacity: 1;
-      z-index: 2;
-    }
-
-    .slideshow-slide img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      display: block;
-    }
-
-    .slideshow-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(10, 10, 10, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #f5f5f5;
-      font-size: 24px;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-    }
-
-    .slideshow-nav:hover {
-      background: rgba(232, 213, 181, 0.2);
-      border-color: rgba(232, 213, 181, 0.4);
-    }
-
-    .slideshow-prev {
-      left: 12px;
-    }
-
-    .slideshow-next {
-      right: 12px;
-    }
-
-    /* Gallery Grid */
-    .gallery-heading {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
+    .about p {
       margin: 0 0 20px;
+      font-size: clamp(16px, 2vw, 18px);
+      line-height: 1.7;
+      color: rgba(245, 245, 245, 0.88);
     }
 
-    .gallery-heading h2 {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(28px, 4vw, 36px);
-      font-weight: 600;
-      margin: 0;
-      color: #f5f5f5;
-    }
-
-    .gallery-heading .filter-pills {
-      gap: 8px;
-    }
-
-    #gallery-grid {
-      column-count: 3;
-      column-gap: 20px;
-      margin: 48px 0;
-    }
-
-    .gallery-item {
-      position: relative;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #0f0f0f;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-      cursor: pointer;
-      break-inside: avoid;
-      margin-bottom: 20px;
-    }
-
-    .gallery-item.is-visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .gallery-item img {
-      width: 100%;
-      height: auto;
-      object-fit: cover;
-      display: block;
-      transition: transform 0.3s ease;
-      background: #0f0f0f;
-    }
-
-    .gallery-item:hover img {
-      transform: scale(1.05);
-    }
-
-    /* Links */
-    a.button {
-      display: inline-block;
-      padding: 12px 24px;
-      border-radius: 999px;
-      border: 1px solid rgba(245, 245, 245, 0.2);
+    .about a {
+      color: #e8d5b5;
       text-decoration: none;
-      color: #f5f5f5;
-      transition: all 0.2s ease;
-      font-weight: 500;
+      border-bottom: 1px solid rgba(232, 213, 181, 0.3);
+      transition: border-color 0.2s ease;
     }
 
-    a.button:hover {
-      background: rgba(245, 245, 245, 0.05);
-      border-color: rgba(245, 245, 245, 0.4);
+    .about a:hover {
+      border-bottom-color: #e8d5b5;
     }
 
     /* Footer */
     footer {
-      opacity: 0.5;
-      margin-top: 48px;
-      font-size: 0.9rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      #gallery-grid {
-        column-count: 2;
-        column-gap: 12px;
-      }
-
-      .slideshow-container {
-        height: 400px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      #gallery-grid {
-        column-count: 1;
-        column-gap: 0;
-      }
-
-      .slideshow-container {
-        height: 300px;
-      }
-    }
-
-    /* Loading state */
-    .loading-message {
+      padding: 32px 24px 40px;
+      font-size: 0.875rem;
+      color: #888;
+      letter-spacing: 0.03em;
       text-align: center;
-      padding: 60px 20px;
-      opacity: 0.6;
     }
 
-    .empty-gallery {
-      text-align: center;
-      padding: 80px 20px;
-      opacity: 0.7;
+    footer .elsewhere {
+      margin-bottom: 10px;
     }
 
-    .empty-gallery h2 {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-weight: 300;
-      font-size: clamp(32px, 5vw, 48px);
-      margin: 0 0 16px;
-      opacity: 0.6;
+    footer .elsewhere a {
+      color: rgba(245, 245, 245, 0.45);
+      text-decoration: none;
+      text-transform: lowercase;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+      margin: 0 8px;
     }
 
-    .empty-gallery p {
-      font-size: 18px;
-      max-width: 500px;
-      margin: 0 auto;
+    footer .elsewhere a:hover {
+      color: rgba(232, 213, 181, 0.8);
+      border-bottom-color: rgba(232, 213, 181, 0.3);
     }
   </style>
 
@@ -294,105 +96,45 @@
   <meta property="og:type" content="website">
 </head>
 <body>
-  <main class="wrap">
-    <header class="site-header">
+  <!-- Full-bleed hero slideshow with overlaid ghost title -->
+  <header class="hero">
+    <div class="slideshow-container" id="slideshow">
+      <!-- Slides inserted by gallery.js -->
+    </div>
+    <button class="slideshow-nav slideshow-prev" aria-label="Previous image">‹</button>
+    <button class="slideshow-nav slideshow-next" aria-label="Next image">›</button>
+    <div class="hero-title">
       <h1>liam hensler</h1>
-      <div class="subtitle">photography</div>
-    </header>
-
-    <img src="/assets/liam-hero.jpg" alt="Liam with camera" style="max-width: 300px; height: auto; border-radius: 16px; margin: 24px auto; display: block; box-shadow: 0 10px 30px rgba(0,0,0,.35);">
-
-    <div class="bio">
-      <p>Follow my photography journey on <a href="https://www.instagram.com/scotiancapture" rel="me noopener" target="_blank" class="button">Instagram</a></p>
+      <p class="subtitle">photography</p>
     </div>
+  </header>
 
-    <!-- Slideshow Carousel -->
-    <div class="slideshow">
-      <div id="slideshow" class="slideshow-container">
-        <div class="loading-message" id="loading-slideshow">Loading gallery...</div>
+  <main>
+    <!-- Public gallery: category row + justified grid -->
+    <section class="gallery" aria-label="Photo gallery">
+      <nav class="category-nav" id="category-nav" aria-label="Gallery categories" hidden>
+        <!-- Category links inserted by gallery.js -->
+      </nav>
+      <div class="gallery-grid" id="gallery-grid">
+        <!-- Gallery items inserted by gallery.js -->
       </div>
-      <button class="slideshow-nav slideshow-prev" aria-label="Previous image">‹</button>
-      <button class="slideshow-nav slideshow-next" aria-label="Next image">›</button>
-    </div>
+    </section>
 
-    <!-- Gallery Grid -->
-    <div class="gallery-heading">
-      <h2>Browse Gallery</h2>
-      <div class="filter-pills" id="discovery-mode-toggle" aria-label="Discovery mode">
-        <button class="pill" type="button" data-mode="browse">Browse</button>
-        <button class="pill" type="button" data-mode="refine">Refine</button>
-      </div>
-    </div>
-    <div id="gallery-grid"></div>
-
-    <!-- Category/Tag Filter Section -->
-    <div class="filter-section" id="filter-section">
-      <p class="filter-helper">Start broad, then add tags to refine.</p>
-
-      <div class="filter-zone">
-        <h3 class="filter-heading filter-zone-heading" id="intent-filter-heading">start with an intent</h3>
-        <div class="filter-group">
-          <div class="filter-pills" id="intent-pills" aria-labelledby="intent-filter-heading">
-            <button class="pill" type="button" data-intent="start">start here</button>
-            <button class="pill" type="button" data-intent="popular">popular</button>
-            <button class="pill" type="button" data-intent="landscapes">landscapes</button>
-            <button class="pill" type="button" data-intent="people">people</button>
-            <button class="pill" type="button" data-intent="recent">recent</button>
-          </div>
-        </div>
-      </div>
-
-      <details class="filter-zone" id="refine-results">
-        <summary class="filter-heading filter-zone-heading">Refine results</summary>
-
-        <div class="filter-group">
-          <h4 class="filter-heading" id="scope-filter-heading">scope</h4>
-          <div class="filter-pills" id="featured-toggle" aria-labelledby="scope-filter-heading">
-            <button class="pill" type="button" data-featured="true">featured</button>
-            <button class="pill" type="button" data-featured="false">all</button>
-          </div>
-        </div>
-
-        <div class="filter-group">
-          <h4 class="filter-heading" id="categories-filter-heading">categories</h4>
-          <div class="filter-pills" id="category-pills" aria-labelledby="categories-filter-heading">
-            <!-- Dynamically populated by JavaScript -->
-          </div>
-        </div>
-
-        <div class="filter-group">
-          <h4 class="filter-heading" id="tags-filter-heading">tags</h4>
-          <div class="filter-pills" id="tag-pills" aria-labelledby="tags-filter-heading">
-            <!-- Dynamically populated by JavaScript -->
-          </div>
-        </div>
-
-        <details class="filter-advanced">
-          <summary class="filter-advanced-toggle">Advanced filters</summary>
-          <div class="filter-group filter-group-advanced">
-            <h4 class="filter-heading" id="tag-logic-filter-heading">tag logic</h4>
-            <div class="filter-pills" id="tag-match-toggle" aria-labelledby="tag-logic-filter-heading">
-              <button class="pill" type="button" data-tag-match="any">any</button>
-              <button class="pill" type="button" data-tag-match="all">all</button>
-            </div>
-          </div>
-        </details>
-      </details>
-
-      <!-- Active Filters Display -->
-      <div class="active-filters" id="active-filters" style="display: none;">
-        <span class="filter-label">active:</span>
-        <div class="active-filter-controls">
-          <span class="active-filter-text" id="active-filter-text" aria-live="polite"></span>
-          <button class="clear-filters-btn" id="clear-filters" type="button">clear all</button>
-        </div>
-      </div>
-    </div>
-
-    <footer>
-      © <span id="y"></span> Liam Hensler
-    </footer>
+    <!-- About + contact -->
+    <section class="about" aria-label="About">
+      <h2>about</h2>
+      <p>Photography by Liam Hensler, from Nova Scotia.</p>
+      <p>Follow along on <a href="https://www.instagram.com/scotiancapture" rel="me noopener" target="_blank">Instagram</a>.</p>
+    </section>
   </main>
+
+  <footer>
+    <div class="elsewhere">
+      elsewhere:
+      <a href="https://www.instagram.com/scotiancapture" rel="me noopener" target="_blank">instagram</a>
+    </div>
+    © <span id="y"></span> Liam Hensler
+  </footer>
 
   <!-- GLightbox -->
   <script src="/shared/vendor/glightbox/glightbox.min.js"></script>
@@ -406,7 +148,7 @@
   </script>
 
   <!-- Shared gallery application (slideshow, gallery, analytics, filtering) -->
-  <script src="/shared/gallery.js?v=20260307"></script>
+  <script src="/shared/gallery.js?v=20260705"></script>
 
   <script>
     // Set copyright year
