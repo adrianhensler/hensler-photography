@@ -308,6 +308,14 @@ def run_migrations():
             cursor.execute("ALTER TABLE users ADD COLUMN ai_style TEXT DEFAULT 'balanced'")
             print("✓ Migration complete: ai_style column added")
 
+        # Photographer tracking preference (see api/migrations/003_add_photographer_tracking.py)
+        if "track_own_activity" not in user_columns:
+            print("Running migration: Adding track_own_activity column to users table")
+            cursor.execute(
+                "ALTER TABLE users ADD COLUMN track_own_activity BOOLEAN DEFAULT 1"
+            )
+            print("✓ Migration complete: track_own_activity column added")
+
         # AI-generated content tracking (per-field)
         # Default = 1 (AI-generated) since all existing content was AI-generated
         ai_tracking_columns = [
@@ -336,6 +344,11 @@ def run_migrations():
         event_columns = [row[1] for row in cursor.fetchall()]
 
         # Photographer activity tracking (see api/migrations/003_add_photographer_tracking.py)
+        if "metadata" not in event_columns:
+            print("Running migration: Adding metadata column to image_events table")
+            cursor.execute("ALTER TABLE image_events ADD COLUMN metadata TEXT")
+            print("✓ Migration complete: metadata column added")
+
         if "is_photographer" not in event_columns:
             print("Running migration: Adding is_photographer column to image_events table")
             cursor.execute(
