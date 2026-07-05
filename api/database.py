@@ -122,8 +122,6 @@ CREATE TABLE IF NOT EXISTS image_events (
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_is_photographer ON image_events(is_photographer);
-
 -- Future: Products (print sizes, pricing)
 CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -207,6 +205,7 @@ CREATE INDEX IF NOT EXISTS idx_images_slug ON images(user_id, slug);
 CREATE INDEX IF NOT EXISTS idx_images_deleted_at ON images(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_events_image ON image_events(image_id);
 CREATE INDEX IF NOT EXISTS idx_events_timestamp ON image_events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_is_photographer ON image_events(is_photographer);
 CREATE INDEX IF NOT EXISTS idx_variants_image ON image_variants(image_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp);
@@ -331,6 +330,18 @@ def run_migrations():
             print("Running migration: Adding deleted_at column to images table")
             cursor.execute("ALTER TABLE images ADD COLUMN deleted_at DATETIME DEFAULT NULL")
             print("✓ Migration complete: deleted_at column added")
+
+        # Check image_events table columns
+        cursor.execute("PRAGMA table_info(image_events)")
+        event_columns = [row[1] for row in cursor.fetchall()]
+
+        # Photographer activity tracking (see api/migrations/003_add_photographer_tracking.py)
+        if "is_photographer" not in event_columns:
+            print("Running migration: Adding is_photographer column to image_events table")
+            cursor.execute(
+                "ALTER TABLE image_events ADD COLUMN is_photographer BOOLEAN DEFAULT 0"
+            )
+            print("✓ Migration complete: is_photographer column added")
 
 
 def init_database():
