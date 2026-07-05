@@ -49,7 +49,7 @@ async function getQualifyingCategories(request) {
 }
 
 test.beforeAll(async () => {
-  const ctx = await apiRequest.newContext();
+  const ctx = await apiRequest.newContext({ ignoreHTTPSErrors: true });
   try {
     const res = await ctx.get(`${BASE_URL}/healthz`, { timeout: 5000 });
     devStackReachable = res.ok();

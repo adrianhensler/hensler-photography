@@ -16,7 +16,7 @@ const SITES = {
 let stackReachable = true;
 
 test.beforeAll(async () => {
-  const ctx = await apiRequest.newContext();
+  const ctx = await apiRequest.newContext({ ignoreHTTPSErrors: true });
   try {
     const res = await ctx.get(`${SITES.hub}/healthz`, { timeout: 5000 });
     stackReachable = res.ok();

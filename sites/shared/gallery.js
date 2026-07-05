@@ -450,14 +450,15 @@
     const params = new URLSearchParams(window.location.search);
     activeCategory = null;
 
-    // Validate category against known database values (XSS protection)
+    // Validate against the public category list (XSS protection, and
+    // sub-threshold categories fold into "all" rather than landing the
+    // visitor on an orphan view with no matching nav item)
     if (params.has('category')) {
       const requested = params.get('category');
-      const known = new Set(galleryData.map(img => img.category).filter(Boolean));
-      if (known.has(requested)) {
+      if (getPublicCategories().includes(requested)) {
         activeCategory = requested;
       } else {
-        console.warn('Invalid category from URL:', requested);
+        console.warn('Invalid or non-public category from URL:', requested);
       }
     }
 
