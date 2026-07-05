@@ -215,6 +215,13 @@
 
   // ===== SLIDESHOW LOGIC =====
 
+  // The "featured" scope is only meaningful when at least one image is featured;
+  // otherwise it produces an empty gallery under a populated slideshow.
+  function hasFeaturedImages() {
+    const dataset = window.galleryData || galleryData;
+    return dataset.some(img => img.featured);
+  }
+
   // Helper function: Get filtered dataset based on current filter state
   function getFilteredDataset() {
     const dataset = window.galleryData || galleryData;
@@ -976,7 +983,7 @@
     const normalizedIntent = intentMap[intentKey] ? intentKey : 'start';
     const config = intentMap[normalizedIntent];
 
-    featuredOnly = config.featuredOnly;
+    featuredOnly = config.featuredOnly && hasFeaturedImages();
     tagMatchMode = config.tagMatchMode || 'any';
 
     const categoryOptions = Object.keys(allCategories);
@@ -1199,7 +1206,7 @@
     activeIntent = 'start';
     activeCategory = null;
     activeTags = [];
-    featuredOnly = true;
+    featuredOnly = hasFeaturedImages();
     tagMatchMode = 'any';
     applyFilters();
   }
@@ -1367,9 +1374,9 @@
   function buildFilterURL() {
     const params = new URLSearchParams();
 
-    // Only add featured param if set to false (default is true)
-    if (!featuredOnly) {
-      params.set('featured', 'false');
+    // Only add featured param when it differs from the data-driven default
+    if (featuredOnly !== hasFeaturedImages()) {
+      params.set('featured', featuredOnly ? 'true' : 'false');
     }
 
     if (activeCategory) {
@@ -1448,7 +1455,7 @@
     const params = new URLSearchParams(window.location.search);
 
     // Reset all filters to defaults before applying URL state
-    featuredOnly = true;
+    featuredOnly = hasFeaturedImages();
     activeCategory = null;
     activeTags = [];
     tagMatchMode = 'any';
@@ -1511,7 +1518,7 @@
       tagMatchMode = 'any';
     }
 
-    const hasConfiguredFilters = featuredOnly !== true || Boolean(activeCategory) || activeTags.length > 0 || tagMatchMode !== 'any';
+    const hasConfiguredFilters = featuredOnly !== hasFeaturedImages() || Boolean(activeCategory) || activeTags.length > 0 || tagMatchMode !== 'any';
     hasUserInteracted = hasConfiguredFilters;
     const refineDetails = document.getElementById('refine-results');
     if (refineDetails) {
@@ -1656,6 +1663,12 @@
     if (!loaded || galleryData.length === 0) {
       console.warn('No published images found');
       return;
+    }
+
+    // If nothing is featured, the featured-only default would render an empty
+    // grid beneath a populated slideshow — fall back to showing all images.
+    if (!hasFeaturedImages()) {
+      featuredOnly = false;
     }
 
     // Initialize gallery UI
