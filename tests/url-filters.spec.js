@@ -21,6 +21,7 @@ const { test, expect, request: apiRequest } = require('@playwright/test');
 const BASE_URL = 'https://adrian.hensler.photography:8080';
 
 let devStackReachable = true;
+let hasPublishedImages = true;
 
 async function openRefinePanel(page) {
   await page.locator('button[data-mode="refine"]').click();
@@ -36,6 +37,15 @@ test.beforeAll(async () => {
   try {
     const res = await ctx.get(`${BASE_URL}/healthz`, { timeout: 5000 });
     devStackReachable = res.ok();
+
+    // Filtering never initializes on a gallery with no published images
+    // (e.g. a fresh CI database), so these tests need data to be meaningful
+    if (devStackReachable) {
+      const gallery = await ctx.get(`${BASE_URL}/api/gallery/published?user_id=1`, { timeout: 5000 });
+      const published = await gallery.json();
+      const images = Array.isArray(published) ? published : (published.images || []);
+      hasPublishedImages = images.length > 0;
+    }
   } catch {
     devStackReachable = false;
   } finally {
@@ -45,6 +55,7 @@ test.beforeAll(async () => {
 
 test.beforeEach(() => {
   test.skip(!devStackReachable, `dev stack not reachable at ${BASE_URL}`);
+  test.skip(!hasPublishedImages, 'no published images in gallery — filter tests need data');
 });
 
 test.describe('URL Filters', () => {
