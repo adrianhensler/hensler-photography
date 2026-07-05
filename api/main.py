@@ -148,6 +148,9 @@ app.mount("/static", StaticFiles(directory="api/static"), name="static")
 app.mount("/assets/gallery", StaticFiles(directory="/app/assets/gallery"), name="gallery")
 templates = Jinja2Templates(directory="api/templates", autoescape=True)
 
+import json as _json_module
+templates.env.filters["from_json"] = _json_module.loads
+
 
 # Health check endpoint
 @app.get("/healthz")
@@ -327,6 +330,35 @@ async def photographer_analytics(
     return templates.TemplateResponse("photographer/analytics.html", context)
 
 
+# Photographer inquiries page (protected)
+@app.get("/manage/inquiries")
+async def photographer_inquiries(
+    request: Request, current_user: User = Depends(get_current_user_for_subdomain)
+):
+    """Submitted inquiry briefs (authenticated users)"""
+    import json as _json
+    from api.database import get_db_connection as _get_db
+
+    async with _get_db() as db:
+        cursor = await db.execute(
+            "SELECT id, name, email, project_type, timeframe, location, style_notes, budget_range, transcript, status, submitted_at FROM inquiries ORDER BY submitted_at DESC"
+        )
+        rows = await cursor.fetchall()
+
+    inquiries = [dict(r) for r in rows]
+    new_count = sum(1 for i in inquiries if i["status"] == "new")
+
+    context = {
+        "request": request,
+        "title": "Inquiries",
+        "current_user": current_user,
+        "inquiries": inquiries,
+        "new_count": new_count,
+    }
+    context = add_csrf_token_to_context(request, context)
+    return templates.TemplateResponse("photographer/inquiries.html", context)
+
+
 # Photographer settings page (protected)
 @app.get("/manage/settings")
 async def photographer_settings(
@@ -373,6 +405,7 @@ from api.routes.gallery import router as gallery_router
 from api.routes.photographer import router as photographer_router
 from api.routes.analytics import router as analytics_router
 from api.routes.users import router as users_router
+from api.routes.inquiries import router as inquiries_router
 
 app.include_router(ingestion_router)
 app.include_router(auth_router)
@@ -380,6 +413,7 @@ app.include_router(gallery_router)
 app.include_router(photographer_router)
 app.include_router(analytics_router)
 app.include_router(users_router)
+app.include_router(inquiries_router)
 
 
 # Track endpoint (public - for frontend JavaScript)
