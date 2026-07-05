@@ -385,6 +385,7 @@ class TrackingEvent(BaseModel):
         "page_view",
         "image_impression",
         "scroll_depth",
+        "inquiry_click",
     ] = Field(description="Type of event being tracked")
     image_id: Optional[int] = Field(
         None, description="Image ID (optional for page_view and scroll_depth events)"
