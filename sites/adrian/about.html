@@ -39,20 +39,20 @@
       font-family: 'Playfair Display', Georgia, serif;
       font-weight: 300;
       margin: 0;
-      font-size: clamp(56px, 8vw, 80px);
+      font-size: clamp(48px, 7vw, 80px);
       letter-spacing: 0.05em;
       line-height: 1.0;
-      opacity: 0.45;
+      opacity: 0.6;
       text-transform: lowercase;
     }
 
     .subtitle {
       font-family: 'Playfair Display', Georgia, serif;
       font-weight: 300;
-      font-size: clamp(20px, 3vw, 28px);
-      letter-spacing: 0.08em;
+      font-size: clamp(18px, 2.6vw, 26px);
+      letter-spacing: 0.12em;
       margin: 8px 0 0;
-      opacity: 0.4;
+      opacity: 0.5;
       text-transform: lowercase;
     }
 
@@ -241,24 +241,37 @@
     }
 
     a.button:hover {
-      background: #1a1a1a;
-      border-color: #666;
+      background: rgba(232, 213, 181, 0.04);
+      border-color: rgba(232, 213, 181, 0.45);
       transform: translateY(-1px);
+    }
+
+    a.button:focus-visible,
+    .toggle-btn:focus-visible,
+    .nav-link:focus-visible {
+      outline: 2px solid rgba(232, 213, 181, 0.6);
+      outline-offset: 3px;
     }
 
     .button-group {
       margin: 24px 0;
     }
 
-    /* Inline Links */
-    .about-section a {
+    /* Quiet return link back to the gallery */
+    .gallery-return {
+      text-align: center;
+      margin: 8px 0 0;
+    }
+
+    /* Inline Links (scoped to paragraphs so buttons keep their own styling) */
+    .about-section p a {
       color: #e8d5b5;
       text-decoration: none;
       border-bottom: 1px solid rgba(232, 213, 181, 0.3);
       transition: border-color 0.2s ease;
     }
 
-    .about-section a:hover {
+    .about-section p a:hover {
       border-bottom-color: #e8d5b5;
     }
 
@@ -327,6 +340,7 @@
   <meta property="og:title" content="About | Adrian Hensler">
   <meta property="og:description" content="Photography from Halifax, Nova Scotia by Adrian Hensler, and a working demonstration of a website built end-to-end with AI. Open source; prints available on request.">
   <meta property="og:type" content="website">
+  <meta property="og:image" content="https://adrian.hensler.photography/assets/adrian-hero.jpg">
 </head>
 <body>
   <main class="wrap about-page">
@@ -353,6 +367,10 @@
           that workflow can actually produce.
         </p>
         <p>
+          <strong>Not the photographs.</strong> Every image in the gallery came out of a camera,
+          not a model.
+        </p>
+        <p>
           The project is open source. Browse the repository, see how everything is built,
           or fork it if you want to build something similar.
         </p>
@@ -369,10 +387,6 @@
             <span class="toggle-icon">+</span>
           </button>
           <div class="toggle-content" hidden>
-            <p>
-              <strong>Not the photographs.</strong> Every image in the gallery came out of a camera,
-              not a model.
-            </p>
             <p>
               Image descriptions, titles, and tags are drafted by Claude's Vision API when I upload
               a photo. Descriptions I haven't personally edited carry a small
@@ -437,7 +451,17 @@
           More of my archive lives on
           <a href="https://www.flickr.com/photos/adrianhensler/" rel="me noopener" target="_blank">Flickr</a>.
         </p>
+
+        <div class="button-group">
+          <a href="mailto:adrianhensler@gmail.com?subject=Print%20inquiry" class="button" id="print-inquiry">
+            Ask about a print
+          </a>
+        </div>
       </section>
+
+      <p class="gallery-return">
+        <a href="/" class="nav-link">view the gallery</a>
+      </p>
 
     </article>
 
@@ -474,6 +498,57 @@
         yearEl.textContent = new Date().getFullYear();
       }
     });
+  </script>
+
+  <!-- Minimal privacy-preserving analytics (no cookies, silent failure) -->
+  <script>
+    (function () {
+      function getSessionId() {
+        try {
+          let id = sessionStorage.getItem('analytics_session');
+          if (!id) {
+            id = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            sessionStorage.setItem('analytics_session', id);
+          }
+          return id;
+        } catch (e) {
+          return 'session_unavailable';
+        }
+      }
+
+      function track(eventType, metadata) {
+        try {
+          const payload = {
+            event_type: eventType,
+            session_id: getSessionId()
+          };
+          if (document.referrer) {
+            payload.referrer = document.referrer;
+          }
+          if (metadata) {
+            payload.metadata = JSON.stringify(metadata);
+          }
+          fetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          }).catch(() => {});
+        } catch (e) {
+          // Never disrupt the visitor experience
+        }
+      }
+
+      track('page_view');
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const inquiryButton = document.getElementById('print-inquiry');
+        if (inquiryButton) {
+          inquiryButton.addEventListener('click', () => {
+            track('inquiry_click', { surface: 'about_prints' });
+          });
+        }
+      });
+    })();
   </script>
 </body>
 </html>
