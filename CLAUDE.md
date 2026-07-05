@@ -55,6 +55,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Traceability**: Log inputs, key decisions, outputs; include run_id for async operations
 - **Auditability**: Prefer append-only history for important records
 
+### Change Management (Light)
+- **Division of labor**: Adrian provides taste, priorities, and final calls. Agents propose, implement to best practices, and **flag drift** (stale docs, red CI, guardrail conflicts) instead of silently working around it.
+- Every behavior change lands via PR. CI must be green, or the failure explained in the PR body.
+- Decisions that won't be obvious from the diff in six months get a short record in `docs/decisions/` (see its README for format and when to write one).
+- Design/brand guardrails live in `docs/reviews/photography-site-2026-03-02/final_synthesis_sonnet46.md`. Deviating from them requires Adrian's explicit sign-off, recorded in a decision record.
+- Use the **Domain Vocabulary** (below) in code, commits, docs, and discussion so it is always unambiguous which surface or user is meant.
+
 ## Code Quality Standards
 
 ### JavaScript Style
@@ -87,9 +94,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Multi-site photography portfolio using a **single Caddy container** serving three domains:
-- `hensler.photography` → sites/main/ (directory hub linking to Adrian and Liam portfolios)
-- `liam.hensler.photography` → sites/liam/ (Instagram portfolio)
-- `adrian.hensler.photography` → sites/adrian/ (Flickr portfolio)
+- `hensler.photography` → sites/main/ (the hub — brand front door linking to both portfolios)
+- `liam.hensler.photography` → sites/liam/ (Liam's portfolio site)
+- `adrian.hensler.photography` → sites/adrian/ (Adrian's portfolio site)
+
+## Project Direction
+
+**North star**: evolve from a personal portfolio experiment into a public-facing, marketable photography site for two photographers (Adrian and Liam), eventually selling prints.
+
+Sequence (each stage must earn the next):
+1. **Visitor-first galleries** — polished public UX; no admin/CMS concepts leaking into visitor-facing surfaces
+2. **Per-image permalink pages** (`/photo/{slug}`) + **inquiry-based print sales** — validate demand at near-zero build cost
+3. **Storefront** under the Hensler Photography umbrella — only after inquiries prove demand
+
+## Domain Vocabulary
+
+Canonical names — use these instead of ad-hoc alternatives:
+
+**People**
+- **Visitor** — anyone browsing the public sites. (Not "public user" or "consumer".)
+- **Photographer** — authenticated user who uploads and curates; matches the `photographer` DB role. (Not "uploading user".)
+- **Admin** — role with account/system management rights.
+
+**Sites**
+- **Hub** — `hensler.photography` (sites/main), the brand front door.
+- **Portfolio site** — `adrian.` / `liam.` subdomains.
+
+**Surfaces**
+- **Public gallery** — the visitor-facing gallery on a portfolio site, composed of the **hero slideshow**, **gallery grid**, and **lightbox**. (Not "landing gallery".)
+- **Management console** — everything under `/manage` (auth required).
+- **Gallery manager** — `/manage/gallery`, where photographers curate metadata, publish state, and featured flags. (Not "upload gallery" — upload is its own page, `/manage/upload`.)
+
+**Content states**
+- **Published** — visible to visitors. **Unpublished** — exists only in the management console.
+- **Featured** — a curation flag set in the gallery manager; seeds the hero slideshow and, when any featured images exist, the default public gallery scope.
 
 ## Backend API System
 

@@ -3,11 +3,23 @@
 This roadmap highlights major milestones and upcoming initiatives without exposing internal planning details.
 
 ## Released
-- **Sprint 1: Foundation** – Established FastAPI backend, SQLite multi-tenant schema, Docker/Caddy deployment, and seeded admin/photographer users.
-- **Sprint 2: Image Ingestion** – Added upload workflow with EXIF extraction, Claude Vision metadata generation, WebP variants, and resilient processing with user feedback.
-- **Sprint 2.5: Gallery Management** – Delivered admin gallery UI with search/filter, edit modals, publish toggles, delete/bulk actions, and supporting API endpoints.
-- **Sprint 3: Error Handling & Logging** – Implemented structured error responses, JSON logging with rich context, and user-friendly error surfacing in the upload interface.
+- **Foundation** – FastAPI backend, SQLite multi-tenant schema, Docker/Caddy deployment serving three domains from a single container.
+- **Image Ingestion** – Upload workflow with EXIF extraction, AI-assisted metadata generation, responsive WebP variants, and resilient processing with user feedback.
+- **Gallery Management** – Management console for photographers: search/filter, metadata editing, publish and featured workflows, delete/bulk actions.
+- **Error Handling & Logging** – Structured error responses, JSON logging with rich context, user-friendly error surfacing.
+- **Authentication & Roles** – JWT cookie authentication with photographer/admin roles and photographer-specific dashboards.
+- **Analytics** – Privacy-preserving engagement tracking (impressions, clicks, views, scroll depth) with a photographer-facing dashboard.
+- **Public Gallery Filtering** – Category/tag filtering with URL-synchronized state and shareable filter links.
+- **Brand Hub** – hensler.photography front door linking both photographer portfolios.
+
+## In Progress
+- **Visitor-First Gallery Redesign** – Simplify the public galleries around the photography itself: full-bleed hero, streamlined category navigation, aspect-ratio-preserving grid.
+- **Inquiry Assistant** – Conversational widget for visitor inquiries.
 
 ## Upcoming
-- **Sprint 4: Multi-User Reorganization** – Introduce authentication with JWT cookies, migrate admin to the main domain, and add photographer-specific dashboards with role-based permissions.
-- **Sprint 5: AI Chatbot Assistant** – Launch conversational assistant for querying images, suggesting tags/descriptions, and managing publishing via natural language.
+- **Per-Image Pages** – Shareable permalink pages for individual photographs with rich metadata, improving discovery and search visibility.
+- **Print Inquiries** – "Prints available — inquire" pathway on individual photographs.
+- **Hardening & Trust** – Uptime monitoring, two-factor admin authentication, and privacy consent improvements.
+
+## Later
+- **Storefront** – Print sales under the Hensler Photography umbrella, once inquiry demand is proven.
