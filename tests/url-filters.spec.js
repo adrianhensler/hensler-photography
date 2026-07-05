@@ -12,9 +12,11 @@
  * resolves to production and :8080 is closed) the suite skips instead
  * of failing.
  *
- * The scope/category/tag pills live inside the "Refine results"
- * disclosure, which is hidden in the default "browse" discovery mode —
- * tests must enter refine mode before interacting with them.
+ * The only public filter control is the #category-nav row of
+ * .category-link buttons (one per category with >= 3 published images,
+ * plus "all"). The nav is hidden when fewer than 2 categories qualify,
+ * so category-specific tests skip themselves when the dev DB doesn't
+ * have enough data to show it.
  */
 const { test, expect, request: apiRequest } = require('@playwright/test');
 
@@ -23,17 +25,31 @@ const BASE_URL = 'https://adrian.hensler.photography:8080';
 let devStackReachable = true;
 let hasPublishedImages = true;
 
-async function openRefinePanel(page) {
-  await page.locator('button[data-mode="refine"]').click();
-  const details = page.locator('#refine-results');
-  if (!(await details.evaluate((el) => el.open))) {
-    // "> summary" avoids matching the nested "Advanced filters" disclosure
-    await details.locator('> summary').click();
+/**
+ * Fetch published images and compute category -> count for categories
+ * with >= 3 published images (the same threshold gallery.js uses to
+ * decide whether a category qualifies for the nav).
+ */
+async function getQualifyingCategories(request) {
+  const response = await request.get(`${BASE_URL}/api/gallery/published?user_id=1`);
+  const published = await response.json();
+  const images = Array.isArray(published) ? published : (published.images || []);
+
+  const counts = {};
+  for (const img of images) {
+    if (!img.category) continue;
+    counts[img.category] = (counts[img.category] || 0) + 1;
   }
+
+  const qualifying = Object.entries(counts)
+    .filter(([, count]) => count >= 3)
+    .sort((a, b) => b[1] - a[1]);
+
+  return { images, qualifying };
 }
 
 test.beforeAll(async () => {
-  const ctx = await apiRequest.newContext();
+  const ctx = await apiRequest.newContext({ ignoreHTTPSErrors: true });
   try {
     const res = await ctx.get(`${BASE_URL}/healthz`, { timeout: 5000 });
     devStackReachable = res.ok();
@@ -59,86 +75,62 @@ test.beforeEach(() => {
 });
 
 test.describe('URL Filters', () => {
-  test('should update URL when clicking featured toggle', async ({ page, request }) => {
-    // The default scope is data-driven: featured-only when featured images
-    // exist, otherwise all images. Toggling away from the default must be
-    // reflected in the URL; the default itself adds no query param.
-    const response = await request.get(`${BASE_URL}/api/gallery/published?user_id=1`);
-    const published = await response.json();
-    const images = Array.isArray(published) ? published : (published.images || []);
-    const hasFeatured = images.some((img) => img.featured);
-
+  test('should load gallery with no filter params by default', async ({ page }) => {
     await page.goto(`${BASE_URL}/`);
-
-    // Wait for gallery to load
     await page.waitForSelector('#gallery-grid');
+    await page.waitForSelector('.gallery-item');
 
-    // Initial URL should have no query params (default scope is implicit)
     expect(page.url()).toBe(`${BASE_URL}/`);
 
-    // Scope pills are inside the refine panel
-    await openRefinePanel(page);
+    const itemCount = await page.locator('.gallery-item').count();
+    expect(itemCount).toBeGreaterThan(0);
 
-    // Click the pill for the non-default scope
-    const nonDefault = hasFeatured ? 'false' : 'true';
-    const toggleButton = page.locator(`button[data-featured="${nonDefault}"]`);
-    await toggleButton.click();
-
-    // URL should update to include the non-default scope
-    await page.waitForTimeout(500);
-    expect(page.url()).toContain(`featured=${nonDefault}`);
-
-    console.log('✅ Featured toggle updates URL correctly');
+    console.log('✅ Gallery loads with no filter params by default');
   });
 
-  test('should update URL when filtering by category', async ({ page }) => {
+  test('should update URL when clicking a category', async ({ page, request }) => {
+    const { qualifying } = await getQualifyingCategories(request);
+    test.skip(qualifying.length < 2, 'fewer than 2 qualifying categories — category nav is hidden');
+
     await page.goto(`${BASE_URL}/`);
     await page.waitForSelector('#gallery-grid');
 
-    await openRefinePanel(page);
+    // First .category-link is "all"; click the first real category button
+    const categoryButton = page.locator('#category-nav .category-link').nth(1);
+    await categoryButton.click();
 
-    // Click first category pill
-    const categoryPill = page.locator('#category-pills .pill').first();
-    await categoryPill.click();
-
-    // URL should include category parameter
     await page.waitForTimeout(500);
     expect(page.url()).toContain('category=');
 
     console.log('✅ Category filter updates URL correctly');
   });
 
-  test('should show copy link button when filters are active', async ({ page }) => {
-    await page.goto(`${BASE_URL}/`);
-    await page.waitForSelector('#gallery-grid');
+  test('should restore category filter from URL on direct visit', async ({ page, request }) => {
+    const { qualifying } = await getQualifyingCategories(request);
+    test.skip(qualifying.length === 0, 'no qualifying categories to restore from URL');
 
-    await openRefinePanel(page);
+    const [category, count] = qualifying[0];
 
-    // Click a category
-    await page.locator('#category-pills .pill').first().click();
-    await page.waitForTimeout(500);
+    await page.goto(`${BASE_URL}/?category=${category}`);
+    await page.waitForSelector('.gallery-item');
 
-    // Copy link button should appear
-    const copyButton = page.locator('.copy-filter-link');
-    await expect(copyButton).toBeVisible();
+    const itemCount = await page.locator('.gallery-item').count();
+    expect(itemCount).toBe(count);
 
-    console.log('✅ Copy link button appears correctly');
+    console.log('✅ URL category filter restores correctly on direct visit');
   });
 
-  test('should restore state from URL on direct visit', async ({ page }) => {
-    // mode=refine so the scope pills and active-filter chips are visible
-    await page.goto(`${BASE_URL}/?featured=false&category=wildlife&mode=refine`);
-    await page.waitForSelector('#gallery-grid');
+  test('should ignore an invalid category from URL', async ({ page, request }) => {
+    const response = await request.get(`${BASE_URL}/api/gallery/published?user_id=1`);
+    const published = await response.json();
+    const images = Array.isArray(published) ? published : (published.images || []);
 
-    // Check that "all" button is active
-    const allButton = page.locator('button[data-featured="false"]');
-    await expect(allButton).toHaveClass(/active/);
+    await page.goto(`${BASE_URL}/?category=not-a-real-category-xyz`);
+    await page.waitForSelector('.gallery-item');
 
-    // Check that active filter text is shown
-    const activeFilters = page.locator('#active-filter-text');
-    const filterText = await activeFilters.textContent();
-    expect(filterText).toContain('wildlife');
+    const itemCount = await page.locator('.gallery-item').count();
+    expect(itemCount).toBe(images.length);
 
-    console.log('✅ URL state restores correctly on direct visit');
+    console.log('✅ Invalid category from URL is ignored');
   });
 });

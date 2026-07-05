@@ -256,12 +256,12 @@ Pydantic models enforce these formats:
 
 ### Gallery Filtering & URL Synchronization
 
-- **Featured/All Toggle**: Default = featured only; `?featured=false` for all
-- **Category Filters**: `?category=portrait`
-- **Tag Filters**: `?tag=nature` or `?tags=nature,landscape,wildlife`
-- All filter state synced to URL; browser history (back/forward) supported
-- Copy Link button appears when filters are active
-- Hero slideshow always uses full published dataset (independent of gallery filters); 70% weighted toward featured images
+- **Category row is the only public filter**: `?category=wildlife`; "all" (no param) is the default
+- A category earns a public link only with ≥ 3 published images; the row hides entirely below 2 qualifying categories
+- Category state synced to URL; browser history (back/forward) supported
+- URL categories are validated against known database values (XSS protection); invalid values fall back to all
+- Hero slideshow is independent of the category filter: featured images when ≥ 3 exist, otherwise all published
+- Tags are lightbox metadata only — never public filter controls
 
 ### Environment Variables
 
@@ -295,22 +295,26 @@ for row in conn.execute('SELECT id, title, published FROM images WHERE user_id =
 "
 ```
 
-## Frontend: Adrian Site Architecture
+## Frontend: Public Gallery Architecture
 
-- **Entry point**: `sites/adrian/index.html`
-- **Gallery logic**: `sites/shared/gallery.js` (IIFE module, 1692 lines)
-- **API-driven**: Gallery loads from `/api/gallery/published?user_id=1` on page load
+Both portfolio sites share the same visitor-first page structure:
+hero → category row → justified grid → about/contact → footer.
+
+- **Entry points**: `sites/adrian/index.html`, `sites/liam/index.html`
+- **Gallery logic**: `sites/shared/gallery.js` (IIFE module, ~670 lines)
+- **API-driven**: Gallery loads from `/api/gallery/published?user_id=N` on page load
 - **Responsive images**: srcset with WebP variants (400px/800px/1200px)
-- **Ghost typography**: Playfair Display, 300 weight, 0.45 opacity, lowercase
-- **Slideshow**: Auto-cycles 5s with large (1200px) variants, pauses on hover
-- **Gallery grid**: Thumbnail variants (400px), 3→2→1 responsive columns
-- **Lightbox**: GLightbox using large (1200px) variants
+- **Hero**: full-bleed slideshow (~82vh, `object-fit: cover`), ghost-typography title overlaid, deterministic first slide, auto-cycles 5s, pauses on hover, skeleton shimmer while loading
+- **Ghost typography**: Playfair Display, 300 weight, lowercase, overlaid on the hero
+- **Gallery grid**: justified flexbox rows sized by API `aspect_ratio` (thumbnail/medium srcset); stacks full-width below 640px
+- **Lightbox**: GLightbox (self-hosted at `sites/shared/vendor/glightbox/` — production CSP blocks CDNs) using large (1200px) variants; shows title, caption, EXIF-when-shared, category/tag metadata
 - **Analytics**: Tracks impressions, clicks, views, scroll depth, duration
 - **No frameworks**: Pure vanilla HTML/CSS/JS, no build process
 
 **When making changes**:
 - Preserve aspect ratios in gallery (hard requirement)
 - Image URLs come from the API — do not hardcode them
+- Keep UI chrome secondary to the photography (brand guardrail); no admin/CMS concepts (featured flags, tag pills) in visitor-facing surfaces
 - Test slideshow cycling and manual navigation
 - Verify responsive breakpoints (mobile, tablet, desktop)
 - Check Network tab: WebP variants loading, `/api/track` events firing
@@ -320,22 +324,15 @@ for row in conn.execute('SELECT id, title, published FROM images WHERE user_id =
 **File**: `sites/shared/gallery.js` — IIFE module, used by both adrian and liam sites.
 
 **Module Structure**:
-1. **Configuration & State**: Global variables, filter state
+1. **Configuration & State**: `window.GALLERY_CONFIG`, dataset + category state
 2. **Security Helpers**: `escapeHtml()` XSS prevention
-3. **Utility Functions**: `applyFilterCriteria()`, `buildLightboxDescription()`, `createGalleryItem()`
-4. **Slideshow Logic**: Hero carousel, auto-advance
-5. **Gallery Grid Logic**: Thumbnail grid, lazy loading
-6. **Analytics Tracking**: Event tracking (impression, click, scroll)
-7. **Gallery Filtering**: Featured/category/tag filters, URL sync
-8. **Main Initialization + Public API**: `window.GalleryApp`
-
-**Key Functions**:
-- `escapeHtml(unsafe)` — XSS prevention for all user input
-- `applyFilterCriteria(dataset, criteria)` — Filter by featured/category/tags
-- `buildLightboxDescription(imageData, options)` — Builds EXIF/caption HTML
-- `createGalleryItem(imageData, index, options)` — Creates thumbnail element
-- `applyFilters()` / `rerenderGallery(filteredData)` — Filter + re-render
-- `initSlideshow()` / `initGallery()` — Initialize components
+3. **Lightbox Description**: `buildLightboxDescription()` — caption/EXIF/metadata HTML
+4. **Gallery Grid**: `createGalleryItem()`, `renderGallery()` — justified grid from `aspect_ratio`
+5. **Lightbox**: GLightbox lifecycle (`ensureLightboxReady`, rebuild on rerender)
+6. **Slideshow**: hero carousel — featured images when ≥ 3 exist, else all published
+7. **Category Filtering**: `filterByCategory()`, URL sync, popstate handling
+8. **Analytics Tracking**: delegated event tracking (impression, click, scroll)
+9. **Main Initialization + Public API**: `window.GalleryApp`
 
 **Modifying gallery.js**: Changes affect both sites. Use DocumentFragment for batch DOM inserts. All user input (URL params, DB values) must be escaped.
 
