@@ -17,8 +17,11 @@ module.exports = defineConfig({
   reporter: [['html', { open: 'never' }]],
 
   use: {
-    // Base URL for local testing
-    baseURL: 'http://localhost:8080',
+    // Specs use absolute domain URLs (the dev Caddy routes by hostname on
+    // :8080 over HTTPS; plain localhost matches no site block). In CI the
+    // workflow points the domains at 127.0.0.1 with Caddy local_certs, so
+    // certificates are self-signed there.
+    ignoreHTTPSErrors: true,
 
     // Screenshot on failure
     screenshot: 'only-on-failure',

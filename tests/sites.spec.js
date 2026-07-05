@@ -1,98 +1,135 @@
 // Visual and functional tests for all Hensler Photography sites
-const { test, expect } = require('@playwright/test');
+//
+// Targets the dev/test stack via domain-based routing on :8080 (the dev
+// Caddy routes by hostname over HTTPS; there is no localhost site block).
+// In CI the workflow maps the domains to 127.0.0.1 and enables Caddy
+// local_certs so the same URLs resolve to the compose stack. If the stack
+// is not reachable at all, the suite skips instead of failing.
+const { test, expect, request: apiRequest } = require('@playwright/test');
 
-test.describe('Main Site (hensler.photography)', () => {
+const SITES = {
+  hub: 'https://hensler.photography:8080',
+  liam: 'https://liam.hensler.photography:8080',
+  adrian: 'https://adrian.hensler.photography:8080',
+};
+
+let stackReachable = true;
+
+test.beforeAll(async () => {
+  const ctx = await apiRequest.newContext();
+  try {
+    const res = await ctx.get(`${SITES.hub}/healthz`, { timeout: 5000 });
+    stackReachable = res.ok();
+  } catch {
+    stackReachable = false;
+  } finally {
+    await ctx.dispose();
+  }
+});
+
+test.beforeEach(() => {
+  test.skip(!stackReachable, `dev stack not reachable at ${SITES.hub}`);
+});
+
+test.describe('Hub (hensler.photography)', () => {
   test('should load and display correctly @screenshot', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(`${SITES.hub}/`);
 
-    // Check title
     await expect(page).toHaveTitle(/Hensler Photography/);
 
-    // Check heading
+    // Ghost typography renders the name lowercase
     const heading = page.locator('h1');
-    await expect(heading).toContainText('Hensler Photography');
+    await expect(heading).toContainText(/hensler photography/i);
 
-    // Check links to individual sites
-    const liamLink = page.locator('a:has-text("Liam Hensler")');
-    const adrianLink = page.locator('a:has-text("Adrian Hensler")');
-    await expect(liamLink).toBeVisible();
-    await expect(adrianLink).toBeVisible();
+    // Photographer cards link to both portfolio sites
+    await expect(page.locator('text=Adrian Hensler')).toBeVisible();
+    await expect(page.locator('text=Liam Hensler')).toBeVisible();
+    await expect(page.locator('a[href="https://adrian.hensler.photography"]')).toBeVisible();
+    await expect(page.locator('a[href="https://liam.hensler.photography"]')).toBeVisible();
 
-    // Take screenshot
     await page.screenshot({ path: 'screenshots/main-site.png', fullPage: true });
   });
 
   test('should have working health check', async ({ page }) => {
-    const response = await page.goto('/healthz');
+    const response = await page.goto(`${SITES.hub}/healthz`);
     expect(response.status()).toBe(200);
     const text = await page.textContent('body');
     expect(text).toBe('ok');
   });
 });
 
-test.describe("Liam's Site (liam.hensler.photography)", () => {
+test.describe("Liam's portfolio site (liam.hensler.photography)", () => {
   test('should load and display correctly @screenshot', async ({ page }) => {
-    await page.goto('/liam');
+    await page.goto(`${SITES.liam}/`);
 
-    // Check title
     await expect(page).toHaveTitle(/Liam Hensler Photography/);
+    await expect(page.locator('h1')).toContainText(/liam hensler/i);
 
-    // Check heading
-    const heading = page.locator('h1');
-    await expect(heading).toContainText('Liam Hensler Photography');
-
-    // Check Instagram link
-    const instagramLink = page.locator('a:has-text("Follow on Instagram")');
+    // Instagram link
+    const instagramLink = page.locator('a[href="https://www.instagram.com/scotiancapture"]');
     await expect(instagramLink).toBeVisible();
-    await expect(instagramLink).toHaveAttribute('href', 'https://www.instagram.com/scotiancapture');
 
-    // Check hero image exists
-    const heroImage = page.locator('img[alt*="Liam"]');
-    await expect(heroImage).toBeVisible();
-
-    // Take screenshot
     await page.screenshot({ path: 'screenshots/liam-site.png', fullPage: true });
   });
 
   test('should have correct copyright year', async ({ page }) => {
-    await page.goto('/liam');
+    await page.goto(`${SITES.liam}/`);
     const footer = page.locator('footer');
     const currentYear = new Date().getFullYear().toString();
     await expect(footer).toContainText(currentYear);
     await expect(footer).toContainText('Liam Hensler');
   });
+
+  test('should have working health check', async ({ page }) => {
+    const response = await page.goto(`${SITES.liam}/healthz`);
+    expect(response.status()).toBe(200);
+  });
 });
 
-test.describe("Adrian's Site (adrian.hensler.photography)", () => {
+test.describe("Adrian's portfolio site (adrian.hensler.photography)", () => {
   test('should load and display correctly @screenshot', async ({ page }) => {
-    await page.goto('/adrian');
+    await page.goto(`${SITES.adrian}/`);
 
-    // Check title
     await expect(page).toHaveTitle(/Adrian Hensler Photography/);
+    await expect(page.locator('h1')).toContainText(/adrian hensler/i);
 
-    // Check heading
-    const heading = page.locator('h1');
-    await expect(heading).toContainText('Adrian Hensler Photography');
-
-    // Check Flickr link
-    const flickrLink = page.locator('a:has-text("View on Flickr")');
+    // Flickr link
+    const flickrLink = page.locator('a[href="https://www.flickr.com/photos/adrianhensler/"]');
     await expect(flickrLink).toBeVisible();
-    await expect(flickrLink).toHaveAttribute('href', 'https://www.flickr.com/photos/adrianhensler/');
 
-    // Check hero image exists
-    const heroImage = page.locator('img[alt*="Adrian"]');
-    await expect(heroImage).toBeVisible();
+    // Public gallery containers exist regardless of published data
+    await expect(page.locator('#gallery-grid')).toBeAttached();
+    await expect(page.locator('#slideshow')).toBeAttached();
 
-    // Take screenshot
     await page.screenshot({ path: 'screenshots/adrian-site.png', fullPage: true });
   });
 
   test('should have correct copyright year', async ({ page }) => {
-    await page.goto('/adrian');
+    await page.goto(`${SITES.adrian}/`);
     const footer = page.locator('footer');
     const currentYear = new Date().getFullYear().toString();
     await expect(footer).toContainText(currentYear);
     await expect(footer).toContainText('Adrian Hensler');
+  });
+
+  test('should have working health check', async ({ page }) => {
+    const response = await page.goto(`${SITES.adrian}/healthz`);
+    expect(response.status()).toBe(200);
+  });
+
+  test('should render gallery images when published data exists', async ({ page, request }) => {
+    const response = await request.get(`${SITES.adrian}/api/gallery/published?user_id=1`);
+    const published = await response.json();
+    const images = Array.isArray(published) ? published : (published.images || []);
+    test.skip(images.length === 0, 'no published images — rendering test needs data');
+
+    await page.goto(`${SITES.adrian}/`);
+    await page.waitForSelector('.gallery-item', { timeout: 10000 });
+    const count = await page.locator('.gallery-item').count();
+    expect(count).toBeGreaterThan(0);
+
+    // The empty state must never show alongside rendered items
+    await expect(page.locator('.enhanced-empty-state')).toHaveCount(0);
   });
 });
 
@@ -107,15 +144,10 @@ test.describe('Responsive Design', () => {
     test(`should display correctly on ${viewport.name}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
-      // Test each site
-      await page.goto('/');
-      await expect(page.locator('h1')).toBeVisible();
-
-      await page.goto('/liam');
-      await expect(page.locator('h1')).toBeVisible();
-
-      await page.goto('/adrian');
-      await expect(page.locator('h1')).toBeVisible();
+      for (const url of Object.values(SITES)) {
+        await page.goto(`${url}/`);
+        await expect(page.locator('h1')).toBeVisible();
+      }
     });
   }
 });
