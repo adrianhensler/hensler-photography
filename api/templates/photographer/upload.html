@@ -16,7 +16,7 @@
 
         .header {
             background: var(--bg-primary);
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid var(--border-light);
             padding: 1rem 2rem;
         }
 
@@ -47,7 +47,7 @@
 
         .upload-area {
             background: var(--bg-primary);
-            border: 2px dashed #d1d1d6;
+            border: 2px dashed var(--border-medium);
             border-radius: 12px;
             padding: 3rem;
             text-align: center;
@@ -160,18 +160,18 @@
         }
 
         .status-processing {
-            background: #fff3cd;
-            color: #856404;
+            background: var(--warning-bg);
+            color: var(--warning-text);
         }
 
         .status-success {
-            background: #d4edda;
-            color: #155724;
+            background: var(--success-bg);
+            color: var(--success-text);
         }
 
         .status-error {
-            background: #f8d7da;
-            color: #721c24;
+            background: var(--error-bg);
+            color: var(--error-text);
         }
 
         .ai-metadata {
@@ -197,10 +197,20 @@
         .ai-metadata textarea {
             width: 100%;
             padding: 0.5rem;
-            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
             border-radius: 6px;
             font-family: inherit;
             font-size: 0.85rem;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .ai-metadata input:focus,
+        .ai-metadata textarea:focus {
+            outline: none;
+            background: var(--bg-primary);
+            border-color: var(--accent);
         }
 
         .ai-metadata textarea {
@@ -239,8 +249,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 0.5rem;
             padding: 0.35rem 0;
-            border-bottom: 1px solid #f5f5f7;
+            border-bottom: 1px solid var(--bg-secondary);
         }
 
         .meta-row:last-child {
@@ -259,6 +270,21 @@
             font-family: 'SF Mono', Monaco, monospace;
         }
 
+        input.meta-value {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 0.25rem;
+            flex: 1;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        input.meta-value:focus {
+            outline: none;
+            background: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
         .exposure-triangle {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -269,7 +295,7 @@
         .exposure-item {
             text-align: center;
             padding: 0.5rem;
-            background: linear-gradient(135deg, #f5f5f7 0%, #ffffff 100%);
+            background: var(--bg-secondary);
             border-radius: 6px;
         }
 
@@ -285,6 +311,22 @@
             font-weight: 600;
             color: var(--text-primary);
             font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        input.exposure-value {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 0.25rem;
+            text-align: center;
+            width: 100%;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        input.exposure-value:focus {
+            outline: none;
+            background: var(--bg-primary);
+            border-color: var(--accent);
         }
 
         .print-sizes {
@@ -303,6 +345,11 @@
             font-weight: 500;
         }
 
+        [data-theme="dark"] .print-size {
+            background: rgba(56, 189, 248, 0.15);
+            color: #7dd3fc;
+        }
+
         .ai-badge {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -316,7 +363,7 @@
         .progress-bar {
             width: 100%;
             height: 4px;
-            background: #e0e0e0;
+            background: var(--border-light);
             border-radius: 2px;
             overflow: hidden;
             margin-top: 0.5rem;
@@ -334,11 +381,11 @@
         }
 
         .progress-fill.processing {
-            background: #ff9500;
+            background: var(--warning);
         }
 
         .progress-fill.complete {
-            background: #34c759;
+            background: var(--success);
         }
 
         .progress-stage {
@@ -386,7 +433,7 @@
 
         .batch-controls button {
             padding: 0.5rem 1rem;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-light);
             background: var(--bg-primary);
             border-radius: 6px;
             cursor: pointer;
@@ -409,23 +456,23 @@
         }
 
         .batch-controls button.success {
-            background: #34c759;
+            background: var(--success);
             color: white;
             border: none;
         }
 
         .batch-controls button.success:hover {
-            background: #28a745;
+            background: var(--success-border);
         }
 
         .batch-controls button.danger {
-            background: #ff3b30;
+            background: var(--error);
             color: white;
             border: none;
         }
 
         .batch-controls button.danger:hover {
-            background: #dc3545;
+            background: var(--error-border);
         }
 
         .actions {
@@ -437,7 +484,7 @@
         .actions button {
             flex: 1;
             padding: 0.5rem;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-light);
             background: var(--bg-primary);
             border-radius: 6px;
             cursor: pointer;
@@ -449,23 +496,23 @@
         }
 
         .actions button.publish {
-            background: #34c759;
+            background: var(--success);
             color: white;
             border: none;
         }
 
         .actions button.publish:hover {
-            background: #28a745;
+            background: var(--success-border);
         }
 
         .actions button.delete {
-            background: #ff3b30;
+            background: var(--error);
             color: white;
             border: none;
         }
 
         .actions button.delete:hover {
-            background: #dc3545;
+            background: var(--error-border);
         }
 
         /* Toast Notification System */
@@ -493,19 +540,19 @@
         }
 
         .toast.toast-error {
-            border-left: 4px solid #ff3b30;
+            border-left: 4px solid var(--error);
         }
 
         .toast.toast-warning {
-            border-left: 4px solid #ff9500;
+            border-left: 4px solid var(--warning);
         }
 
         .toast.toast-success {
-            border-left: 4px solid #34c759;
+            border-left: 4px solid var(--success);
         }
 
         .toast.toast-info {
-            border-left: 4px solid #06c;
+            border-left: 4px solid var(--accent);
         }
 
         .toast-icon {
@@ -513,9 +560,9 @@
             flex-shrink: 0;
         }
 
-        .toast-error .toast-icon { color: #ff3b30; }
-        .toast-warning .toast-icon { color: #ff9500; }
-        .toast-success .toast-icon { color: #34c759; }
+        .toast-error .toast-icon { color: var(--error); }
+        .toast-warning .toast-icon { color: var(--warning); }
+        .toast-success .toast-icon { color: var(--success); }
         .toast-info .toast-icon { color: var(--accent); }
 
         .toast-content {
@@ -539,7 +586,7 @@
         .toast-details {
             margin-top: 8px;
             padding-top: 8px;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid var(--border-light);
         }
 
         .toast-details-toggle {
@@ -668,14 +715,14 @@
 
         .user-dropdown-trigger:hover {
             background: var(--bg-tertiary);
-            border-color: var(--border-color);
+            border-color: var(--border-medium);
         }
 
         .user-dropdown-trigger .avatar {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            background: var(--brand-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -768,11 +815,11 @@
         }
 
         .user-dropdown-menu button.danger {
-            color: #dc3545;
+            color: var(--error);
         }
 
         .user-dropdown-menu button.danger:hover {
-            background: rgba(220, 53, 69, 0.1);
+            background: var(--danger-hover);
         }
 
 
@@ -1181,8 +1228,7 @@
                                        value="${escapeHtml(exif.aperture || '')}"
                                        placeholder="f/2.8"
                                        pattern="f/\\d+(\\.\\d+)?"
-                                       title="Format: f/2.8 or f/1.4"
-                                       style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; text-align:center; width:100%; font-family:'SF Mono',Monaco,monospace;">
+                                       title="Format: f/2.8 or f/1.4">
                             </div>
                             <div class="exposure-item">
                                 <div class="exposure-label">Shutter</div>
@@ -1190,8 +1236,7 @@
                                        value="${escapeHtml(exif.shutter_speed || '')}"
                                        placeholder="1/250s"
                                        pattern="(\\d+/\\d+s?)|(\\d+(\\.\\d+)?&quot;)|(\\d+(\\.\\d+)?s)"
-                                       title="Format: 1/250s, 1/1000, or 1&quot;"
-                                       style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; text-align:center; width:100%; font-family:'SF Mono',Monaco,monospace;">
+                                       title="Format: 1/250s, 1/1000, or 1&quot;">
                             </div>
                             <div class="exposure-item">
                                 <div class="exposure-label">ISO</div>
@@ -1199,8 +1244,7 @@
                                        value="${escapeHtml(exif.iso || '')}"
                                        placeholder="400"
                                        pattern="\\d+"
-                                       title="Numeric value only (e.g., 100, 400, 3200)"
-                                       style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; text-align:center; width:100%; font-family:'SF Mono',Monaco,monospace;">
+                                       title="Numeric value only (e.g., 100, 400, 3200)">
                             </div>
                         </div>
                     </div>
@@ -1214,15 +1258,13 @@
                             <span class="meta-label">Camera</span>
                             <input type="text" class="meta-value" id="camera-${fileId}"
                                    value="${escapeHtml(exif.camera || '')}"
-                                   placeholder="Canon EOS R5"
-                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                                   placeholder="Canon EOS R5">
                         </div>
                         <div class="meta-row">
                             <span class="meta-label">Lens</span>
                             <input type="text" class="meta-value" id="lens-${fileId}"
                                    value="${escapeHtml(exif.lens || '')}"
-                                   placeholder="RF 24-70mm f/2.8"
-                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                                   placeholder="RF 24-70mm f/2.8">
                         </div>
                         <div class="meta-row">
                             <span class="meta-label">Focal Length</span>
@@ -1230,8 +1272,7 @@
                                    value="${escapeHtml(exif.focal_length || '')}"
                                    placeholder="50mm"
                                    pattern="\\d+(-\\d+)?mm"
-                                   title="Format: 50mm or 24-70mm"
-                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                                   title="Format: 50mm or 24-70mm">
                         </div>
                     </div>
                 `;
@@ -1244,8 +1285,7 @@
                             <span class="meta-label">GPS</span>
                             <input type="text" class="meta-value" id="location-${fileId}"
                                    value="${escapeHtml(exif.location || '')}"
-                                   placeholder="37.7749° N, 122.4194° W or leave blank"
-                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                                   placeholder="37.7749° N, 122.4194° W or leave blank">
                         </div>
                     </div>
                 `;
@@ -1258,8 +1298,7 @@
                             <span class="meta-label">Captured</span>
                             <input type="text" class="meta-value" id="date_taken-${fileId}"
                                    value="${escapeHtml(exif.date_taken || '')}"
-                                   placeholder="2024-01-15 14:30:00"
-                                   style="border:1px solid #d1d1d6; border-radius:4px; padding:0.25rem; font-family:'SF Mono',Monaco,monospace; flex:1;">
+                                   placeholder="2024-01-15 14:30:00">
                         </div>
                     </div>
                 `;
