@@ -1,56 +1,60 @@
 /* Design System Variables */
 /* Hensler Photography Admin Interface */
+/* Palette: "easy." console retheme — cotton-rag (light) / darkroom (dark) */
+/* Token NAMES are kept stable (other templates depend on them); only the */
+/* VALUES change to the warm-neutral palette from sites/main/design.html. */
+/* See docs/decisions/0003-console-retheme-easy.md */
 
 :root {
-    /* Brand Colors */
-    --brand-blue: #0066cc;
-    --brand-blue-dark: #0052a3;
-    --brand-gradient: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+    /* Brand Colors (cotton rag: bronze accent, sand-to-bronze gradient) */
+    --brand-blue: #7d6540;
+    --brand-blue-dark: #5d4a2c;
+    --brand-gradient: linear-gradient(135deg, #e8d5b5 0%, #7d6540 100%);
     --avatar-gradient: var(--brand-gradient);
 
     /* Accent Palette (shared across manage experience) */
     --accent: var(--brand-blue);
-    --accent-hover: #0077ed;
-    --success: #34c759;
-    --warning: #ff9500;
-    --error: #ff3b30;
-    --modal-backdrop: rgba(0, 0, 0, 0.4);
+    --accent-hover: #5d4a2c;
+    --success: #43714f;
+    --warning: #a8722e;
+    --error: #a84a3f;
+    --modal-backdrop: rgba(38, 33, 25, 0.4);
 
-    /* Light Theme Colors */
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f7;
-    --bg-tertiary: #e8e8ed;
-    --text-primary: #1a1a1a;
-    --text-secondary: #666666;
-    --text-tertiary: #999999;
-    --border-light: #e0e0e0;
-    --border-medium: #cccccc;
+    /* Light Theme Colors: cotton rag */
+    --bg-primary: #f6f3ec;
+    --bg-secondary: #efeade;
+    --bg-tertiary: #e3dbc9;
+    --text-primary: #262119;
+    --text-secondary: #71685a;
+    --text-tertiary: #a2977f;
+    --border-light: #e3dbc9;
+    --border-medium: #d0c4a8;
 
     /* Interactive States */
-    --hover-bg: #f0f0f5;
-    --active-bg: #e8e8ed;
-    --focus-ring: rgba(0, 102, 204, 0.1);
-    --focus-border: #0066cc;
+    --hover-bg: #e9e1cd;
+    --active-bg: #e3dbc9;
+    --focus-ring: rgba(200, 168, 116, 0.28);
+    --focus-border: #7d6540;
 
     /* Semantic Colors */
-    --success-bg: #e6f4ea;
-    --success-text: #1e7e34;
-    --success-border: #28a745;
-    --warning-bg: #fff3cd;
-    --warning-text: #856404;
-    --warning-border: #ffc107;
-    --error-bg: #fee;
-    --error-text: #c33;
-    --error-border: #dc3545;
-    --danger-bg: #fee;
-    --danger-text: #c33;
-    --danger-hover: #fdd;
+    --success-bg: rgba(74, 124, 89, 0.12);
+    --success-text: #43714f;
+    --success-border: #3a6144;
+    --warning-bg: rgba(176, 125, 58, 0.13);
+    --warning-text: #a8722e;
+    --warning-border: #a8722e;
+    --error-bg: rgba(168, 74, 63, 0.10);
+    --error-text: #a84a3f;
+    --error-border: #a84a3f;
+    --danger-bg: rgba(168, 74, 63, 0.10);
+    --danger-text: #a84a3f;
+    --danger-hover: rgba(168, 74, 63, 0.18);
 
     /* Component-Specific */
-    --card-bg: #ffffff;
-    --card-border: #e0e0e0;
-    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --card-bg: #efeade;
+    --card-border: #e3dbc9;
+    --card-shadow: 0 2px 8px rgba(70, 58, 38, 0.10);
+    --card-shadow-hover: 0 4px 12px rgba(70, 58, 38, 0.15);
 
     /* Spacing Scale */
     --space-xs: 4px;
@@ -62,6 +66,7 @@
 
     /* Typography */
     --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
     --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 
     --font-size-xs: 12px;
@@ -99,42 +104,42 @@
     --z-toast: 1200;
 }
 
-/* Dark Theme */
+/* Dark Theme: darkroom */
 [data-theme="dark"] {
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #2a2a2a;
-    --bg-tertiary: #3a3a3a;
-    --text-primary: #ffffff;
-    --text-secondary: #b0b0b0;
-    --text-tertiary: #808080;
-    --border-light: #3a3a3a;
-    --border-medium: #4a4a4a;
+    --bg-primary: #171512;
+    --bg-secondary: #211d17;
+    --bg-tertiary: #2c2820;
+    --text-primary: #f0eadd;
+    --text-secondary: #a89d89;
+    --text-tertiary: #6f664f;
+    --border-light: #322c22;
+    --border-medium: #3d362a;
 
-    --accent: #0a84ff;
-    --accent-hover: #409cff;
-    --success: #32d74b;
-    --warning: #ff9f0a;
-    --error: #ff453a;
-    --modal-backdrop: rgba(0, 0, 0, 0.7);
+    --accent: #e8d5b5;
+    --accent-hover: #f2e3c6;
+    --success: #8fbf9c;
+    --warning: #dfa55c;
+    --error: #dd8377;
+    --modal-backdrop: rgba(23, 21, 18, 0.7);
 
-    --hover-bg: #2a2a2a;
-    --active-bg: #3a3a3a;
-    --focus-ring: rgba(0, 102, 204, 0.2);
+    --hover-bg: #2c2820;
+    --active-bg: #322c22;
+    --focus-ring: rgba(232, 213, 181, 0.18);
 
-    --card-bg: #2a2a2a;
-    --card-border: #3a3a3a;
-    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --card-bg: #211d17;
+    --card-border: #322c22;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.5);
 
-    --success-bg: rgba(40, 167, 69, 0.15);
-    --success-text: #4ade80;
-    --warning-bg: rgba(255, 193, 7, 0.15);
-    --warning-text: #fbbf24;
-    --error-bg: rgba(220, 53, 69, 0.15);
-    --error-text: #f87171;
-    --danger-bg: rgba(220, 53, 69, 0.15);
-    --danger-text: #f87171;
-    --danger-hover: rgba(220, 53, 69, 0.25);
+    --success-bg: rgba(143, 191, 156, 0.12);
+    --success-text: #8fbf9c;
+    --warning-bg: rgba(223, 165, 92, 0.12);
+    --warning-text: #dfa55c;
+    --error-bg: rgba(221, 131, 119, 0.10);
+    --error-text: #dd8377;
+    --danger-bg: rgba(221, 131, 119, 0.10);
+    --danger-text: #dd8377;
+    --danger-hover: rgba(221, 131, 119, 0.18);
 }
 
 /* Base Resets */
