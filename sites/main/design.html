@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>design notes · hensler photography</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Working design notes for the Hensler Photography management console: cotton-rag and darkroom themes, upload flow, gallery manager, and button system.">
+
+  <!-- Google Fonts: Playfair Display for the serif role, Inter for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+
+  <meta property="og:title" content="design notes · hensler photography">
+  <meta property="og:description" content="Working design notes for the Hensler Photography management console: cotton-rag and darkroom themes, upload flow, gallery manager, and button system.">
+  <meta property="og:type" content="website">
+
+  <style>
+    /* ============ tokens: cotton rag (light) / darkroom (dark) ============ */
+    :root {
+      --paper:   #f6f3ec;  /* page ground: unbleached cotton */
+      --cotton:  #efeade;  /* raised surface */
+      --crease:  #e3dbc9;  /* borders, the crumple shadow */
+      --ink:     #262119;  /* warm near-black */
+      --ink-2:   #71685a;
+      --ink-3:   #a2977f;
+      --accent:  #8a6f47;  /* bronze: interactive on light */
+      --accent-strong: #6f5835;
+      --sand:    #e8d5b5;  /* brand sand from the public site */
+      --sand-soft: rgba(200, 168, 116, 0.28);
+      --ok:      #4a7c59;
+      --ok-bg:   rgba(74, 124, 89, 0.12);
+      --warn:    #a8722e;
+      --warn-bg: rgba(176, 125, 58, 0.13);
+      --err:     #a84a3f;
+      --err-bg:  rgba(168, 74, 63, 0.10);
+      --shadow:  0 1px 2px rgba(70, 58, 38, 0.06), 0 6px 24px rgba(70, 58, 38, 0.07);
+      --photo-a: linear-gradient(150deg, #7d8a7a 0%, #55604f 45%, #2e352c 100%);
+      --photo-b: linear-gradient(160deg, #c9b28f 0%, #8f7d63 40%, #3f3a30 100%);
+      --photo-c: linear-gradient(140deg, #8d99a6 0%, #5c6672 55%, #303842 100%);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper:   #171512;
+        --cotton:  #211d17;
+        --crease:  #322c22;
+        --ink:     #f0eadd;
+        --ink-2:   #a89d89;
+        --ink-3:   #6f664f;
+        --accent:  #e8d5b5;
+        --accent-strong: #f2e3c6;
+        --sand:    #e8d5b5;
+        --sand-soft: rgba(232, 213, 181, 0.18);
+        --ok:      #8fbf9c;
+        --ok-bg:   rgba(143, 191, 156, 0.12);
+        --warn:    #dfa55c;
+        --warn-bg: rgba(223, 165, 92, 0.12);
+        --err:     #dd8377;
+        --err-bg:  rgba(221, 131, 119, 0.10);
+        --shadow:  0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.35);
+      }
+    }
+    :root[data-theme="dark"] {
+      --paper:   #171512;
+      --cotton:  #211d17;
+      --crease:  #322c22;
+      --ink:     #f0eadd;
+      --ink-2:   #a89d89;
+      --ink-3:   #6f664f;
+      --accent:  #e8d5b5;
+      --accent-strong: #f2e3c6;
+      --sand:    #e8d5b5;
+      --sand-soft: rgba(232, 213, 181, 0.18);
+      --ok:      #8fbf9c;
+      --ok-bg:   rgba(143, 191, 156, 0.12);
+      --warn:    #dfa55c;
+      --warn-bg: rgba(223, 165, 92, 0.12);
+      --err:     #dd8377;
+      --err-bg:  rgba(221, 131, 119, 0.10);
+      --shadow:  0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.35);
+    }
+    :root[data-theme="light"] {
+      --paper:   #f6f3ec;
+      --cotton:  #efeade;
+      --crease:  #e3dbc9;
+      --ink:     #262119;
+      --ink-2:   #71685a;
+      --ink-3:   #a2977f;
+      --accent:  #8a6f47;
+      --accent-strong: #6f5835;
+      --sand:    #e8d5b5;
+      --sand-soft: rgba(200, 168, 116, 0.28);
+      --ok:      #4a7c59;
+      --ok-bg:   rgba(74, 124, 89, 0.12);
+      --warn:    #a8722e;
+      --warn-bg: rgba(176, 125, 58, 0.13);
+      --err:     #a84a3f;
+      --err-bg:  rgba(168, 74, 63, 0.10);
+      --shadow:  0 1px 2px rgba(70, 58, 38, 0.06), 0 6px 24px rgba(70, 58, 38, 0.07);
+    }
+
+    /* ============ page scaffolding ============ */
+    * { box-sizing: border-box; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      margin: 0;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+
+    .page-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .back-link {
+      color: var(--ink-3);
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.03em;
+      border-bottom: 1px solid transparent;
+    }
+    .back-link:hover { color: var(--ink-2); border-bottom-color: var(--crease); }
+    .theme-toggle {
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: transparent;
+      color: var(--ink-2);
+      border: 1px solid var(--crease);
+      border-radius: 999px;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+    .theme-toggle:hover { color: var(--ink); border-color: var(--ink-3); }
+
+    .serif {
+      font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+      font-weight: 400;
+      text-transform: lowercase;
+      letter-spacing: 0.04em;
+    }
+    h1.serif { font-size: clamp(2.6rem, 6vw, 4rem); line-height: 1.05; margin: 0 0 0.5rem; text-wrap: balance; }
+    .intro { color: var(--ink-2); max-width: 62ch; margin: 0 0 1.25rem; }
+    .lede { color: var(--ink-2); max-width: 62ch; margin: 0 0 0.25rem; }
+    .hint { color: var(--ink-3); font-size: 0.85rem; }
+
+    section { margin-top: 3.5rem; }
+    .eyebrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin: 0 0 1rem;
+      font-weight: 600;
+    }
+    h2.serif { font-size: 1.7rem; margin: 0 0 0.75rem; }
+    p { max-width: 68ch; }
+    section > p { color: var(--ink-2); }
+
+    /* ============ palette strip ============ */
+    .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+    .swatch {
+      border: 1px solid var(--crease);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--cotton);
+      margin: 0;
+    }
+    .swatch .chip { height: 64px; }
+    .swatch figcaption { padding: 0.5rem 0.65rem; }
+    .swatch .name { font-size: 0.8rem; font-weight: 600; display: block; }
+    .swatch .role { font-size: 0.72rem; color: var(--ink-2); display: block; }
+
+    /* ============ mock console ============ */
+    .mock {
+      border: 1px solid var(--crease);
+      border-radius: 12px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .mock-note { margin-top: 0.75rem; }
+
+    .m-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.5rem;
+      background: var(--paper);
+      border-bottom: 1px solid var(--crease);
+      flex-wrap: wrap;
+    }
+    .m-brand .serif { font-size: 1.25rem; display: block; line-height: 1.2; }
+    .m-brand small { color: var(--ink-3); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .m-nav { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .m-nav a {
+      color: var(--ink-2);
+      text-decoration: none;
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      border-bottom: 2px solid transparent;
+    }
+    .m-nav a:hover { color: var(--ink); background: var(--cotton); }
+    .m-nav a[aria-current] {
+      color: var(--ink);
+      border-bottom-color: var(--sand);
+      font-weight: 600;
+    }
+    .m-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--sand);
+      color: #4a3d28;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem;
+    }
+
+    .m-body { padding: 1.5rem; display: grid; gap: 1.25rem; }
+    .m-page-title { display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; }
+    .m-page-title .serif { font-size: 1.9rem; }
+    .m-page-title .hint { font-size: 0.85rem; }
+
+    /* upload cards */
+    .m-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1.25rem; }
+    .m-card {
+      background: var(--cotton);
+      border: 1px solid var(--crease);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .m-photo { height: 150px; }
+    .m-card-body { padding: 1rem; display: grid; gap: 0.7rem; }
+
+    .m-field { display: grid; gap: 0.25rem; position: relative; }
+    .m-field label {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      font-weight: 600;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .m-field input, .m-field textarea {
+      background: var(--paper);
+      border: 1px solid var(--crease);
+      border-radius: 6px;
+      color: var(--ink);
+      padding: 0.5rem 0.6rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .m-field input:focus, .m-field textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--sand-soft);
+    }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--sand);
+      box-shadow: 0 0 0 2px var(--sand-soft);
+      display: inline-block;
+    }
+    .dot-legend { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--ink-2); font-size: 0.8rem; }
+
+    .m-exif {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+      color: var(--ink-2);
+      background: var(--paper);
+      border: 1px solid var(--crease);
+      border-radius: 6px;
+      padding: 0.55rem 0.7rem;
+    }
+    .m-exif b { color: var(--ink); font-weight: 600; }
+
+    .m-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.2rem; }
+    .btn {
+      font: inherit; font-size: 0.9rem; font-weight: 600;
+      border-radius: 6px; padding: 0.55rem 1.1rem; cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-primary { background: var(--accent); color: var(--paper); }
+    :root[data-theme="dark"] .btn-primary { color: #262119; }
+    @media (prefers-color-scheme: dark) { .btn-primary { color: #262119; } }
+    :root[data-theme="light"] .btn-primary { color: #f6f3ec; }
+    .btn-primary:hover { background: var(--accent-strong); }
+    .btn-quiet { background: transparent; color: var(--ink-2); border-color: var(--crease); }
+    .btn-quiet:hover { color: var(--ink); border-color: var(--ink-3); }
+    .btn-more { background: transparent; color: var(--ink-3); border: none; font-size: 1.2rem; padding: 0.3rem 0.5rem; cursor: pointer; margin-left: auto; }
+    .btn-more:hover { color: var(--ink); }
+    .btn:focus-visible, .btn-more:focus-visible, .m-nav a:focus-visible, .back-link:focus-visible, .theme-toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* analyzing state */
+    .sk { border-radius: 6px; background: linear-gradient(100deg, var(--cotton) 40%, var(--crease) 50%, var(--cotton) 60%); background-size: 200% 100%; animation: shimmer 1.6s ease-in-out infinite; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+    .sk-line { height: 0.95rem; }
+    .sk-input { height: 2.2rem; border: 1px solid var(--crease); }
+    .m-status { font-size: 0.8rem; color: var(--ink-2); display: inline-flex; align-items: center; gap: 0.45rem; }
+
+    /* gallery manager rows */
+    .m-rows { display: grid; gap: 1px; background: var(--crease); border: 1px solid var(--crease); border-radius: 10px; overflow: hidden; }
+    .m-row {
+      display: flex; align-items: center; gap: 1rem;
+      background: var(--cotton);
+      padding: 0.7rem 1rem;
+      flex-wrap: wrap;
+    }
+    .m-thumb { width: 72px; height: 48px; border-radius: 4px; flex: none; }
+    .m-row-main { flex: 1; min-width: 160px; }
+    .m-row-title { font-weight: 600; font-size: 0.92rem; }
+    .m-row-sub { color: var(--ink-3); font-size: 0.78rem; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    .pill {
+      font-size: 0.74rem; font-weight: 600;
+      padding: 0.22rem 0.6rem; border-radius: 999px;
+    }
+    .pill-ok { background: var(--ok-bg); color: var(--ok); }
+    .pill-draft { background: var(--sand-soft); color: var(--accent-strong); }
+    .star { color: var(--sand); font-size: 1.05rem; }
+    .star.off { color: var(--crease); }
+
+    /* button spec strip */
+    .spec { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end; }
+    .spec figure { margin: 0; display: grid; gap: 0.5rem; justify-items: start; }
+    .spec figcaption { font-size: 0.78rem; color: var(--ink-2); }
+    .btn-danger { background: transparent; color: var(--err); border-color: transparent; }
+    .btn-danger:hover { background: var(--err-bg); border-color: var(--err); }
+
+    /* principles list */
+    .rules { display: grid; gap: 0.9rem; padding: 0; margin: 1.25rem 0 0; list-style: none; max-width: 68ch; }
+    .rules li { display: grid; gap: 0.15rem; }
+    .rules b { font-size: 0.95rem; }
+    .rules span { color: var(--ink-2); font-size: 0.9rem; }
+
+    footer { margin-top: 4rem; border-top: 1px solid var(--crease); padding-top: 1.25rem; }
+    footer p { color: var(--ink-3); font-size: 0.82rem; max-width: none; }
+
+    /* respect reduced motion beyond the shimmer */
+    @media (prefers-reduced-motion: reduce) {
+      body { transition: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="page-top">
+    <a href="/" class="back-link">hensler.photography</a>
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false">cotton rag · switch to darkroom</button>
+  </div>
+
+  <header>
+    <p class="eyebrow">hensler photography · management console direction</p>
+    <h1 class="serif">easy.</h1>
+    <p class="intro">This page is the working design brief for the site's photographer console, published as part of building this site in the open. It is not a finished interface; it is the plan the console is being built toward.</p>
+    <p class="lede">One word is the whole spec. The console should feel like the quiet back room of the gallery: cotton-rag paper in the light, the darkroom after hours in the dark. The photographs supply all the color; the interface supplies calm. The intelligence works out of sight, and things are simply ready when you look.</p>
+    <p class="hint">Use the toggle at the top of this page to switch between the two grounds: cotton rag (light) and darkroom (dark). The serif here is Playfair Display, the same face used on the public hero.</p>
+  </header>
+
+  <section>
+    <p class="eyebrow">palette</p>
+    <h2 class="serif">cotton rag &amp; darkroom</h2>
+    <p>Both themes are warm-neutral, built around the sand accent the public site already owns (<code>#e8d5b5</code>: the category links and focus rings on adrian. and liam.). On the light ground the accent deepens to bronze so it can carry buttons; on the dark ground the sand is used straight, which ties the console to the public gallery exactly.</p>
+    <div class="swatches">
+      <figure class="swatch"><div class="chip" style="background:#f6f3ec"></div><figcaption><span class="name">paper #f6f3ec</span><span class="role">light ground</span></figcaption></figure>
+      <figure class="swatch"><div class="chip" style="background:#efeade"></div><figcaption><span class="name">cotton #efeade</span><span class="role">light surface</span></figcaption></figure>
+      <figure class="swatch"><div class="chip" style="background:#e8d5b5"></div><figcaption><span class="name">sand #e8d5b5</span><span class="role">brand accent</span></figcaption></figure>
+      <figure class="swatch"><div class="chip" style="background:#8a6f47"></div><figcaption><span class="name">bronze #8a6f47</span><span class="role">accent on light</span></figcaption></figure>
+      <figure class="swatch"><div class="chip" style="background:#211d17"></div><figcaption><span class="name">darkroom #211d17</span><span class="role">dark surface</span></figcaption></figure>
+      <figure class="swatch"><div class="chip" style="background:#171512"></div><figcaption><span class="name">deep #171512</span><span class="role">dark ground</span></figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">the upload flow</p>
+    <h2 class="serif">things are simply ready</h2>
+    <p>Drop the files and walk away from the machinery. While a photo is analyzing, its fields shimmer like the public site's hero skeleton. When it's done, the title, caption, and EXIF are just <em>there</em>: marked only by a small sand dot meaning "suggested; edit anything." No robot badges, no cost talk, no purple. One primary action per card.</p>
+    <div class="mock" inert aria-hidden="true">
+      <div class="m-header">
+        <div class="m-brand"><span class="serif">hensler photography</span><small>management console</small></div>
+        <nav class="m-nav">
+          <a href="#" onclick="return false">Dashboard</a>
+          <a href="#" onclick="return false">Gallery</a>
+          <a href="#" aria-current="page" onclick="return false">Upload</a>
+          <a href="#" onclick="return false">Analytics</a>
+        </nav>
+        <span class="m-avatar">A</span>
+      </div>
+      <div class="m-body">
+        <div class="m-page-title">
+          <span class="serif">upload</span>
+          <span class="dot-legend"><span class="dot"></span> suggested: edit anything</span>
+        </div>
+        <div class="m-cards">
+          <article class="m-card">
+            <div class="m-photo" style="background:var(--photo-a)"></div>
+            <div class="m-card-body">
+              <div class="m-field">
+                <label>Title <span class="dot"></span></label>
+                <input type="text" value="Great Blue Heron at Dawn">
+              </div>
+              <div class="m-field">
+                <label>Caption <span class="dot"></span></label>
+                <textarea rows="2">A heron stands motionless in still water as first light breaks.</textarea>
+              </div>
+              <div class="m-exif">
+                <span><b>f/5.6</b></span><span><b>1/1000</b></span><span><b>ISO 800</b></span><span>R5 &middot; 500mm</span>
+              </div>
+              <div class="m-actions">
+                <button class="btn btn-primary" type="button">Publish</button>
+                <button class="btn btn-quiet" type="button">Save draft</button>
+                <button class="btn-more" type="button" aria-label="More actions">&#8942;</button>
+              </div>
+            </div>
+          </article>
+          <article class="m-card" aria-label="Photo still analyzing">
+            <div class="m-photo" style="background:var(--photo-b)"></div>
+            <div class="m-card-body">
+              <div class="m-field">
+                <label>Title</label>
+                <div class="sk sk-input"></div>
+              </div>
+              <div class="m-field">
+                <label>Caption</label>
+                <div class="sk sk-input" style="height:3.4rem"></div>
+              </div>
+              <div class="sk sk-line" style="width:70%"></div>
+              <div class="m-actions">
+                <span class="m-status">Analyzing&hellip;</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+    <p class="hint mock-note">Re-extract EXIF, regenerate suggestions, and delete all live behind the &#8942; menu: present, never prominent.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">the gallery manager</p>
+    <h2 class="serif">curation, at a glance</h2>
+    <p>Rows read like a contact sheet: image first, state second, everything else on request. Published is a quiet green; a draft is sand. Featured is a star you tap, not a form you fill.</p>
+    <div class="mock" inert aria-hidden="true">
+      <div class="m-body">
+        <div class="m-rows">
+          <div class="m-row">
+            <div class="m-thumb" style="background:var(--photo-a)"></div>
+            <div class="m-row-main"><div class="m-row-title">Great Blue Heron at Dawn</div><div class="m-row-sub">wildlife &middot; f/5.6 &middot; 1/1000 &middot; ISO 800</div></div>
+            <span class="pill pill-ok">Published</span>
+            <span class="star" title="Featured">&#9733;</span>
+            <button class="btn-more" type="button" aria-label="More actions">&#8942;</button>
+          </div>
+          <div class="m-row">
+            <div class="m-thumb" style="background:var(--photo-c)"></div>
+            <div class="m-row-main"><div class="m-row-title">Fog on the North Ridge</div><div class="m-row-sub">landscape &middot; f/8 &middot; 1/250 &middot; ISO 100</div></div>
+            <span class="pill pill-draft">Draft</span>
+            <span class="star off" title="Not featured">&#9733;</span>
+            <button class="btn-more" type="button" aria-label="More actions">&#8942;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">one system</p>
+    <h2 class="serif">buttons, standardized</h2>
+    <p>Three button voices across every console page, and no others. Serif lowercase for page titles only. Mono for EXIF only. Everything interactive focuses with a sand ring.</p>
+    <div class="mock" inert aria-hidden="true"><div class="m-body">
+      <div class="spec">
+        <figure><button class="btn btn-primary" type="button">Publish</button><figcaption>Primary: one per view</figcaption></figure>
+        <figure><button class="btn btn-quiet" type="button">Save draft</button><figcaption>Quiet: secondary actions</figcaption></figure>
+        <figure><button class="btn btn-danger" type="button">Delete</button><figcaption>Destructive: quiet until hovered</figcaption></figure>
+        <figure><button class="btn-more" type="button" aria-label="More actions">&#8942;</button><figcaption>Everything else</figcaption></figure>
+      </div>
+    </div></div>
+    <ul class="rules">
+      <li><b>The photograph is the loudest thing on every screen.</b><span>Chrome stays paper-quiet; thumbnails and heroes carry the color.</span></li>
+      <li><b>The intelligence is invisible.</b><span>No "AI" in visitor or photographer copy. Suggestions appear as finished work, marked by the sand dot until you touch or publish them.</span></li>
+      <li><b>One primary action per view.</b><span>Publish. Everything else steps back into quiet or &#8942;.</span></li>
+      <li><b>Skeletons, never spinners.</b><span>Same shimmer the public hero uses: the console and the site are one family.</span></li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>These are living notes, not a frozen spec: the console is being brought in line with them page by page, and this document updates as decisions change. Semantic colors (published-green, warning, error) sit outside the two-accent brand rule as state, not decoration.</p>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var toggle = document.getElementById('theme-toggle');
+
+    function currentTheme() {
+      var attr = root.getAttribute('data-theme');
+      if (attr === 'dark' || attr === 'light') return attr;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function setTheme(theme) {
+      root.setAttribute('data-theme', theme);
+      toggle.setAttribute('aria-pressed', String(theme === 'dark'));
+      toggle.textContent = theme === 'dark'
+        ? 'darkroom · switch to cotton rag'
+        : 'cotton rag · switch to darkroom';
+    }
+
+    setTheme(currentTheme());
+
+    toggle.addEventListener('click', function () {
+      setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>
+</body>
+</html>
