@@ -13,6 +13,11 @@ hensler.photography {
     reverse_proxy api:8000
   }
 
+  # Static files for management UI
+  handle /static/* {
+    reverse_proxy api:8000
+  }
+
   # Proxy API requests to backend (for analytics tracking)
   handle /api/* {
     reverse_proxy api:8000
