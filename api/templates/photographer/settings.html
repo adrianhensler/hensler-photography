@@ -198,8 +198,9 @@
     }
 
     field('save-profile').addEventListener('click', async (e) => {
-        if (await patchUser(snapshots.profile(), e.currentTarget, 'Save profile')) {
-            saved.profile = snapshots.profile();
+        const payload = snapshots.profile();
+        if (await patchUser(payload, e.currentTarget, 'Save profile')) {
+            saved.profile = payload;
         }
     });
     field('cancel-profile').addEventListener('click', () => {
@@ -208,8 +209,9 @@
     });
 
     field('save-ai-style').addEventListener('click', async (e) => {
-        if (await patchUser(snapshots.aiStyle(), e.currentTarget, 'Save AI style')) {
-            saved.aiStyle = snapshots.aiStyle();
+        const payload = snapshots.aiStyle();
+        if (await patchUser(payload, e.currentTarget, 'Save AI style')) {
+            saved.aiStyle = payload;
         }
     });
     field('cancel-ai-style').addEventListener('click', () => {
@@ -217,8 +219,9 @@
     });
 
     field('save-tracking').addEventListener('click', async (e) => {
-        if (await patchUser(snapshots.tracking(), e.currentTarget, 'Save tracking preference')) {
-            saved.tracking = snapshots.tracking();
+        const payload = snapshots.tracking();
+        if (await patchUser(payload, e.currentTarget, 'Save tracking preference')) {
+            saved.tracking = payload;
         }
     });
     field('cancel-tracking').addEventListener('click', () => {
