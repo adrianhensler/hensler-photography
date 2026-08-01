@@ -59,7 +59,8 @@ async def get_published_gallery(user_id: int, response: Response):
                 medium.filename as medium_filename,
                 large.filename as large_filename,
                 i.ai_generated_title, i.ai_generated_caption, i.ai_generated_description,
-                i.ai_generated_alt_text, i.ai_generated_tags, i.ai_generated_category
+                i.ai_generated_alt_text, i.ai_generated_tags, i.ai_generated_category,
+                full.filename as full_filename
             FROM images i
             LEFT JOIN image_variants thumb ON i.id = thumb.image_id
                 AND thumb.format = 'webp' AND thumb.size = 'thumbnail'
@@ -67,6 +68,8 @@ async def get_published_gallery(user_id: int, response: Response):
                 AND medium.format = 'webp' AND medium.size = 'medium'
             LEFT JOIN image_variants large ON i.id = large.image_id
                 AND large.format = 'webp' AND large.size = 'large'
+            LEFT JOIN image_variants full ON i.id = full.image_id
+                AND full.format = 'webp' AND full.size = 'full'
             WHERE i.user_id = ? AND i.published = 1 AND i.deleted_at IS NULL
             ORDER BY i.sort_order ASC, i.created_at DESC
         """,
@@ -77,17 +80,23 @@ async def get_published_gallery(user_id: int, response: Response):
 
         images = []
         for row in rows:
-            # Get variant filenames (fallback to original if not available)
+            # Get variant filenames. thumbnail/medium/large fall back to the
+            # original only for legacy pre-variant rows (rare, harmless --
+            # low-res anyway). `full` NEVER falls back to the raw original:
+            # that file still carries whatever EXIF/GPS the camera embedded,
+            # regardless of share_exif, so falling back through generated
+            # (EXIF-stripped) variants instead is a hard privacy requirement.
             original_filename = row[1]
             thumbnail_filename = row[23] or original_filename
             medium_filename = row[24] or original_filename
             large_filename = row[25] or original_filename
+            full_filename = row[32] or large_filename or medium_filename or thumbnail_filename
 
             # Construct URLs
-            original_url = f"/assets/gallery/{original_filename}"
             thumbnail_url = f"/assets/gallery/{thumbnail_filename}"
             medium_url = f"/assets/gallery/{medium_filename}"
             large_url = f"/assets/gallery/{large_filename}"
+            full_url = f"/assets/gallery/{full_filename}"
 
             # Only include EXIF if share_exif = 1
             exif_data = None
@@ -131,8 +140,8 @@ async def get_published_gallery(user_id: int, response: Response):
                     "aspect_ratio": row[11],
                     "share_exif": bool(row[12]),
                     "exif": exif_data,
-                    # Original full-resolution image
-                    "image_url": original_url,
+                    # Full-resolution, EXIF-stripped image (never the raw upload -- see comment above)
+                    "image_url": full_url,
                     # Optimized WebP variants (400px, 800px, 1200px)
                     "thumbnail_url": thumbnail_url,  # 400px for grid
                     "medium_url": medium_url,  # 800px for tablets
@@ -188,8 +197,21 @@ async def get_published_image(user_id: int, slug: str):
                 detail=f"Published image with slug '{slug}' not found for user {user_id}",
             )
 
-        # Construct image URLs from filename
-        base_url = f"/assets/gallery/{row[1]}"
+        # Never serve the raw upload -- it carries whatever EXIF/GPS the
+        # camera embedded regardless of share_exif. Fall back through
+        # generated (EXIF-stripped) variants instead; see get_published_gallery.
+        variant_cursor = await db.execute(
+            "SELECT size, filename FROM image_variants WHERE image_id = ? AND format = 'webp'",
+            (row[0],),
+        )
+        variants = {v_row[0]: v_row[1] for v_row in await variant_cursor.fetchall()}
+        thumbnail_filename = variants.get("thumbnail") or row[1]
+        full_filename = (
+            variants.get("full") or variants.get("large") or variants.get("medium")
+            or variants.get("thumbnail") or row[1]
+        )
+        base_url = f"/assets/gallery/{full_filename}"
+        thumbnail_url = f"/assets/gallery/{thumbnail_filename}"
 
         # Only return EXIF if share_exif = 1
         exif_data = None
@@ -220,7 +242,7 @@ async def get_published_image(user_id: int, slug: str):
             "aspect_ratio": row[10],
             "share_exif": bool(row[11]),
             "image_url": base_url,
-            "thumbnail_url": base_url,
+            "thumbnail_url": thumbnail_url,
             "exif": exif_data,
             "created_at": row[21],
         }

@@ -124,6 +124,39 @@ def generate_variants(
                 )
                 # Continue with other variants
 
+        # Full-resolution variant: original pixel dimensions, high quality,
+        # but re-encoded (not a copy of the upload) so it does NOT carry the
+        # original file's embedded EXIF/GPS -- the raw upload must never be
+        # served directly, regardless of the photographer's share_exif
+        # setting, since that field only governs the curated EXIF fields
+        # shown in the UI, not arbitrary metadata embedded by the camera.
+        try:
+            full_filename = f"{base_name}_full.webp"
+            full_path = output_dir / full_filename
+            img.save(full_path, format="WEBP", quality=95, method=6)
+            full_file_size = full_path.stat().st_size
+
+            full_variant_info = {
+                "format": "webp",
+                "size": "full",
+                "filename": full_filename,
+                "width": original_width,
+                "height": original_height,
+                "file_size": full_file_size,
+            }
+            variants.append(full_variant_info)
+
+            logger.info(
+                f"Generated full variant: {full_filename} ({full_file_size} bytes)",
+                extra={"context": {**context, "variant": full_variant_info}},
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to generate full variant: {e}",
+                exc_info=e,
+                extra={"context": {**context, "size_name": "full"}},
+            )
+
         if not variants:
             # If no variants were generated, that's a problem
             error_msg = "No variants were successfully generated"

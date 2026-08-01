@@ -515,8 +515,32 @@ async def list_images(
         cursor = await db.execute(count_query, tuple(count_params))
         total = (await cursor.fetchone())[0]
 
+        # Bulk-fetch variant filenames so `image_url` can fall back through
+        # progressively lower-quality *generated* variants (full -> large ->
+        # medium -> thumbnail) without ever serving the raw upload, which
+        # still carries whatever EXIF/GPS the camera embedded regardless of
+        # the photographer's share_exif setting.
+        image_ids = [row[0] for row in rows]
+        variants_by_image: dict[int, dict[str, str]] = {}
+        if image_ids:
+            placeholders = ",".join("?" * len(image_ids))
+            variant_cursor = await db.execute(
+                f"SELECT image_id, size, filename FROM image_variants WHERE image_id IN ({placeholders})",
+                tuple(image_ids),
+            )
+            for variant_row in await variant_cursor.fetchall():
+                variants_by_image.setdefault(variant_row[0], {})[variant_row[1]] = variant_row[2]
+
         images = []
         for row in rows:
+            variants = variants_by_image.get(row[0], {})
+            thumbnail_filename = variants.get("thumbnail") or f"{Path(row[2]).stem}_thumbnail.webp"
+            large_filename = variants.get("large") or f"{Path(row[2]).stem}_large.webp"
+            full_filename = (
+                variants.get("full") or variants.get("large") or variants.get("medium")
+                or variants.get("thumbnail") or thumbnail_filename
+            )
+
             image = {
                 "id": row[0],
                 "user_id": row[1],
@@ -533,9 +557,9 @@ async def list_images(
                 "height": row[12],
                 "created_at": row[13],
                 "updated_at": row[14],
-                "thumbnail_url": f"/assets/gallery/{Path(row[2]).stem}_thumbnail.webp",
-                "large_url": f"/assets/gallery/{Path(row[2]).stem}_large.webp",
-                "image_url": f"/assets/gallery/{row[2]}",
+                "thumbnail_url": f"/assets/gallery/{thumbnail_filename}",
+                "large_url": f"/assets/gallery/{large_filename}",
+                "image_url": f"/assets/gallery/{full_filename}",
             }
 
             # Include analytics if requested
