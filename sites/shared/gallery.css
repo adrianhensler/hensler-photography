@@ -257,3 +257,46 @@
     flex-basis: 100% !important;
   }
 }
+
+/* ===== Lightbox Fullscreen Toggle =====
+ * A second view mode reachable from within the existing captioned
+ * GLightbox: image-only, sized so the longest side fills the viewport.
+ * Not the browser's native Fullscreen API -- just fills the lightbox
+ * overlay. See gallery.js addFullscreenToggle()/toggleLightboxFullscreen().
+ */
+.glightbox-clean .gfullscreen-toggle {
+  position: absolute;
+  top: 15px;
+  right: 55px;
+  width: 35px;
+  height: 35px;
+  background-color: rgba(0, 0, 0, .32);
+  border-radius: 4px;
+  color: #fff;
+  z-index: 99999;
+}
+
+.glightbox-clean .gfullscreen-toggle:hover {
+  background-color: rgba(0, 0, 0, .7);
+}
+
+.glightbox-container.is-fullscreen .gfullscreen-toggle {
+  color: #e8d5b5;
+}
+
+.glightbox-container.is-fullscreen .gslide-description {
+  display: none !important;
+}
+
+.glightbox-container.is-fullscreen .gslide-image img {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  object-fit: contain;
+}
+
+.glightbox-container.is-fullscreen .ginner-container {
+  height: 100vh !important;
+  width: 100vw !important;
+}
