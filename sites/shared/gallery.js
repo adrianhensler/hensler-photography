@@ -259,11 +259,11 @@
   function toggleLightboxFullscreen() {
     const container = document.querySelector('.glightbox-container');
     if (!container) return;
-    const isFullscreen = container.classList.toggle('is-fullscreen');
-    if (isFullscreen) {
-      applyFullQualityImage();
-    } else {
+    if (container.classList.contains('is-fullscreen')) {
+      container.classList.remove('is-fullscreen');
       revertAllUpgradedImages();
+    } else {
+      enterFullscreen(container);
     }
   }
 
@@ -282,10 +282,51 @@
     return new URL(url, document.baseURI).href;
   }
 
-  // Swaps the active slide's <img> to the full-quality original -- the
-  // slide otherwise renders the lighter 1200px `large_url` variant.
-  // Only fetched on demand (full-screen toggle / navigation while
-  // full-screen), never preloaded.
+  // Entering fullscreen resizes the slide to fill the viewport instantly
+  // (CSS, no transition) -- if the full-quality image isn't loaded yet,
+  // that resize renders the still-loaded `large_url` stretched to full
+  // size (soft/blurry) for however long the download takes, then pops to
+  // the sharp image once it arrives: two visible steps that read as
+  // "loading twice". Preloading off-screen first means the resize and the
+  // sharp image appear in the same frame.
+  function enterFullscreen(container) {
+    if (!galleryLightbox) {
+      container.classList.add('is-fullscreen');
+      return;
+    }
+    const index = galleryLightbox.index;
+    const activeEl = galleryLightbox.elements[index];
+    const node = activeEl && activeEl.node;
+    const originalSrc = node && node.dataset.originalSrc;
+    const img = document.querySelector('.gslide.current .gslide-image img');
+    const toggleBtn = container.querySelector('.gfullscreen-toggle');
+
+    if (!img || !originalSrc || img.src === resolveUrl(originalSrc)) {
+      container.classList.add('is-fullscreen');
+      return;
+    }
+
+    if (toggleBtn) toggleBtn.classList.add('is-loading');
+    const preload = new Image();
+    preload.onload = () => {
+      img.src = originalSrc;
+      fullscreenUpgradedIndices.add(index);
+      container.classList.add('is-fullscreen');
+      if (toggleBtn) toggleBtn.classList.remove('is-loading');
+    };
+    preload.onerror = () => {
+      // Full-quality fetch failed -- still enter fullscreen at whatever
+      // quality is already loaded rather than leaving the toggle inert.
+      container.classList.add('is-fullscreen');
+      if (toggleBtn) toggleBtn.classList.remove('is-loading');
+    };
+    preload.src = originalSrc;
+  }
+
+  // Swaps the active slide's <img> to the full-quality original when
+  // navigating next/prev while already fullscreen -- the viewport-filling
+  // layout is already in place, so there's no resize to desync from, just
+  // the image content updating once it's ready.
   function applyFullQualityImage() {
     if (!galleryLightbox) return;
     const index = galleryLightbox.index;

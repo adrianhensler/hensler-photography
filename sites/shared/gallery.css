@@ -284,6 +284,17 @@
   color: #e8d5b5;
 }
 
+/* Shown while the full-quality image is being preloaded, before the
+ * fullscreen resize/swap happens in one step -- see enterFullscreen() */
+.gfullscreen-toggle.is-loading svg {
+  animation: gfullscreen-toggle-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes gfullscreen-toggle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 .glightbox-container.is-fullscreen .gslide-description {
   display: none !important;
 }
