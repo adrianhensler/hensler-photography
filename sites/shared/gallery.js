@@ -217,6 +217,46 @@
     });
   }
 
+  // Injects a fullscreen-toggle button into the GLightbox chrome. Called via
+  // GLightbox's onOpen callback, which fires once per lightbox open (not per
+  // slide), so we guard against duplicate injection on top of that.
+  function addFullscreenToggle() {
+    const container = document.querySelector('.glightbox-container');
+    if (!container || container.querySelector('.gfullscreen-toggle')) return;
+
+    const closeBtn = container.querySelector('.gclose');
+    const btn = document.createElement('button');
+    btn.className = 'gbtn gfullscreen-toggle';
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Toggle fullscreen view');
+    btn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/>' +
+      '</svg>';
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLightboxFullscreen();
+    });
+
+    if (closeBtn && closeBtn.parentNode) {
+      closeBtn.parentNode.insertBefore(btn, closeBtn);
+    } else {
+      container.appendChild(btn);
+    }
+  }
+
+  function toggleLightboxFullscreen() {
+    const container = document.querySelector('.glightbox-container');
+    if (!container) return;
+    container.classList.toggle('is-fullscreen');
+  }
+
+  function exitLightboxFullscreen() {
+    const container = document.querySelector('.glightbox-container');
+    if (container) container.classList.remove('is-fullscreen');
+  }
+
   function ensureLightboxReady() {
     if (galleryLightbox) {
       return Promise.resolve(galleryLightbox);
@@ -238,7 +278,9 @@
             zoomable: false,
             draggable: true,
             closeButton: true,
-            closeOnOutsideClick: true
+            closeOnOutsideClick: true,
+            onOpen: addFullscreenToggle,
+            onClose: exitLightboxFullscreen
           });
           resolve(galleryLightbox);
         }, 100);
@@ -646,6 +688,21 @@
     trackPageView();
     addGalleryTracking();
     addScrollDepthTracking();
+    addFullscreenEscapeHandling();
+  }
+
+  // Captured ahead of GLightbox's own Escape handler so the first Esc
+  // press exits fullscreen view instead of closing the lightbox; a second
+  // press then falls through to GLightbox's normal close behavior.
+  function addFullscreenEscapeHandling() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const container = document.querySelector('.glightbox-container.is-fullscreen');
+      if (!container) return;
+      exitLightboxFullscreen();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }, true);
   }
 
   // ===== PUBLIC API =====
