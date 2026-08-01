@@ -411,7 +411,10 @@ gh pr create --title "..." --body "..."
 # 4. After PR merged, deploy
 cd /opt/prod/hensler_photography
 git pull origin main
-docker compose restart
+# api/ changes require an image rebuild (restart alone ships nothing):
+docker compose up -d --build api
+# Caddyfile changes: docker compose restart web
+# sites/ static changes: no container action needed (bind-mounted)
 
 # 5. Verify health
 curl -I https://hensler.photography/healthz
