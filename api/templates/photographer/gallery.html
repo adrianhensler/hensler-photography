@@ -1,236 +1,8 @@
 {% extends 'photographer/base.html' %}
 {% block styles %}
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: var(--bg-secondary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .header {
-            background: var(--bg-primary);
-            border-bottom: 1px solid var(--border-light);
-            padding: 1rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header-left h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        /* Theme Toggle */
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 8px;
-            transition: background-color 0.2s;
-        }
-
-        .theme-toggle:hover {
-            background: var(--bg-secondary);
-        }
-
-        .theme-toggle-switch {
-            width: 48px;
-            height: 28px;
-            background: var(--bg-tertiary);
-            border-radius: 14px;
-            position: relative;
-            transition: background-color 0.3s;
-        }
-
-        .theme-toggle-switch::after {
-            content: '';
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: var(--bg-primary);
-            top: 2px;
-            left: 2px;
-            transition: transform 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        [data-theme="dark"] .theme-toggle-switch {
-            background: var(--accent);
-        }
-
-        [data-theme="dark"] .theme-toggle-switch::after {
-            transform: translateX(20px);
-        }
-
-        .theme-icon {
-            font-size: 1.2rem;
-        }
-
-        /* User Dropdown Component */
-        .user-dropdown {
-            position: relative;
-        }
-
-        .user-dropdown-trigger {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 12px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .user-dropdown-trigger:hover {
-            background: var(--bg-tertiary);
-            border-color: var(--border-color);
-        }
-
-        .user-dropdown-trigger .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .user-dropdown-trigger .user-name {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        .user-dropdown-trigger .dropdown-arrow {
-            font-size: 10px;
-            color: var(--text-secondary);
-            transition: transform 0.2s ease;
-        }
-
-        .user-dropdown.active .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-
-        .user-dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            min-width: 200px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-            z-index: 1000;
-        }
-
-        .user-dropdown.active .user-dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .user-dropdown-header {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .user-dropdown-header .name {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 2px;
-        }
-
-        .user-dropdown-header .role {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-transform: capitalize;
-        }
-
-        .user-dropdown-menu a,
-        .user-dropdown-menu button {
-            display: block;
-            width: 100%;
-            padding: 10px 16px;
-            font-size: 14px;
-            font-weight: 400;
-            color: var(--text-primary);
-            text-decoration: none;
-            background: none;
-            border: none;
-            text-align: left;
-            cursor: pointer;
-            transition: background 0.15s ease;
-        }
-
-        .user-dropdown-menu a:hover,
-        .user-dropdown-menu button:hover {
-            background: var(--bg-secondary);
-        }
-
-        .user-dropdown-divider {
-            height: 1px;
-            background: var(--border-light);
-            margin: 4px 0;
-        }
-
-        .user-dropdown-menu button.danger {
-            color: #dc3545;
-        }
-
-        .user-dropdown-menu button.danger:hover {
-            background: rgba(220, 53, 69, 0.1);
-        }
-
-        nav {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        nav a {
-            color: var(--accent);
-            text-decoration: none;
-        }
-
-        nav a:hover {
-            text-decoration: underline;
-        }
-
-        nav a.active {
-            font-weight: 500;
-            color: var(--text-primary);
         }
 
         .container {
@@ -238,6 +10,10 @@
             margin: 2rem auto;
             padding: 0 2rem;
         }
+
+        /* ============================================
+           FILTERS
+           ============================================ */
 
         .filters {
             background: var(--bg-primary);
@@ -264,7 +40,7 @@
         .filter-group select,
         .filter-group input {
             padding: 0.75rem;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-light);
             border-radius: 8px;
             font-size: 0.9rem;
             font-family: inherit;
@@ -272,62 +48,9 @@
             color: var(--text-primary);
         }
 
-        /* Active tag filter bar */
-        .active-tags {
-            background: var(--bg-primary);
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .active-tags-label {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-
-        #activeTagDisplay {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        #activeTagDisplay .tag-pill {
-            background: var(--accent);
-            color: var(--bg-primary);
-            border: none;
-            padding-right: 2rem;
-            position: relative;
-        }
-
-        #activeTagDisplay .tag-pill::after {
-            content: '×';
-            position: absolute;
-            right: 0.5rem;
-            font-size: 1.1rem;
-            font-weight: 400;
-        }
-
-        .clear-filter {
-            padding: 0.5rem 0.75rem;
-            background: #f5f5f7;
-            color: var(--text-secondary);
-            border: none;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .clear-filter:hover {
-            background: #e8e8ed;
-            color: var(--text-primary);
-        }
+        /* ============================================
+           STATS BAR
+           ============================================ */
 
         .stats {
             background: var(--bg-primary);
@@ -344,141 +67,448 @@
             color: var(--text-secondary);
         }
 
-        .btn {
-            padding: 0.75rem 1.5rem;
-            background: var(--accent);
-            color: var(--bg-primary);
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: background 0.2s;
-        }
+        /* ============================================
+           CONTACT-SHEET ROWS
+           ============================================ */
 
-        .btn:hover {
-            background: var(--accent-hover);
-        }
-
-        .btn-secondary {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-tertiary);
-            border-color: var(--border-light);
-        }
-
-        .gallery-grid {
+        .contact-sheet {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .image-card {
-            background: var(--bg-primary);
-            border-radius: 12px;
+            gap: 1px;
+            background: var(--border-light);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            position: relative;
         }
 
-        .image-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        .sheet-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            background: var(--bg-primary);
+            padding: 0.7rem 1rem;
         }
 
-        /* Public card indicator */
-        .image-card.is-public {
-            border-color: #34c759;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08),
-                        0 0 0 0px rgba(52, 199, 89, 0.15);
+        .row-thumb {
+            width: 72px;
+            height: 48px;
+            flex: none;
+            padding: 0;
+            border: none;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: zoom-in;
+            background: var(--bg-tertiary);
         }
 
-        .image-card.is-public:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12),
-                        0 0 0 4px rgba(52, 199, 89, 0.15);
-        }
-
-        .image-thumbnail-wrapper {
-            position: relative;
-            width: 100%;
-            height: 200px;
-        }
-
-        .image-thumbnail {
+        .row-thumb img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            background: #f5f5f7;
+            display: block;
         }
 
-        /* Public overlay badge */
-        .public-overlay {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            padding: 0.375rem 0.75rem;
-            background: rgba(52, 199, 89, 0.92);
-            color: white;
-            font-size: 0.75rem;
+        .row-main {
+            flex: 1;
+            min-width: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.15rem;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+        }
+
+        .row-title {
             font-weight: 600;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            backdrop-filter: blur(8px);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+            font-size: 0.92rem;
+            color: var(--text-primary);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        /* Fullscreen expand affordance on the thumbnail */
-        .image-thumbnail {
-            cursor: zoom-in;
+        .row-sub {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--text-secondary);
         }
 
-        .fullscreen-expand-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
+        .pill {
+            font-size: 0.74rem;
+            font-weight: 600;
+            padding: 0.22rem 0.6rem;
+            border-radius: var(--radius-full);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .pill-published {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .pill-published:hover {
+            filter: brightness(0.97);
+        }
+
+        .pill-draft {
+            background: var(--focus-ring);
+            color: var(--accent-hover);
+        }
+
+        .pill-draft:hover {
+            filter: brightness(0.97);
+        }
+
+        .star-toggle {
             width: 32px;
             height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.55);
-            color: #fff;
+            background: none;
             border: none;
-            border-radius: 6px;
-            cursor: zoom-in;
-            opacity: 0;
-            transition: opacity 0.2s ease, background-color 0.2s ease;
-            z-index: 11;
-            font-size: 1rem;
-            line-height: 1;
+            border-radius: var(--radius-md);
+            font-size: 1.05rem;
+            cursor: pointer;
+            color: var(--text-secondary);
         }
 
-        .fullscreen-expand-btn:hover {
-            background: rgba(0, 0, 0, 0.8);
+        .star-toggle:hover {
+            background: var(--hover-bg);
         }
 
-        .image-card:hover .fullscreen-expand-btn {
-            opacity: 1;
+        .star-toggle.is-featured {
+            color: var(--accent);
         }
 
-        /* Fullscreen viewer overlay (manage console) -- image only, no
-         * caption chrome; metadata editing already lives in the Edit
-         * modal. z-index sits above .modal (200). */
+        .menu-trigger {
+            width: 32px;
+            height: 32px;
+            background: none;
+            border: none;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .menu-trigger:hover {
+            color: var(--text-primary);
+            background: var(--hover-bg);
+        }
+
+        .changing {
+            opacity: 0.55;
+            pointer-events: none;
+        }
+
+        .sheet-row button:focus-visible,
+        .btn:focus-visible {
+            outline: 2px solid var(--focus-border);
+            outline-offset: 2px;
+        }
+
+        /* Skeleton rows while loading */
+        .sheet-row.is-skeleton {
+            gap: var(--space-md);
+        }
+
+        .skeleton-thumb {
+            width: 72px;
+            height: 48px;
+            flex: none;
+            border-radius: 4px;
+        }
+
+        .skeleton-lines {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .skeleton-line {
+            height: 0.85rem;
+            width: 40%;
+        }
+
+        .skeleton-line.short {
+            width: 22%;
+        }
+
+        /* ============================================
+           ROW MENU (singleton)
+           ============================================ */
+
+        .row-menu {
+            position: fixed;
+            min-width: 190px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--card-shadow-hover);
+            padding: 4px 0;
+            z-index: var(--z-dropdown);
+        }
+
+        .menu-item {
+            display: block;
+            width: 100%;
+            padding: 9px 16px;
+            font: inherit;
+            font-size: var(--font-size-sm);
+            color: var(--text-primary);
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .menu-item:hover,
+        .menu-item:focus-visible {
+            background: var(--hover-bg);
+        }
+
+        .menu-item-danger {
+            color: var(--danger-text);
+        }
+
+        .menu-item-danger:hover {
+            background: var(--danger-hover);
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 4px 0;
+        }
+
+        /* ============================================
+           EMPTY STATE
+           ============================================ */
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--bg-primary);
+            border-radius: 12px;
+        }
+
+        .empty-state h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            color: var(--text-tertiary);
+            margin-bottom: 1.5rem;
+        }
+
+        /* ============================================
+           EDIT MODAL
+           ============================================ */
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--modal-backdrop);
+            z-index: var(--z-modal);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-light);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 1rem;
+        }
+
+        .modal-section-title {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-primary);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .form-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .form-grid-2 .form-group input,
+        .form-grid-3 .form-group input {
+            font-size: 0.85rem;
+        }
+
+        .form-grid-2 .form-group label,
+        .form-grid-3 .form-group label {
+            font-size: 0.85rem;
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-check label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .form-check input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            accent-color: var(--accent);
+        }
+
+        .readonly-input {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            border: 1px solid var(--border-light);
+        }
+
+        .modal-tools {
+            margin: 1.5rem 0;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: stretch;
+        }
+
+        .modal-tools .btn {
+            min-width: 180px;
+        }
+
+        .input-group {
+            flex: 2;
+            min-width: 280px;
+            display: flex;
+            gap: 0;
+        }
+
+        .input-group select {
+            border-radius: var(--radius-md) 0 0 var(--radius-md);
+            border-right: none;
+        }
+
+        .input-group .btn {
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            flex: 1;
+        }
+
+        .suggested-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        /* The explicit display above would otherwise defeat the hidden attribute. */
+        .suggested-dot[hidden] {
+            display: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        /* ============================================
+           FULLSCREEN VIEWER (unchanged; palette-independent overlay)
+           ============================================ */
+
         .fullscreen-viewer {
             display: none;
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.92);
-            z-index: 300;
+            /* Above --z-modal (1100): the viewer wins if both are ever open. */
+            z-index: 1150;
             align-items: center;
             justify-content: center;
         }
@@ -547,466 +577,39 @@
             background: rgba(255, 255, 255, 0.12);
         }
 
-        .image-content {
-            padding: 1rem;
-        }
+        /* ============================================
+           TOAST
+           ============================================ */
 
-        .image-title {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .image-caption {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.75rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-        }
-
-        .image-upload-date {
-            font-size: 0.75rem;
-            color: #86868b;
-            margin-bottom: 0.5rem;
-            font-style: italic;
-        }
-
-        /* Tag pills */
-        .image-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.375rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .tag-pill {
-            padding: 0.3rem 0.75rem;
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
-            transition: all 0.15s ease;
-            white-space: nowrap;
-        }
-
-        .tag-pill:hover {
-            background: var(--bg-secondary);
-            border-color: var(--accent);
-            color: var(--accent);
-            transform: translateY(-1px);
-        }
-
-        .tag-pill.active {
-            background: var(--accent);
-            color: var(--bg-primary);
-            border-color: var(--accent);
-        }
-
-        .tag-more {
-            padding: 0.3rem 0.5rem;
-            font-size: 0.75rem;
-            color: #86868b;
-            font-weight: 500;
-        }
-
-        .image-meta {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 0.75rem;
-        }
-
-        .badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .badge-published {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-draft {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-category {
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-        }
-
-        .image-actions {
-            display: grid;
-            grid-template-columns: 1fr auto auto 1fr;
-            gap: 0.5rem;
-            align-items: stretch;
-        }
-
-        .image-actions button {
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--border-light);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.15s ease;
-            white-space: nowrap;
-        }
-
-        .image-actions button:hover {
-            background: var(--bg-secondary);
-            border-color: var(--border-color);
-            transform: translateY(-1px);
-        }
-
-        /* Visibility toggle button */
-        .visibility-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.875rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-
-        /* Private state - neutral gray */
-        .visibility-toggle.is-private {
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-        }
-
-        .visibility-toggle.is-private:hover {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            border-color: var(--border-color);
-        }
-
-        /* Public state - vibrant green */
-        .visibility-toggle.is-public {
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-            color: white;
-            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.25);
-            border: none;
-        }
-
-        .visibility-toggle.is-public:hover {
-            background: linear-gradient(135deg, #30d158 0%, #32d760 100%);
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.35);
-            transform: translateY(-1px);
-        }
-
-        .toggle-icon {
-            font-size: 1rem;
-            line-height: 1;
-        }
-
-        .toggle-label {
-            font-weight: 500;
-        }
-
-        /* Animated transition between states */
-        .visibility-toggle.changing {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        /* EXIF toggle button */
-        .exif-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5rem;
-            font-size: 1.1rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-width: 42px;
-        }
-
-        .exif-toggle.is-private {
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-        }
-
-        .exif-toggle.is-private:hover {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            transform: scale(1.05);
-        }
-
-        .exif-toggle.is-shared {
-            background: rgba(52, 199, 89, 0.15);
-            color: #34c759;
-        }
-
-        .exif-toggle.is-shared:hover {
-            background: rgba(52, 199, 89, 0.25);
-            transform: scale(1.05);
-        }
-
-        .image-actions .action-danger {
-            background: var(--bg-primary);
-            color: var(--error);
-            border-color: var(--error);
-        }
-
-        .image-actions .action-danger:hover {
-            background: var(--error);
-            color: var(--bg-primary);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(255, 59, 48, 0.25);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: var(--bg-primary);
-            border-radius: 12px;
-        }
-
-        .empty-state h2 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-        }
-
-        .empty-state p {
-            color: #86868b;
-            margin-bottom: 1.5rem;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-        }
-
-        .modal {
-            display: none;
+        .toast {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--modal-backdrop);
-            z-index: 200;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 2rem;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-        }
-
-        .modal-content h2 {
-            margin-bottom: 1rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
+            bottom: 2rem;
+            right: 2rem;
+            color: var(--bg-primary);
+            padding: 1rem 1.5rem;
             border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.9rem;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            transition: border-color 0.2s, background 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: var(--z-toast);
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
         }
 
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-            background: var(--bg-primary);
+        .toast-success {
+            background: var(--success);
         }
 
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
+        .toast-error {
+            background: var(--error);
         }
 
-        .modal-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1.5rem;
+        .toast-info {
+            background: var(--accent);
         }
 
-        .modal-actions button {
-            flex: 1;
-            font-weight: 500;
+        .toast.removing {
+            animation: slideOut 0.3s ease-in;
         }
 
-        /* Ensure buttons in modal have good contrast */
-        .modal-content .btn-secondary {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-
-        .modal-content .btn-secondary:hover {
-            background: var(--bg-tertiary);
-            border-color: var(--accent);
-            color: var(--text-primary);
-        }
-
-        /* Engagement analytics styles */
-        .engagement-badge {
-            position: absolute;
-            bottom: 12px;
-            right: 12px;
-            padding: 6px 10px;
-            background: rgba(0, 0, 0, 0.80);
-            backdrop-filter: blur(12px);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            font-size: 12px;
-            font-weight: 500;
-            color: white;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .image-card:hover .engagement-badge {
-            opacity: 1;
-        }
-
-        .engagement-stat {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            white-space: nowrap;
-        }
-
-        .engagement-icon {
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        /* Engagement level indicators */
-        .image-card.engagement-high {
-            border-left: 3px solid #34c759;
-        }
-
-        .image-card.engagement-medium {
-            border-left: 3px solid #ff9500;
-        }
-
-        .image-card.engagement-low {
-            /* No special border */
-        }
-
-        /* Mobile responsive styles */
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 1rem;
-            }
-
-            .filters {
-                grid-template-columns: 1fr;
-                padding: 1rem;
-                margin-bottom: 1rem;
-            }
-
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-                gap: 1rem;
-            }
-
-            .image-actions {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
-            }
-
-            .image-actions button,
-            .visibility-toggle {
-                min-height: 44px;
-                font-size: 0.9rem;
-                padding: 0.625rem 0.875rem;
-            }
-
-            .tag-pill {
-                min-height: 32px;
-                padding: 0.375rem 0.75rem;
-            }
-
-            .active-tags {
-                padding: 0.75rem 1rem;
-            }
-
-            .stats {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: stretch;
-            }
-
-            .btn {
-                width: 100%;
-                text-align: center;
-            }
-        }
-
-        /* Tablet responsive */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            }
-        }
-
-        /* Toast animations */
         @keyframes slideIn {
             from {
                 transform: translateX(400px);
@@ -1029,192 +632,245 @@
             }
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            .toast {
+                animation: none;
+            }
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+
+        @media (max-width: 640px) {
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
+            .sheet-row {
+                flex-wrap: wrap;
+            }
+
+            .row-main {
+                min-width: 0;
+                flex-basis: calc(100% - 88px);
+            }
+
+            .row-thumb,
+            .pill,
+            .star-toggle,
+            .menu-trigger {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .row-thumb {
+                width: 44px;
+            }
+
+            .form-grid-2,
+            .form-grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .filters {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .stats .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
 {% endblock %}
 
 {% block content %}
+<div id="toastContainer"></div>
+
 <div class="container">
-        <div class="filters">
-            <div class="filter-group">
-                <label>Status</label>
-                <select id="filterStatus">
-                    <option value="">All Status</option>
-                    <option value="published">Public</option>
-                    <option value="draft">Private</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label>Search</label>
-                <input type="text" id="filterSearch" placeholder="Search title, caption, tags...">
-            </div>
+    <div class="filters">
+        <div class="filter-group">
+            <label for="filterStatus">Status</label>
+            <select id="filterStatus">
+                <option value="">All</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+            </select>
         </div>
 
-        <!-- Active tag filter bar -->
-        <div id="activeTagBar" class="active-tags" style="display: none;">
-            <span class="active-tags-label">Album:</span>
-            <div id="activeTagDisplay"></div>
-            <button class="clear-filter" onclick="clearTagFilter()" type="button">Show All</button>
+        <div class="filter-group">
+            <label for="filterTag">Tag</label>
+            <select id="filterTag">
+                <option value="">All tags</option>
+            </select>
         </div>
 
-        <div class="stats">
-            <div class="stats-info">
-                <span id="statsTotal">0</span> images
-                <span id="statsFiltered" style="display: none">(<span id="statsFilteredCount">0</span> filtered)</span>
-            </div>
-            <a href="/manage/upload" class="btn">+ Upload New Image</a>
-        </div>
-
-        <div id="gallery" class="gallery-grid">
-            <div class="loading">Loading images...</div>
+        <div class="filter-group">
+            <label for="filterSearch">Search</label>
+            <input type="text" id="filterSearch" placeholder="Search title, caption, tags...">
         </div>
     </div>
 
-    <!-- Edit Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
-            <h2>Edit Image</h2>
-            <form id="editForm">
-                <input type="hidden" id="editImageId">
-
-                <div class="form-group">
-                    <label>Title <span id="aiIndicatorTitle" class="ai-indicator" style="display: none; font-size: 0.75rem; color: #999; font-weight: normal;">(AI-generated)</span></label>
-                    <input type="text" id="editTitle" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Caption <span id="aiIndicatorCaption" class="ai-indicator" style="display: none; font-size: 0.75rem; color: #999; font-weight: normal;">(AI-generated)</span></label>
-                    <textarea id="editCaption"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Alt Text (for accessibility) <span id="aiIndicatorAltText" class="ai-indicator" style="display: none; font-size: 0.75rem; color: #999; font-weight: normal;">(AI-generated)</span></label>
-                    <textarea id="editAltText" placeholder="Descriptive text for screen readers" rows="2"></textarea>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
-                        Alternative text for accessibility (screen readers). Usually auto-populated from caption.
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Tags (comma-separated) <span id="aiIndicatorTags" class="ai-indicator" style="display: none; font-size: 0.75rem; color: #999; font-weight: normal;">(AI-generated)</span></label>
-                    <input type="text" id="editTags" placeholder="landscape, nature, sunset">
-                </div>
-
-                <div class="form-group">
-                    <label>Category <span id="aiIndicatorCategory" class="ai-indicator" style="display: none; font-size: 0.75rem; color: #999; font-weight: normal;">(AI-generated)</span></label>
-                    <input type="text" id="editCategory">
-                </div>
-
-                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="checkbox" id="editFeatured" style="width: auto; margin: 0;">
-                    <label for="editFeatured" style="margin: 0; cursor: pointer;">
-                        Featured (show in hero rotation more often - 70% chance)
-                    </label>
-                </div>
-
-                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.1rem;">Technical Metadata</h3>
-
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">Aperture</label>
-                        <input type="text" id="editAperture" placeholder="f/2.8" pattern="f/\d+(\.\d+)?" title="Format: f/2.8 or f/1.4" style="font-size: 0.85rem;">
-                    </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">Shutter Speed</label>
-                        <input type="text" id="editShutterSpeed" placeholder="1/250s" pattern="(\d+/\d+s?)|(\d+(\.\d+)?&quot;)|(\d+(\.\d+)?s)" title="Format: 1/250s, 1/1000, or 1&quot;" style="font-size: 0.85rem;">
-                    </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">ISO</label>
-                        <input type="text" id="editIso" placeholder="400" pattern="\d+" title="Numeric value only (e.g., 100, 400, 3200)" style="font-size: 0.85rem;">
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">Camera</label>
-                        <input type="text" id="editCamera" placeholder="Canon EOS R5" style="font-size: 0.85rem;">
-                    </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">Lens</label>
-                        <input type="text" id="editLens" placeholder="RF 24-70mm f/2.8" style="font-size: 0.85rem;">
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">Focal Length</label>
-                        <input type="text" id="editFocalLength" placeholder="50mm" pattern="\d+(-\d+)?mm" title="Format: 50mm or 24-70mm" style="font-size: 0.85rem;">
-                    </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">Location</label>
-                        <input type="text" id="editLocation" placeholder="Halifax, NS" style="font-size: 0.85rem;">
-                    </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">Date Taken</label>
-                        <input type="text" id="editDateTaken" placeholder="2024-01-15 14:30" title="Format: YYYY-MM-DD HH:MM:SS or YYYY-MM-DD" style="font-size: 0.85rem;">
-                    </div>
-                </div>
-
-                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.1rem;">Privacy Settings</h3>
-
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-                        <input type="checkbox" id="editShareEXIF" style="width: auto;">
-                        <span>Share EXIF data publicly (camera, lens, exposure settings, location)</span>
-                    </label>
-                    <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem; margin-left: 1.75rem;">
-                        When disabled, technical metadata remains private. Only you can see it in the management interface.
-                    </small>
-                </div>
-
-                <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.1rem;">Upload Information</h3>
-
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">Uploaded</label>
-                        <input type="text" id="editCreatedAt" readonly style="font-size: 0.85rem; background: var(--bg-primary); color: var(--text-secondary); cursor: not-allowed; border: 1px solid var(--border-color);">
-                    </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.85rem;">Last Modified</label>
-                        <input type="text" id="editUpdatedAt" readonly style="font-size: 0.85rem; background: var(--bg-primary); color: var(--text-secondary); cursor: not-allowed; border: 1px solid var(--border-color);">
-                    </div>
-                </div>
-
-                <div style="margin: 1.5rem 0; padding-top: 1rem; border-top: 1px solid var(--border-light);">
-                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: stretch;">
-                        <button type="button" onclick="reextractEXIF()" style="flex: 1; min-width: 180px; padding: 0.75rem; background: var(--bg-primary); border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                            🔄 Re-Extract EXIF
-                        </button>
-                        <div style="flex: 2; min-width: 280px; display: flex; gap: 0;">
-                            <select id="regenerateStyle" style="padding: 0.75rem; background: var(--bg-secondary); border: 1px solid rgba(102, 126, 234, 0.5); border-right: none; color: var(--text-primary); border-radius: 8px 0 0 8px; font-size: 0.85rem; cursor: pointer;">
-                                <option value="minimal">Minimal</option>
-                                <option value="technical">Technical</option>
-                                <option value="balanced" selected>Balanced</option>
-                                <option value="documentary">Documentary</option>
-                                <option value="artistic">Artistic</option>
-                            </select>
-                            <button type="button" onclick="regenerateAI()" style="flex: 1; padding: 0.75rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 0 8px 8px 0; cursor: pointer; font-size: 0.9rem; white-space: nowrap;">
-                                ✨ Regenerate AI (~$0.02)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-                    <button type="submit" class="btn">Save Changes</button>
-                </div>
-            </form>
+    <div class="stats">
+        <div class="stats-info">
+            <span id="statsTotal">0</span> photographs
+            <span id="statsFiltered" hidden>(<span id="statsFilteredCount">0</span> filtered)</span>
         </div>
+        <a href="/manage/upload" class="btn btn-primary">Upload photos</a>
     </div>
 
-    <!-- Fullscreen Viewer: image-only, no caption chrome -->
-    <div id="fullscreenViewer" class="fullscreen-viewer">
-        <button id="fullscreenClose" class="fullscreen-close" aria-label="Close fullscreen view" type="button">&times;</button>
-        <button id="fullscreenPrev" class="fullscreen-nav fullscreen-prev" aria-label="Previous image" type="button">&lsaquo;</button>
-        <img id="fullscreenImage" class="fullscreen-image" src="" alt="">
-        <button id="fullscreenNext" class="fullscreen-nav fullscreen-next" aria-label="Next image" type="button">&rsaquo;</button>
+    <div id="gallery" class="contact-sheet"></div>
+</div>
+
+<div id="rowMenu" class="row-menu" role="menu" hidden></div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h2>Edit photograph</h2>
+        <form id="editForm">
+            <input type="hidden" id="editImageId">
+
+            <div class="form-group">
+                <label>Title <span id="aiIndicatorTitle" class="suggested-dot" hidden title="Suggested; edit anything"></span></label>
+                <input type="text" id="editTitle" required>
+            </div>
+
+            <div class="form-group">
+                <label>Caption <span id="aiIndicatorCaption" class="suggested-dot" hidden title="Suggested; edit anything"></span></label>
+                <textarea id="editCaption"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Alt text (for accessibility) <span id="aiIndicatorAltText" class="suggested-dot" hidden title="Suggested; edit anything"></span></label>
+                <textarea id="editAltText" placeholder="Descriptive text for screen readers" rows="2"></textarea>
+                <div class="form-hint">Alternative text for accessibility (screen readers). Usually auto-populated from caption.</div>
+            </div>
+
+            <div class="form-group">
+                <label>Tags (comma-separated) <span id="aiIndicatorTags" class="suggested-dot" hidden title="Suggested; edit anything"></span></label>
+                <input type="text" id="editTags" placeholder="landscape, nature, sunset">
+            </div>
+
+            <div class="form-group">
+                <label>Category <span id="aiIndicatorCategory" class="suggested-dot" hidden title="Suggested; edit anything"></span></label>
+                <input type="text" id="editCategory">
+            </div>
+
+            <div class="form-group form-check">
+                <input type="checkbox" id="editFeatured">
+                <label for="editFeatured">Featured (show in hero rotation more often)</label>
+            </div>
+
+            <h3 class="modal-section-title">Technical metadata</h3>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Aperture</label>
+                    <input type="text" id="editAperture" placeholder="f/2.8" pattern="f/\d+(\.\d+)?" title="Format: f/2.8 or f/1.4">
+                </div>
+                <div class="form-group">
+                    <label>Shutter speed</label>
+                    <input type="text" id="editShutterSpeed" placeholder="1/250s" pattern="(\d+/\d+s?)|(\d+(\.\d+)?&quot;)|(\d+(\.\d+)?s)" title="Format: 1/250s, 1/1000, or 1&quot;">
+                </div>
+                <div class="form-group">
+                    <label>ISO</label>
+                    <input type="text" id="editIso" placeholder="400" pattern="\d+" title="Numeric value only (e.g., 100, 400, 3200)">
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Camera</label>
+                    <input type="text" id="editCamera" placeholder="Canon EOS R5">
+                </div>
+                <div class="form-group">
+                    <label>Lens</label>
+                    <input type="text" id="editLens" placeholder="RF 24-70mm f/2.8">
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>Focal length</label>
+                    <input type="text" id="editFocalLength" placeholder="50mm" pattern="\d+(-\d+)?mm" title="Format: 50mm or 24-70mm">
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="editLocation" placeholder="Halifax, NS">
+                </div>
+                <div class="form-group">
+                    <label>Date taken</label>
+                    <input type="text" id="editDateTaken" placeholder="2024-01-15 14:30" title="Format: YYYY-MM-DD HH:MM:SS or YYYY-MM-DD">
+                </div>
+            </div>
+
+            <h3 class="modal-section-title">Privacy settings</h3>
+
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" id="editShareEXIF">
+                    <label for="editShareEXIF">Share EXIF data publicly (camera, lens, exposure settings, location)</label>
+                </div>
+                <div class="form-hint">When disabled, technical metadata remains private. Only you can see it in the management interface.</div>
+            </div>
+
+            <h3 class="modal-section-title">Upload information</h3>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Uploaded</label>
+                    <input type="text" id="editCreatedAt" class="readonly-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Last modified</label>
+                    <input type="text" id="editUpdatedAt" class="readonly-input" readonly>
+                </div>
+            </div>
+
+            <div class="modal-tools">
+                <button type="button" id="reextractBtn" class="btn btn-secondary">Re-extract EXIF</button>
+                <div class="input-group">
+                    <select id="regenerateStyle" class="form-select" aria-label="Writing style">
+                        <option value="minimal">Minimal</option>
+                        <option value="technical">Technical</option>
+                        <option value="balanced" selected>Balanced</option>
+                        <option value="documentary">Documentary</option>
+                        <option value="artistic">Artistic</option>
+                    </select>
+                    <button type="button" id="regenerateBtn" class="btn btn-secondary">Regenerate metadata</button>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="cancelEditBtn" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </div>
+        </form>
     </div>
+</div>
+
+<!-- Fullscreen Viewer: image-only, no caption chrome -->
+<div id="fullscreenViewer" class="fullscreen-viewer">
+    <button id="fullscreenClose" class="fullscreen-close" aria-label="Close fullscreen view" type="button">&times;</button>
+    <button id="fullscreenPrev" class="fullscreen-nav fullscreen-prev" aria-label="Previous image" type="button">&lsaquo;</button>
+    <img id="fullscreenImage" class="fullscreen-image" src="" alt="">
+    <button id="fullscreenNext" class="fullscreen-nav fullscreen-next" aria-label="Next image" type="button">&rsaquo;</button>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -1223,20 +879,37 @@
         const CURRENT_USER_ID = {{ current_user.id }};
 
         let allImages = [];
-        let currentFilters = {};
         let currentDisplayedImages = [];
         let fullscreenIndex = -1;
+        let activeMenuTrigger = null;
+
+        function csrfHeaders() {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? { 'X-CSRF-Token': meta.getAttribute('content') } : {};
+        }
+
+        // Escapes quotes too: values are interpolated into HTML attributes,
+        // where the textContent/innerHTML trick is not sufficient.
+        function escapeHtml(text) {
+            return String(text ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
         // Load images on page load
         loadImages();
 
         // Set up filter listeners
         document.getElementById('filterStatus').addEventListener('change', applyFilters);
+        document.getElementById('filterTag').addEventListener('change', applyFilters);
         document.getElementById('filterSearch').addEventListener('input', debounce(applyFilters, 500));
 
         async function loadImages() {
+            renderSkeleton();
             try {
-                // Filter by current user automatically, include analytics
                 const response = await fetch(`/api/images/list?user_id=${CURRENT_USER_ID}&limit=1000&with_analytics=true`, {
                     credentials: 'include'
                 });
@@ -1245,16 +918,58 @@
                 const data = await response.json();
                 allImages = data.images;
 
+                populateTagFilter();
                 displayImages(allImages);
                 updateStats(allImages.length, allImages.length);
             } catch (error) {
                 console.error('Error loading images:', error);
                 document.getElementById('gallery').innerHTML = `
                     <div class="empty-state">
-                        <h2>Error Loading Images</h2>
-                        <p>${error.message}</p>
+                        <h2>Could not load photographs</h2>
+                        <p>${escapeHtml(error.message)}</p>
                     </div>
                 `;
+            }
+        }
+
+        function renderSkeleton() {
+            const gallery = document.getElementById('gallery');
+            let rows = '';
+            for (let i = 0; i < 6; i++) {
+                rows += `
+                    <div class="sheet-row is-skeleton">
+                        <div class="skeleton skeleton-thumb"></div>
+                        <div class="skeleton-lines">
+                            <div class="skeleton skeleton-line"></div>
+                            <div class="skeleton skeleton-line short"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            gallery.innerHTML = rows;
+        }
+
+        function populateTagFilter() {
+            const select = document.getElementById('filterTag');
+            const previous = select.value;
+
+            const seen = new Map(); // lowercase -> original casing (first occurrence)
+            allImages.forEach(img => {
+                (img.tags || '').split(',').forEach(tag => {
+                    const trimmed = tag.trim();
+                    if (!trimmed) return;
+                    const key = trimmed.toLowerCase();
+                    if (!seen.has(key)) seen.set(key, trimmed);
+                });
+            });
+
+            const tags = Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
+
+            select.innerHTML = '<option value="">All tags</option>' +
+                tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join('');
+
+            if (previous && tags.includes(previous)) {
+                select.value = previous;
             }
         }
 
@@ -1268,11 +983,11 @@
                 filtered = filtered.filter(img => !img.published);
             }
 
-            // Tag filtering (replace mode - show only images with this tag)
-            if (activeTag) {
+            const tag = document.getElementById('filterTag').value.toLowerCase();
+            if (tag) {
                 filtered = filtered.filter(img => {
-                    const imageTags = (img.tags || '').split(',').map(t => t.trim());
-                    return imageTags.includes(activeTag);
+                    const imageTags = (img.tags || '').split(',').map(t => t.trim().toLowerCase());
+                    return imageTags.includes(tag);
                 });
             }
 
@@ -1289,85 +1004,62 @@
             updateStats(filtered.length, allImages.length);
         }
 
+        function buildRowSub(img) {
+            const parts = [];
+            if (img.category) parts.push(img.category);
+            parts.push(formatDate(img.created_at));
+            if (img.analytics) parts.push(`${img.analytics.views} views`);
+            return parts.join(' · ');
+        }
+
         function displayImages(images) {
             const gallery = document.getElementById('gallery');
             // Fullscreen viewer prev/next steps through whatever is
-            // currently rendered here, respecting the active tag filter.
+            // currently rendered here, respecting active filters.
             currentDisplayedImages = images;
 
             if (images.length === 0) {
                 gallery.innerHTML = `
                     <div class="empty-state">
-                        <h2>No Images Found</h2>
-                        <p>No images match your current filters.</p>
-                        <a href="/manage/upload" class="btn">Upload Your First Image</a>
+                        <h2>No photographs found</h2>
+                        <p>No photographs match your current filters.</p>
+                        <a href="/manage/upload" class="btn btn-secondary">Upload photos</a>
                     </div>
                 `;
                 return;
             }
 
             gallery.innerHTML = images.map(img => {
-                // Determine engagement level class
-                const engagementClass = img.analytics ? `engagement-${img.analytics.engagement_level}` : '';
+                const title = img.title || 'Untitled';
+                const safeTitle = escapeHtml(title);
+                const publishedPillClass = img.published ? 'pill-published' : 'pill-draft';
+                const publishedLabel = img.published ? 'Published' : 'Draft';
+                const publishedTitle = img.published ? 'Click to unpublish' : 'Click to publish';
+                const featuredClass = img.featured ? 'is-featured' : '';
+                const featuredLabel = img.featured ? 'Featured, click to remove' : 'Not featured, click to feature';
+                const starGlyph = img.featured ? '★' : '☆';
 
                 return `
-                <div class="image-card ${img.published ? 'is-public' : ''} ${engagementClass}">
-                    <div class="image-thumbnail-wrapper">
-                        <img src="${img.thumbnail_url}" alt="${img.title || 'Untitled'}" class="image-thumbnail" onclick="openFullscreen(${img.id})">
-                        <button class="fullscreen-expand-btn" onclick="event.stopPropagation(); openFullscreen(${img.id})" aria-label="View fullscreen" type="button">&#9974;</button>
-                        ${img.published ? '<div class="public-overlay">Public</div>' : ''}
-                        ${img.analytics ? `
-                            <div class="engagement-badge">
-                                <div class="engagement-stat">
-                                    <span class="engagement-icon">👁️</span>
-                                    <span>${img.analytics.views}</span>
-                                </div>
-                                <div class="engagement-stat">
-                                    <span class="engagement-icon">🖱️</span>
-                                    <span>${img.analytics.clicks}</span>
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div class="image-content">
-                        <div class="image-title">${img.title || 'Untitled'}</div>
-                        <div class="image-caption">${img.caption || 'No caption'}</div>
-                        <div class="image-upload-date">Uploaded ${formatDate(img.created_at)}</div>
-
-                        ${(img.tags || '').trim() ? `
-                        <div class="image-tags">
-                            ${(img.tags || '').split(',').filter(t => t.trim()).slice(0, 3).map(tag => `
-                                <button class="tag-pill" onclick="filterByTag('${tag.trim()}')" type="button">
-                                    ${tag.trim()}
-                                </button>
-                            `).join('')}
-                            ${((img.tags || '').split(',').filter(t => t.trim()).length > 3) ?
-                                `<span class="tag-more">+${(img.tags.split(',').filter(t => t.trim()).length - 3)}</span>` : ''}
-                        </div>
-                        ` : ''}
-
-                        <div class="image-meta">
-                            ${img.category ? `<span class="badge badge-category">${img.category}</span>` : ''}
-                        </div>
-
-                        <div class="image-actions">
-                            <button onclick="editImage(${img.id})">Edit</button>
-                            <button class="visibility-toggle ${img.published ? 'is-public' : 'is-private'}"
-                                    onclick="toggleVisibility(${img.id}, ${img.published})"
-                                    aria-label="Toggle visibility: currently ${img.published ? 'public' : 'private'}"
-                                    aria-pressed="${img.published}">
-                                <span class="toggle-icon">${img.published ? '●' : '○'}</span>
-                                <span class="toggle-label">${img.published ? 'Public' : 'Private'}</span>
-                            </button>
-                            <button class="exif-toggle ${img.share_exif ? 'is-shared' : 'is-private'}"
-                                    onclick="toggleEXIF(${img.id}, ${img.share_exif})"
-                                    title="Toggle EXIF data sharing"
-                                    aria-label="Toggle EXIF sharing: currently ${img.share_exif ? 'shared' : 'private'}">
-                                ${img.share_exif ? '📷' : '🔒'}
-                            </button>
-                            <button onclick="deleteImage(${img.id})" class="action-danger">Delete</button>
-                        </div>
-                    </div>
+                <div class="sheet-row" data-image-id="${img.id}">
+                    <button type="button" class="row-thumb" data-action="fullscreen" aria-label="View ${safeTitle} full screen">
+                        <img src="${escapeHtml(img.thumbnail_url)}" alt="" loading="lazy">
+                    </button>
+                    <button type="button" class="row-main" data-action="edit">
+                        <span class="row-title">${safeTitle}</span>
+                        <span class="row-sub">${escapeHtml(buildRowSub(img))}</span>
+                    </button>
+                    <button type="button" class="pill ${publishedPillClass}"
+                            data-action="toggle-publish" aria-pressed="${img.published}"
+                            title="${escapeHtml(publishedTitle)}">
+                        ${publishedLabel}
+                    </button>
+                    <button type="button" class="star-toggle ${featuredClass}"
+                            data-action="toggle-featured" aria-pressed="${img.featured ? 'true' : 'false'}"
+                            aria-label="${escapeHtml(featuredLabel)}">
+                        ${starGlyph}
+                    </button>
+                    <button type="button" class="menu-trigger" data-action="menu"
+                            aria-haspopup="menu" aria-expanded="false" aria-label="More actions">&#8942;</button>
                 </div>
             `;
             }).join('');
@@ -1377,17 +1069,45 @@
             document.getElementById('statsTotal').textContent = total;
 
             if (filtered < total) {
-                document.getElementById('statsFiltered').style.display = 'inline';
+                document.getElementById('statsFiltered').hidden = false;
                 document.getElementById('statsFilteredCount').textContent = filtered;
             } else {
-                document.getElementById('statsFiltered').style.display = 'none';
+                document.getElementById('statsFiltered').hidden = true;
             }
         }
+
+        // ===== Delegated row actions =====
+
+        document.getElementById('gallery').addEventListener('click', (e) => {
+            const trigger = e.target.closest('[data-action]');
+            if (!trigger) return;
+            const row = trigger.closest('.sheet-row');
+            if (!row) return;
+            const imageId = parseInt(row.dataset.imageId, 10);
+
+            switch (trigger.dataset.action) {
+                case 'fullscreen':
+                    openFullscreen(imageId);
+                    break;
+                case 'edit':
+                    editImage(imageId);
+                    break;
+                case 'toggle-publish':
+                    toggleVisibility(imageId);
+                    break;
+                case 'toggle-featured':
+                    toggleFeatured(imageId);
+                    break;
+                case 'menu':
+                    openRowMenu(trigger, imageId);
+                    break;
+            }
+        });
 
         // ===== Fullscreen Viewer =====
         // Image-only, no caption chrome -- metadata editing lives in the
         // Edit modal. Steps through whatever list is currently rendered
-        // in the grid (respects the active tag filter / search / status).
+        // in the grid (respects the active filters).
 
         function openFullscreen(imageId) {
             const index = currentDisplayedImages.findIndex(img => img.id === imageId);
@@ -1438,105 +1158,191 @@
             else if (e.key === 'ArrowRight') stepFullscreen(1);
         });
 
-        async function toggleVisibility(imageId, currentlyPublic) {
-            const newState = !currentlyPublic;
+        // ===== State toggles =====
+
+        async function toggleVisibility(imageId) {
+            const image = allImages.find(img => img.id === imageId);
+            if (!image) return;
+            const newState = !image.published;
+            const control = document.querySelector(`.sheet-row[data-image-id="${imageId}"] [data-action="toggle-publish"]`);
+            control?.classList.add('changing');
 
             try {
                 const response = await fetch(`/api/images/${imageId}/publish?published=${newState}`, {
                     method: 'POST',
+                    headers: csrfHeaders(),
                     credentials: 'include'
                 });
 
                 if (!response.ok) throw new Error('Failed to update visibility');
 
-                // Update local data
-                const image = allImages.find(img => img.id === imageId);
-                if (image) image.published = newState;
-
+                image.published = newState;
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                showToast('❌ Failed to update visibility status', 'error');
+                showToast('error', 'Failed to update visibility');
+            } finally {
+                control?.classList.remove('changing');
             }
         }
 
-        async function toggleEXIF(imageId, currentlyShared) {
-            const newState = !currentlyShared;
+        async function toggleFeatured(imageId) {
+            const image = allImages.find(img => img.id === imageId);
+            if (!image) return;
+            const newState = !image.featured;
+            const control = document.querySelector(`.sheet-row[data-image-id="${imageId}"] [data-action="toggle-featured"]`);
+            control?.classList.add('changing');
+
+            try {
+                const response = await fetch(`/api/images/${imageId}/featured?featured=${newState}`, {
+                    method: 'POST',
+                    headers: csrfHeaders(),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to update featured status');
+
+                image.featured = newState;
+                applyFilters();
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('error', 'Failed to update featured status');
+            } finally {
+                control?.classList.remove('changing');
+            }
+        }
+
+        async function toggleEXIF(imageId) {
+            const image = allImages.find(img => img.id === imageId);
+            if (!image) return;
+            const newState = !image.share_exif;
 
             try {
                 const response = await fetch(`/api/images/${imageId}/exif-sharing?share=${newState}`, {
                     method: 'POST',
+                    headers: csrfHeaders(),
                     credentials: 'include'
                 });
 
                 if (!response.ok) throw new Error('Failed to update EXIF sharing');
 
-                // Update local data
-                const image = allImages.find(img => img.id === imageId);
-                if (image) image.share_exif = newState;
-
+                image.share_exif = newState;
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                showToast('❌ Failed to update EXIF sharing status', 'error');
+                showToast('error', 'Failed to update EXIF sharing');
             }
         }
 
-        // Tag filtering (replace mode - show only this tag)
-        let activeTag = null;
+        // ===== Row menu (singleton) =====
 
-        function filterByTag(tag) {
-            const trimmedTag = tag.trim();
+        const rowMenu = document.getElementById('rowMenu');
 
-            // If clicking the same tag, clear the filter
-            if (activeTag === trimmedTag) {
-                clearTagFilter();
+        function closeRowMenu() {
+            rowMenu.hidden = true;
+            rowMenu.innerHTML = '';
+            if (activeMenuTrigger) {
+                activeMenuTrigger.setAttribute('aria-expanded', 'false');
+                activeMenuTrigger = null;
+            }
+        }
+
+        function openRowMenu(trigger, imageId) {
+            const wasOpenForSameTrigger = !rowMenu.hidden && activeMenuTrigger === trigger;
+            closeRowMenu();
+            if (wasOpenForSameTrigger) {
+                trigger.focus();
                 return;
             }
 
-            // Set new active tag
-            activeTag = trimmedTag;
+            const image = allImages.find(img => img.id === imageId);
+            if (!image) return;
 
-            // Update UI
-            updateActiveTagDisplay();
+            const exifLabel = image.share_exif ? 'Stop sharing EXIF' : 'Share EXIF';
 
-            // Update tag pills on cards to show active state
-            document.querySelectorAll('.tag-pill').forEach(pill => {
-                if (pill.textContent.trim() === trimmedTag) {
-                    pill.classList.add('active');
-                } else {
-                    pill.classList.remove('active');
-                }
-            });
+            rowMenu.innerHTML = `
+                <button type="button" class="menu-item" role="menuitem" data-menu-action="edit">Edit</button>
+                <button type="button" class="menu-item" role="menuitem" data-menu-action="fullscreen">View full screen</button>
+                <button type="button" class="menu-item" role="menuitem" data-menu-action="toggle-exif">${escapeHtml(exifLabel)}</button>
+                <div class="menu-divider"></div>
+                <button type="button" class="menu-item menu-item-danger" role="menuitem" data-menu-action="delete">Delete</button>
+            `;
+            rowMenu.dataset.imageId = imageId;
 
-            applyFilters();
+            const rect = trigger.getBoundingClientRect();
+            rowMenu.hidden = false;
+            const menuRect = rowMenu.getBoundingClientRect();
+            let left = rect.right - menuRect.width;
+            let top = rect.bottom + 4;
+            left = Math.max(8, Math.min(left, window.innerWidth - menuRect.width - 8));
+            top = Math.min(top, window.innerHeight - menuRect.height - 8);
+            rowMenu.style.left = `${left}px`;
+            rowMenu.style.top = `${top}px`;
+
+            trigger.setAttribute('aria-expanded', 'true');
+            activeMenuTrigger = trigger;
+
+            const firstItem = rowMenu.querySelector('.menu-item');
+            firstItem?.focus();
         }
 
-        function clearTagFilter() {
-            activeTag = null;
+        rowMenu.addEventListener('click', (e) => {
+            const item = e.target.closest('[data-menu-action]');
+            if (!item) return;
+            const imageId = parseInt(rowMenu.dataset.imageId, 10);
+            closeRowMenu();
 
-            // Hide the active tag bar
-            document.getElementById('activeTagBar').style.display = 'none';
-
-            // Remove active class from all tag pills
-            document.querySelectorAll('.tag-pill').forEach(pill => {
-                pill.classList.remove('active');
-            });
-
-            applyFilters();
-        }
-
-        function updateActiveTagDisplay() {
-            const tagBar = document.getElementById('activeTagBar');
-            const tagDisplay = document.getElementById('activeTagDisplay');
-
-            if (activeTag) {
-                tagDisplay.innerHTML = `<button class="tag-pill" onclick="clearTagFilter()" type="button">${activeTag}</button>`;
-                tagBar.style.display = 'flex';
-            } else {
-                tagBar.style.display = 'none';
+            switch (item.dataset.menuAction) {
+                case 'edit':
+                    editImage(imageId);
+                    break;
+                case 'fullscreen':
+                    openFullscreen(imageId);
+                    break;
+                case 'toggle-exif':
+                    toggleEXIF(imageId);
+                    break;
+                case 'delete':
+                    deleteImage(imageId);
+                    break;
             }
-        }
+        });
+
+        rowMenu.addEventListener('keydown', (e) => {
+            const items = Array.from(rowMenu.querySelectorAll('.menu-item'));
+            const index = items.indexOf(document.activeElement);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                items[(index + 1) % items.length]?.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                items[(index - 1 + items.length) % items.length]?.focus();
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                items[0]?.focus();
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                items[items.length - 1]?.focus();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                const trigger = activeMenuTrigger;
+                closeRowMenu();
+                trigger?.focus();
+            } else if (e.key === 'Tab') {
+                closeRowMenu();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (rowMenu.hidden) return;
+            if (rowMenu.contains(e.target) || e.target.closest('[data-action="menu"]')) return;
+            closeRowMenu();
+        });
+        window.addEventListener('scroll', () => { if (!rowMenu.hidden) closeRowMenu(); }, true);
+        window.addEventListener('resize', () => { if (!rowMenu.hidden) closeRowMenu(); });
+
+        // ===== Edit modal =====
 
         async function editImage(imageId) {
             const image = allImages.find(img => img.id === imageId);
@@ -1557,13 +1363,13 @@
                 document.getElementById('editCategory').value = fullImage.category || '';
                 document.getElementById('editFeatured').checked = fullImage.featured || false;
 
-                // Show/hide AI indicators based on ai_disclosure flags
+                // Show/hide suggested-value indicators based on ai_disclosure flags
                 const aiDisclosure = fullImage.ai_disclosure || {};
-                document.getElementById('aiIndicatorTitle').style.display = aiDisclosure.title ? 'inline' : 'none';
-                document.getElementById('aiIndicatorCaption').style.display = aiDisclosure.caption ? 'inline' : 'none';
-                document.getElementById('aiIndicatorAltText').style.display = aiDisclosure.alt_text ? 'inline' : 'none';
-                document.getElementById('aiIndicatorTags').style.display = aiDisclosure.tags ? 'inline' : 'none';
-                document.getElementById('aiIndicatorCategory').style.display = aiDisclosure.category ? 'inline' : 'none';
+                document.getElementById('aiIndicatorTitle').hidden = !aiDisclosure.title;
+                document.getElementById('aiIndicatorCaption').hidden = !aiDisclosure.caption;
+                document.getElementById('aiIndicatorAltText').hidden = !aiDisclosure.alt_text;
+                document.getElementById('aiIndicatorTags').hidden = !aiDisclosure.tags;
+                document.getElementById('aiIndicatorCategory').hidden = !aiDisclosure.category;
 
                 // Technical metadata (from nested exif object)
                 const exif = fullImage.exif || {};
@@ -1606,6 +1412,8 @@
             document.getElementById('editModal').classList.remove('show');
         }
 
+        document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+
         document.getElementById('editForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -1628,13 +1436,11 @@
                 date_taken: document.getElementById('editDateTaken').value || null
             };
 
-            let response;  // Declare in outer scope for error handling
-
             try {
                 // Save metadata
-                response = await fetch(`/api/images/${imageId}`, {
+                const response = await fetch(`/api/images/${imageId}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
                     credentials: 'include',
                     body: JSON.stringify(metadata)
                 });
@@ -1656,6 +1462,7 @@
                 const shareEXIF = document.getElementById('editShareEXIF').checked;
                 const exifResponse = await fetch(`/api/images/${imageId}/exif-sharing?share=${shareEXIF}`, {
                     method: 'POST',
+                    headers: csrfHeaders(),
                     credentials: 'include'
                 });
 
@@ -1670,23 +1477,25 @@
 
                 // Success! Close modal and show confirmation
                 closeEditModal();
+                populateTagFilter();
                 applyFilters();
-                showToast('✅ Changes saved successfully!', 'success');
+                showToast('success', 'Changes saved');
 
             } catch (error) {
                 console.error('Save error:', error);
-                showToast(`❌ ${error.message}`, 'error');
+                showToast('error', `Failed to save: ${error.message}`);
             }
         });
 
         async function deleteImage(imageId) {
-            if (!confirm('Are you sure you want to delete this image? This cannot be undone.')) {
+            if (!confirm('Delete this photograph? This cannot be undone.')) {
                 return;
             }
 
             try {
                 const response = await fetch(`/api/images/${imageId}`, {
                     method: 'DELETE',
+                    headers: csrfHeaders(),
                     credentials: 'include'
                 });
 
@@ -1695,14 +1504,17 @@
                 // Remove from local data
                 allImages = allImages.filter(img => img.id !== imageId);
 
+                populateTagFilter();
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                showToast('❌ Failed to delete image', 'error');
+                showToast('error', 'Failed to delete photograph');
             }
         }
 
         // Re-Extract EXIF from original file
+        document.getElementById('reextractBtn').addEventListener('click', reextractEXIF);
+
         async function reextractEXIF() {
             const imageId = document.getElementById('editImageId').value;
             if (!imageId) return;
@@ -1714,13 +1526,14 @@
             try {
                 const response = await fetch(`/api/images/${imageId}/reextract-exif`, {
                     method: 'POST',
+                    headers: csrfHeaders(),
                     credentials: 'include'
                 });
 
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    showToast('✅ EXIF data refreshed from original file!', 'success');
+                    showToast('success', 'EXIF refreshed from the original file');
 
                     // Update UI fields with new EXIF data
                     if (result.exif) {
@@ -1735,35 +1548,35 @@
                         if (exif.date_taken) document.getElementById('editDateTaken').value = exif.date_taken;
                     }
                 } else {
-                    showToast('❌ ' + (result.error?.user_message || 'Failed to extract EXIF'), 'error');
+                    showToast('error', result.error?.user_message || 'Failed to extract EXIF');
                 }
             } catch (error) {
                 console.error('EXIF extraction error:', error);
-                showToast('❌ Network error while extracting EXIF', 'error');
+                showToast('error', 'Network error while extracting EXIF');
             }
         }
 
-        // Regenerate AI metadata (costs ~$0.02)
+        // Regenerate metadata (title, caption, tags, category)
+        document.getElementById('regenerateBtn').addEventListener('click', regenerateAI);
+
         async function regenerateAI() {
             const imageId = document.getElementById('editImageId').value;
             if (!imageId) return;
 
-            // Get selected AI style
+            const regenButton = document.getElementById('regenerateBtn');
+
+            // Get selected writing style
             const styleSelect = document.getElementById('regenerateStyle');
             const style = styleSelect ? styleSelect.value : 'balanced';
             const styleName = styleSelect ? styleSelect.options[styleSelect.selectedIndex].text : 'Balanced';
 
-            if (!confirm(`Regenerate AI metadata using "${styleName}" style? This will cost ~$0.02 and overwrite Title, Caption, Tags, Category.`)) {
+            if (!confirm(`Regenerate the title, caption, tags, and category for this image using the "${styleName}" style? Current values will be overwritten.`)) {
                 return;
             }
 
-            // Show loading state
-            const regenButton = event.target;
             const originalText = regenButton.textContent;
             regenButton.disabled = true;
-            regenButton.textContent = '⏳ Analyzing image...';
-            regenButton.style.opacity = '0.6';
-            regenButton.style.cursor = 'not-allowed';
+            regenButton.textContent = 'Regenerating…';
 
             try {
                 const formData = new FormData();
@@ -1771,6 +1584,7 @@
 
                 const response = await fetch(`/api/images/${imageId}/regenerate-ai`, {
                     method: 'POST',
+                    headers: csrfHeaders(),
                     credentials: 'include',
                     body: formData
                 });
@@ -1778,7 +1592,7 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    // Update UI fields with new AI metadata
+                    // Update UI fields with new metadata
                     if (result.title) document.getElementById('editTitle').value = result.title;
                     if (result.caption) {
                         document.getElementById('editCaption').value = result.caption;
@@ -1788,45 +1602,29 @@
                     if (result.tags) document.getElementById('editTags').value = result.tags;
                     if (result.category) document.getElementById('editCategory').value = result.category;
 
-                    // Show success message with style used
-                    showToast(`✅ AI metadata regenerated (${styleName} style)`, 'success');
+                    showToast('success', 'Metadata regenerated');
                 } else {
-                    showToast('❌ ' + (result.error?.user_message || 'Failed to regenerate AI metadata'), 'error');
+                    showToast('error', result.error?.user_message || 'Failed to regenerate metadata');
                 }
             } catch (error) {
-                console.error('AI regeneration error:', error);
-                showToast('❌ Network error while regenerating AI metadata', 'error');
+                console.error('Metadata regeneration error:', error);
+                showToast('error', 'Network error while regenerating metadata');
             } finally {
-                // Restore button state
                 regenButton.disabled = false;
                 regenButton.textContent = originalText;
-                regenButton.style.opacity = '1';
-                regenButton.style.cursor = 'pointer';
             }
         }
 
         // Toast notification system
-        function showToast(message, type = 'info') {
+        function showToast(type, message) {
+            const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             toast.textContent = message;
-            toast.style.cssText = `
-                position: fixed;
-                bottom: 2rem;
-                right: 2rem;
-                background: ${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--error)' : 'var(--accent)'};
-                color: var(--bg-primary);
-                padding: 1rem 1.5rem;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                z-index: 1000;
-                animation: slideIn 0.3s ease-out;
-                max-width: 400px;
-            `;
-            document.body.appendChild(toast);
+            container.appendChild(toast);
 
             setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease-in';
+                toast.classList.add('removing');
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
         }
