@@ -14,31 +14,6 @@
             line-height: 1.6;
         }
 
-        .header {
-            background: var(--bg-primary);
-            border-bottom: 1px solid var(--border-light);
-            padding: 1rem 2rem;
-        }
-
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        nav {
-            margin-top: 0.5rem;
-        }
-
-        nav a {
-            color: var(--accent);
-            text-decoration: none;
-            margin-right: 1.5rem;
-        }
-
-        nav a:hover {
-            text-decoration: underline;
-        }
-
         .container {
             max-width: 1200px;
             margin: 2rem auto;
@@ -58,7 +33,7 @@
 
         .upload-area.dragover {
             border-color: var(--accent);
-            background: #f0f7ff;
+            background: var(--hover-bg);
         }
 
         .upload-area:hover {
@@ -82,27 +57,8 @@
             font-size: 0.9rem;
         }
 
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            background: var(--accent);
-            color: var(--bg-primary);
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background 0.2s;
+        .upload-area .btn {
             margin-top: 1rem;
-        }
-
-        .btn:hover {
-            background: var(--accent-hover);
-        }
-
-        .btn:disabled {
-            background: #d1d1d6;
-            cursor: not-allowed;
         }
 
         #fileInput {
@@ -155,8 +111,9 @@
         }
 
         .status-pending {
-            background: #f0f7ff;
-            color: var(--accent);
+            background: var(--bg-tertiary);
+            /* text-primary, not -secondary: small text on bg-tertiary needs it for AA */
+            color: var(--text-primary);
         }
 
         .status-processing {
@@ -338,26 +295,12 @@
 
         .print-size {
             padding: 0.25rem 0.5rem;
-            background: #e0f2fe;
-            color: #0369a1;
+            background: var(--bg-tertiary);
+            /* text-primary, not -secondary: small text on bg-tertiary needs it for AA */
+            color: var(--text-primary);
             border-radius: 4px;
             font-size: 0.7rem;
             font-weight: 500;
-        }
-
-        [data-theme="dark"] .print-size {
-            background: rgba(56, 189, 248, 0.15);
-            color: #7dd3fc;
-        }
-
-        .ai-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            display: inline-block;
-            margin-bottom: 0.5rem;
         }
 
         .progress-bar {
@@ -425,54 +368,21 @@
             display: flex;
         }
 
-        .batch-controls label {
+        .batch-controls .batch-count {
             font-size: 0.9rem;
             font-weight: 500;
-            margin-right: auto;
         }
 
-        .batch-controls button {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border-light);
-            background: var(--bg-primary);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
+        .batch-controls .btn-danger {
+            margin-left: auto;
+            margin-right: var(--space-md);
         }
 
-        .batch-controls button:hover {
-            background: var(--bg-secondary);
-        }
-
-        .batch-controls button.primary {
-            background: var(--accent);
-            color: var(--bg-primary);
-            border: none;
-        }
-
-        .batch-controls button.primary:hover {
-            background: var(--accent-hover);
-        }
-
-        .batch-controls button.success {
-            background: var(--success);
-            color: var(--bg-primary);
-            border: none;
-        }
-
-        .batch-controls button.success:hover {
-            background: var(--success-border);
-        }
-
-        .batch-controls button.danger {
-            background: var(--error);
-            color: var(--bg-primary);
-            border: none;
-        }
-
-        .batch-controls button.danger:hover {
-            background: var(--error-border);
+        .meta-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .actions {
@@ -481,38 +391,8 @@
             margin-top: 1rem;
         }
 
-        .actions button {
-            flex: 1;
-            padding: 0.5rem;
-            border: 1px solid var(--border-light);
-            background: var(--bg-primary);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-
-        .actions button:hover {
-            background: var(--bg-secondary);
-        }
-
-        .actions button.publish {
-            background: var(--success);
-            color: var(--bg-primary);
-            border: none;
-        }
-
-        .actions button.publish:hover {
-            background: var(--success-border);
-        }
-
-        .actions button.delete {
-            background: var(--error);
-            color: var(--bg-primary);
-            border: none;
-        }
-
-        .actions button.delete:hover {
-            background: var(--error-border);
+        .actions .btn-danger {
+            margin-right: auto;
         }
 
         /* Toast Notification System */
@@ -536,7 +416,6 @@
             gap: 12px;
             align-items: flex-start;
             animation: slideIn 0.3s ease;
-            cursor: pointer;
         }
 
         .toast.toast-error {
@@ -594,6 +473,10 @@
             color: var(--accent);
             cursor: pointer;
             user-select: none;
+            background: none;
+            border: none;
+            font-family: inherit;
+            padding: 0;
         }
 
         .toast-details-toggle:hover {
@@ -619,10 +502,19 @@
             line-height: 1;
             padding: 4px;
             flex-shrink: 0;
+            background: none;
+            border: none;
+            font-family: inherit;
         }
 
         .toast-close:hover {
             color: var(--text-primary);
+        }
+
+        .toast-close:focus-visible,
+        .toast-details-toggle:focus-visible {
+            outline: 2px solid var(--focus-border);
+            outline-offset: 2px;
         }
 
         @keyframes slideIn {
@@ -646,183 +538,6 @@
                 opacity: 0;
             }
         }
-        /* Theme Toggle */
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 8px;
-            transition: background-color 0.2s;
-            margin-right: 20px;
-        }
-
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .theme-toggle-switch {
-            width: 48px;
-            height: 28px;
-            background: var(--bg-tertiary);
-            border-radius: 14px;
-            position: relative;
-            transition: background-color 0.3s;
-        }
-
-        .theme-toggle-switch::after {
-            content: '';
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: white;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        [data-theme="dark"] .theme-toggle-switch {
-            background: var(--accent);
-        }
-
-        [data-theme="dark"] .theme-toggle-switch::after {
-            transform: translateX(20px);
-        }
-
-        .theme-icon {
-            font-size: 1.2rem;
-        }
-
-        /* User Dropdown Component */
-        .user-dropdown {
-            position: relative;
-        }
-
-        .user-dropdown-trigger {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 12px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .user-dropdown-trigger:hover {
-            background: var(--bg-tertiary);
-            border-color: var(--border-medium);
-        }
-
-        .user-dropdown-trigger .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--brand-gradient);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--bg-primary);
-        }
-
-        .user-dropdown-trigger .user-name {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        .user-dropdown-trigger .dropdown-arrow {
-            font-size: 10px;
-            color: var(--text-secondary);
-            transition: transform 0.2s ease;
-        }
-
-        .user-dropdown.active .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-
-        .user-dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            min-width: 200px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-            z-index: 1000;
-        }
-
-        .user-dropdown.active .user-dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .user-dropdown-header {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .user-dropdown-header .name {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 2px;
-        }
-
-        .user-dropdown-header .role {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-transform: capitalize;
-        }
-
-        .user-dropdown-menu a,
-        .user-dropdown-menu button {
-            display: block;
-            width: 100%;
-            padding: 10px 16px;
-            font-size: 14px;
-            font-weight: 400;
-            color: var(--text-primary);
-            text-decoration: none;
-            background: none;
-            border: none;
-            text-align: left;
-            cursor: pointer;
-            transition: background 0.15s ease;
-        }
-
-        .user-dropdown-menu a:hover,
-        .user-dropdown-menu button:hover {
-            background: var(--bg-secondary);
-        }
-
-        .user-dropdown-divider {
-            height: 1px;
-            background: var(--border-light);
-            margin: 4px 0;
-        }
-
-        .user-dropdown-menu button.danger {
-            color: var(--error);
-        }
-
-        .user-dropdown-menu button.danger:hover {
-            background: var(--danger-hover);
-        }
-
-
     </style>
 {% endblock %}
 
@@ -837,19 +552,17 @@
             <div class="upload-icon">📸</div>
             <h2>Drag & Drop Photos</h2>
             <p>or click to browse (JPG, PNG, up to 20MB each)</p>
-            <button class="btn" onclick="document.getElementById('fileInput').click()">
-                Browse Files
-            </button>
+            <button type="button" id="browseBtn" class="btn btn-primary">Browse Files</button>
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg" multiple>
         </div>
 
         <div id="batchControls" class="batch-controls">
-            <label><span id="selectedCount">0</span> images selected</label>
-            <button onclick="selectAll()">Select All</button>
-            <button onclick="deselectAll()">Deselect All</button>
-            <button class="primary" onclick="batchSaveDraft()">Save Selected</button>
-            <button class="success" onclick="batchPublish()">Publish Selected</button>
-            <button class="danger" onclick="batchDelete()">Delete Selected</button>
+            <span class="batch-count"><span id="selectedCount">0</span> images selected</span>
+            <button type="button" id="batchSelectAll" class="btn btn-secondary btn-small">Select all</button>
+            <button type="button" id="batchDeselectAll" class="btn btn-secondary btn-small">Clear selection</button>
+            <button type="button" id="batchDelete" class="btn btn-danger">Delete selected</button>
+            <button type="button" id="batchSave" class="btn btn-secondary">Save selected</button>
+            <button type="button" id="batchPublish" class="btn btn-primary">Publish selected</button>
         </div>
 
         <div id="previews" class="previews"></div>
@@ -860,6 +573,11 @@
     <script>
         // Get current user ID from page context
         const CURRENT_USER_ID = {{ current_user.id }};
+
+        function csrfHeaders() {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? { 'X-CSRF-Token': meta.getAttribute('content') } : {};
+        }
 
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
@@ -890,9 +608,9 @@
                 const errorDetails = JSON.stringify(error, null, 2);
                 detailsHtml = `
                     <div class="toast-details">
-                        <div class="toast-details-toggle" onclick="toggleToastDetails('${toastId}')">
+                        <button type="button" class="toast-details-toggle" data-toast-action="toggle" aria-expanded="false">
                             ▼ View Details
-                        </div>
+                        </button>
                         <div class="toast-details-content" id="${toastId}-details" style="display: none;">
                             ${escapeHtml(errorDetails)}
                         </div>
@@ -907,7 +625,7 @@
                     <div class="toast-message">${escapeHtml(message)}</div>
                     ${detailsHtml}
                 </div>
-                <div class="toast-close" onclick="removeToast('${toastId}')">&times;</div>
+                <button type="button" class="toast-close" data-toast-action="close" aria-label="Dismiss notification">&times;</button>
             `;
 
             container.appendChild(toast);
@@ -941,12 +659,26 @@
                 if (details.style.display === 'none') {
                     details.style.display = 'block';
                     toggle.textContent = '▲ Hide Details';
+                    toggle.setAttribute('aria-expanded', 'true');
                 } else {
                     details.style.display = 'none';
                     toggle.textContent = '▼ View Details';
+                    toggle.setAttribute('aria-expanded', 'false');
                 }
             }
         }
+
+        document.getElementById('toastContainer').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-toast-action]');
+            if (!btn) return;
+            const toast = btn.closest('.toast');
+            if (!toast) return;
+            if (btn.dataset.toastAction === 'close') {
+                removeToast(toast.id);
+            } else if (btn.dataset.toastAction === 'toggle') {
+                toggleToastDetails(toast.id);
+            }
+        });
 
         // Drag and drop handlers
         uploadArea.addEventListener('dragover', (e) => {
@@ -969,6 +701,22 @@
             const files = Array.from(e.target.files);
             handleFiles(files);
             fileInput.value = '';
+        });
+
+        document.getElementById('browseBtn').addEventListener('click', () => fileInput.click());
+        document.getElementById('batchSelectAll').addEventListener('click', selectAll);
+        document.getElementById('batchDeselectAll').addEventListener('click', deselectAll);
+        document.getElementById('batchDelete').addEventListener('click', batchDelete);
+        document.getElementById('batchSave').addEventListener('click', batchSaveDraft);
+        document.getElementById('batchPublish').addEventListener('click', batchPublish);
+
+        previewsContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            const fileId = parseInt(btn.dataset.fileId);
+            const imageId = parseInt(btn.dataset.imageId);
+            const handlers = { save: saveMetadata, publish: publishImage, delete: deleteImage, reextract: reextractEXIF, regenerate: regenerateAI };
+            handlers[btn.dataset.action]?.(fileId, imageId);
         });
 
         function handleFiles(files) {
@@ -1027,6 +775,7 @@
             checkbox.className = 'preview-checkbox';
             checkbox.id = `checkbox-${fileData.id}`;
             checkbox.dataset.fileId = fileData.id;
+            checkbox.setAttribute('aria-label', 'Select ' + fileData.file.name + ' for batch actions');
             checkbox.addEventListener('change', updateBatchControls);
 
             const img = document.createElement('img');
@@ -1044,7 +793,7 @@
             const sizeInMB = (fileData.file.size / 1024 / 1024).toFixed(2);
 
             content.innerHTML = `
-                <div class="preview-filename">${fileData.file.name}</div>
+                <div class="preview-filename">${escapeHtml(fileData.file.name)}</div>
                 <div class="preview-size">${sizeInMB} MB</div>
                 <div class="preview-status status-pending">Queued...</div>
                 <div class="progress-bar">
@@ -1082,8 +831,8 @@
                 // Upload completed, now server is processing
                 xhr.upload.addEventListener('load', () => {
                     updateProgress(fileData.id, 50);
-                    updateStage(fileData.id, 'processing', 'AI analyzing image...');
-                    updateStatus(fileData.id, 'processing', 'AI analyzing image...');
+                    updateStage(fileData.id, 'processing', 'Analyzing image...');
+                    updateStatus(fileData.id, 'processing', 'Analyzing image...');
                 });
 
                 // Handle response
@@ -1220,7 +969,7 @@
                 // Exposure Triangle Section (now editable)
                 techMetadataHtml += `
                     <div class="meta-section">
-                        <div class="meta-section-title">📷 Exposure (editable)</div>
+                        <div class="meta-section-title">Exposure (editable)</div>
                         <div class="exposure-triangle">
                             <div class="exposure-item">
                                 <div class="exposure-label">Aperture</div>
@@ -1253,7 +1002,7 @@
                 // Camera & Lens Section (now editable)
                 techMetadataHtml += `
                     <div class="meta-section">
-                        <div class="meta-section-title">📸 Equipment (editable)</div>
+                        <div class="meta-section-title">Equipment (editable)</div>
                         <div class="meta-row">
                             <span class="meta-label">Camera</span>
                             <input type="text" class="meta-value" id="camera-${fileId}"
@@ -1280,7 +1029,7 @@
                 // GPS Location Section (editable, can clear for privacy)
                 techMetadataHtml += `
                     <div class="meta-section">
-                        <div class="meta-section-title">📍 Location (editable)</div>
+                        <div class="meta-section-title">Location (editable)</div>
                         <div class="meta-row">
                             <span class="meta-label">GPS</span>
                             <input type="text" class="meta-value" id="location-${fileId}"
@@ -1293,7 +1042,7 @@
                 // Date Taken (editable for timezone corrections)
                 techMetadataHtml += `
                     <div class="meta-section">
-                        <div class="meta-section-title">📅 Date (editable)</div>
+                        <div class="meta-section-title">Date (editable)</div>
                         <div class="meta-row">
                             <span class="meta-label">Captured</span>
                             <input type="text" class="meta-value" id="date_taken-${fileId}"
@@ -1308,7 +1057,7 @@
             const megapixels = ((metadata.width * metadata.height) / 1000000).toFixed(1);
             techMetadataHtml += `
                 <div class="meta-section">
-                    <div class="meta-section-title">🖼️ Specifications</div>
+                    <div class="meta-section-title">Specifications</div>
                     <div class="meta-row">
                         <span class="meta-label">Resolution</span>
                         <span class="meta-value">${metadata.width} × ${metadata.height}</span>
@@ -1330,7 +1079,7 @@
             if (printSizes.length > 0) {
                 techMetadataHtml += `
                     <div class="meta-section" style="grid-column: 1 / -1;">
-                        <div class="meta-section-title">🖨️ Recommended Print Sizes (300 DPI)</div>
+                        <div class="meta-section-title">Recommended Print Sizes (300 DPI)</div>
                         <div class="print-sizes">
                             ${printSizes.map(size => `<span class="print-size">${size}</span>`).join('')}
                         </div>
@@ -1343,20 +1092,12 @@
                     ${techMetadataHtml}
                 </div>
 
-                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <button onclick="reextractEXIF(${fileId}, ${metadata.image_id})"
-                            style="padding: 0.5rem 1rem; border: 1px solid #06c; background: var(--bg-primary); color: var(--accent); border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                        🔄 Re-Extract EXIF
-                    </button>
-                    <button onclick="regenerateAI(${fileId}, ${metadata.image_id})"
-                            style="padding: 0.5rem 1rem; border: 1px solid #764ba2; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                        ✨ Regenerate AI Metadata (~$0.02)
-                    </button>
+                <div class="meta-actions">
+                    <button type="button" class="btn btn-secondary btn-small" data-action="reextract" data-file-id="${fileId}" data-image-id="${metadata.image_id}">Re-extract EXIF</button>
+                    <button type="button" class="btn btn-secondary btn-small" data-action="regenerate" data-file-id="${fileId}" data-image-id="${metadata.image_id}">Regenerate metadata</button>
                 </div>
 
                 <div class="ai-metadata">
-                    <div class="ai-badge">✨ AI Generated</div>
-
                     <label>Title:</label>
                     <input type="text" id="title-${fileId}" value="${escapeHtml(metadata.title || '')}" />
 
@@ -1428,9 +1169,9 @@
 
             container.innerHTML = `
                 <div class="actions">
-                    <button onclick="saveMetadata(${fileId}, ${imageId})">Save Draft</button>
-                    <button class="publish" onclick="publishImage(${fileId}, ${imageId})">Publish</button>
-                    <button class="delete" onclick="deleteImage(${fileId}, ${imageId})">Delete</button>
+                    <button type="button" class="btn btn-danger btn-small" data-action="delete" data-file-id="${fileId}" data-image-id="${imageId}">Delete</button>
+                    <button type="button" class="btn btn-secondary btn-small" data-action="save" data-file-id="${fileId}" data-image-id="${imageId}">Save draft</button>
+                    <button type="button" class="btn btn-primary btn-small" data-action="publish" data-file-id="${fileId}" data-image-id="${imageId}">Publish</button>
                 </div>
             `;
         }
@@ -1455,7 +1196,7 @@
             try {
                 const response = await fetch(`/api/images/${imageId}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
                     credentials: 'include',
                     body: JSON.stringify(metadata)
                 });
@@ -1477,6 +1218,7 @@
             try {
                 const response = await fetch(`/api/images/${imageId}/publish`, {
                     method: 'POST',
+                    headers: csrfHeaders(),
                     credentials: 'include'
                 });
 
@@ -1498,6 +1240,7 @@
             try {
                 const response = await fetch(`/api/images/${imageId}`, {
                     method: 'DELETE',
+                    headers: csrfHeaders(),
                     credentials: 'include'
                 });
 
@@ -1654,6 +1397,7 @@
             try {
                 const response = await fetch(`/api/images/${imageId}/reextract-exif`, {
                     method: 'POST',
+                    headers: csrfHeaders(),
                     credentials: 'include'
                 });
 
@@ -1683,9 +1427,9 @@
             }
         }
 
-        // Regenerate AI metadata (costs ~$0.02)
+        // Regenerate metadata (title, caption, tags, category)
         async function regenerateAI(fileId, imageId) {
-            if (!confirm('Regenerate AI metadata for this image? This will cost ~$0.02 and overwrite Title, Caption, Tags, Category.')) {
+            if (!confirm('Regenerate the title, caption, tags, and category for this image? Current values will be overwritten.')) {
                 return;
             }
 
@@ -1694,6 +1438,7 @@
 
                 const response = await fetch(`/api/images/${imageId}/regenerate-ai`, {
                     method: 'POST',
+                    headers: csrfHeaders(),
                     credentials: 'include',
                     body: formData
                 });
@@ -1701,19 +1446,19 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    showToast('success', 'AI Metadata Regenerated', 'New AI-generated metadata created');
+                    showToast('success', 'Metadata Regenerated', 'Title, caption, tags, and category were updated.');
 
-                    // Update UI fields with new AI metadata
+                    // Update UI fields with new metadata
                     if (result.title) document.getElementById(`title-${fileId}`).value = result.title;
                     if (result.caption) document.getElementById(`caption-${fileId}`).value = result.caption;
                     if (result.tags) document.getElementById(`tags-${fileId}`).value = result.tags;
                     if (result.category) document.getElementById(`category-${fileId}`).value = result.category;
                 } else {
-                    showToast('error', 'AI Regeneration Failed', result.error?.user_message || 'Failed to regenerate AI metadata');
+                    showToast('error', 'Regeneration Failed', result.error?.user_message || 'Failed to regenerate metadata');
                 }
             } catch (error) {
-                console.error('AI regeneration error:', error);
-                showToast('error', 'AI Regeneration Failed', 'Network error');
+                console.error('Metadata regeneration error:', error);
+                showToast('error', 'Regeneration Failed', 'Network error');
             }
         }
 
