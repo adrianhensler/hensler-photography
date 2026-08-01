@@ -129,6 +129,9 @@
     link.className = 'gallery-item glightbox';
     link.setAttribute('data-gallery', 'portfolio');
     link.dataset.index = index;
+    // Full quality, only swapped in on full-screen toggle -- the slide
+    // itself renders the lighter 1200px `large_url` (link.href above).
+    link.dataset.originalSrc = imageData.image_url || imageData.large_url || link.href;
 
     // Justified rows: width share proportional to aspect ratio
     link.style.flexGrow = String(ratio * 100);
@@ -211,6 +214,7 @@
       galleryLightbox.destroy();
       galleryLightbox = null;
     }
+    fullscreenUpgradedIndices.clear();
     lightboxInitPromise = null;
     ensureLightboxReady().catch((error) => {
       console.error('Failed to initialize lightbox:', error);
@@ -246,15 +250,59 @@
     }
   }
 
+  // Slide indices currently showing the full-quality image, so leaving
+  // fullscreen can revert every upgraded slide, not just whichever one
+  // happens to be current at that moment (a visitor can enter fullscreen on
+  // slide A, arrow to slide B, then exit -- both must revert).
+  let fullscreenUpgradedIndices = new Set();
+
   function toggleLightboxFullscreen() {
     const container = document.querySelector('.glightbox-container');
     if (!container) return;
-    container.classList.toggle('is-fullscreen');
+    const isFullscreen = container.classList.toggle('is-fullscreen');
+    if (isFullscreen) {
+      applyFullQualityImage();
+    } else {
+      revertAllUpgradedImages();
+    }
   }
 
   function exitLightboxFullscreen() {
     const container = document.querySelector('.glightbox-container');
     if (container) container.classList.remove('is-fullscreen');
+    revertAllUpgradedImages();
+  }
+
+  // Swaps the active slide's <img> to the full-quality original -- the
+  // slide otherwise renders the lighter 1200px `large_url` variant.
+  // Only fetched on demand (full-screen toggle / navigation while
+  // full-screen), never preloaded.
+  function applyFullQualityImage() {
+    if (!galleryLightbox) return;
+    const index = galleryLightbox.index;
+    const activeEl = galleryLightbox.elements[index];
+    const node = activeEl && activeEl.node;
+    const originalSrc = node && node.dataset.originalSrc;
+    const img = document.querySelector('.gslide.current .gslide-image img');
+    if (img && originalSrc && img.src !== originalSrc) {
+      img.src = originalSrc;
+      fullscreenUpgradedIndices.add(index);
+    }
+  }
+
+  function revertAllUpgradedImages() {
+    if (!galleryLightbox) return;
+    const slides = document.querySelectorAll('.gslide');
+    fullscreenUpgradedIndices.forEach((index) => {
+      const activeEl = galleryLightbox.elements[index];
+      const node = activeEl && activeEl.node;
+      const largeSrc = node && node.getAttribute('href');
+      const img = slides[index] && slides[index].querySelector('.gslide-image img');
+      if (img && largeSrc) {
+        img.src = largeSrc;
+      }
+    });
+    fullscreenUpgradedIndices.clear();
   }
 
   function ensureLightboxReady() {
@@ -280,7 +328,12 @@
             closeButton: true,
             closeOnOutsideClick: true,
             onOpen: addFullscreenToggle,
-            onClose: exitLightboxFullscreen
+            onClose: exitLightboxFullscreen,
+            afterSlideChange: () => {
+              if (document.querySelector('.glightbox-container.is-fullscreen')) {
+                applyFullQualityImage();
+              }
+            }
           });
           resolve(galleryLightbox);
         }, 100);

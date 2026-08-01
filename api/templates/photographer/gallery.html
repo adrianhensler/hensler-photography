@@ -1404,7 +1404,7 @@
 
             const imgEl = document.getElementById('fullscreenImage');
             // Property assignment, not innerHTML -- safe for untrusted text.
-            imgEl.src = img.large_url || img.thumbnail_url;
+            imgEl.src = img.image_url || img.large_url || img.thumbnail_url;
             imgEl.alt = img.title || 'Untitled';
 
             document.getElementById('fullscreenPrev').disabled = fullscreenIndex <= 0;
