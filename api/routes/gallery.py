@@ -60,7 +60,7 @@ async def get_published_gallery(user_id: int, response: Response):
                 large.filename as large_filename,
                 i.ai_generated_title, i.ai_generated_caption, i.ai_generated_description,
                 i.ai_generated_alt_text, i.ai_generated_tags, i.ai_generated_category,
-                full.filename as full_filename
+                fullres.filename as full_filename
             FROM images i
             LEFT JOIN image_variants thumb ON i.id = thumb.image_id
                 AND thumb.format = 'webp' AND thumb.size = 'thumbnail'
@@ -68,8 +68,8 @@ async def get_published_gallery(user_id: int, response: Response):
                 AND medium.format = 'webp' AND medium.size = 'medium'
             LEFT JOIN image_variants large ON i.id = large.image_id
                 AND large.format = 'webp' AND large.size = 'large'
-            LEFT JOIN image_variants full ON i.id = full.image_id
-                AND full.format = 'webp' AND full.size = 'full'
+            LEFT JOIN image_variants fullres ON i.id = fullres.image_id
+                AND fullres.format = 'webp' AND fullres.size = 'full'
             WHERE i.user_id = ? AND i.published = 1 AND i.deleted_at IS NULL
             ORDER BY i.sort_order ASC, i.created_at DESC
         """,
