@@ -273,6 +273,15 @@
     revertAllUpgradedImages();
   }
 
+  // `img.src` always reads back as an absolute URL; API-supplied paths are
+  // root-relative. Resolve both sides before comparing, otherwise every
+  // check looks like a mismatch and reassigning `src` on an already-correct
+  // image triggers a fresh load -> re-triggers the next check -> infinite
+  // reload loop (this shipped broken and had to be hotfixed).
+  function resolveUrl(url) {
+    return new URL(url, document.baseURI).href;
+  }
+
   // Swaps the active slide's <img> to the full-quality original -- the
   // slide otherwise renders the lighter 1200px `large_url` variant.
   // Only fetched on demand (full-screen toggle / navigation while
@@ -284,7 +293,7 @@
     const node = activeEl && activeEl.node;
     const originalSrc = node && node.dataset.originalSrc;
     const img = document.querySelector('.gslide.current .gslide-image img');
-    if (img && originalSrc && img.src !== originalSrc) {
+    if (img && originalSrc && img.src !== resolveUrl(originalSrc)) {
       img.src = originalSrc;
       fullscreenUpgradedIndices.add(index);
     }
@@ -298,7 +307,7 @@
       const node = activeEl && activeEl.node;
       const largeSrc = node && node.getAttribute('href');
       const img = slides[index] && slides[index].querySelector('.gslide-image img');
-      if (img && largeSrc) {
+      if (img && largeSrc && img.src !== resolveUrl(largeSrc)) {
         img.src = largeSrc;
       }
     });
