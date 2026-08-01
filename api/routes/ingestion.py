@@ -535,6 +535,7 @@ async def list_images(
                 "updated_at": row[14],
                 "thumbnail_url": f"/assets/gallery/{Path(row[2]).stem}_thumbnail.webp",
                 "large_url": f"/assets/gallery/{Path(row[2]).stem}_large.webp",
+                "image_url": f"/assets/gallery/{row[2]}",
             }
 
             # Include analytics if requested

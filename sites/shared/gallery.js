@@ -129,6 +129,9 @@
     link.className = 'gallery-item glightbox';
     link.setAttribute('data-gallery', 'portfolio');
     link.dataset.index = index;
+    // Full quality, only swapped in on full-screen toggle -- the slide
+    // itself renders the lighter 1200px `large_url` (link.href above).
+    link.dataset.originalSrc = imageData.image_url || imageData.large_url || link.href;
 
     // Justified rows: width share proportional to aspect ratio
     link.style.flexGrow = String(ratio * 100);
@@ -249,12 +252,43 @@
   function toggleLightboxFullscreen() {
     const container = document.querySelector('.glightbox-container');
     if (!container) return;
-    container.classList.toggle('is-fullscreen');
+    const isFullscreen = container.classList.toggle('is-fullscreen');
+    if (isFullscreen) {
+      applyFullQualityImage();
+    } else {
+      revertToLightboxImage();
+    }
   }
 
   function exitLightboxFullscreen() {
     const container = document.querySelector('.glightbox-container');
     if (container) container.classList.remove('is-fullscreen');
+    revertToLightboxImage();
+  }
+
+  // Swaps the active slide's <img> to the full-quality original -- the
+  // slide otherwise renders the lighter 1200px `large_url` variant.
+  // Only fetched on demand (full-screen toggle), never preloaded.
+  function applyFullQualityImage() {
+    if (!galleryLightbox) return;
+    const activeEl = galleryLightbox.elements[galleryLightbox.index];
+    const node = activeEl && activeEl.node;
+    const originalSrc = node && node.dataset.originalSrc;
+    const img = document.querySelector('.gslide.current .gslide-image img');
+    if (img && originalSrc && img.src !== originalSrc) {
+      img.src = originalSrc;
+    }
+  }
+
+  function revertToLightboxImage() {
+    if (!galleryLightbox) return;
+    const activeEl = galleryLightbox.elements[galleryLightbox.index];
+    const node = activeEl && activeEl.node;
+    const largeSrc = node && node.getAttribute('href');
+    const img = document.querySelector('.gslide.current .gslide-image img');
+    if (img && largeSrc && img.src !== largeSrc) {
+      img.src = largeSrc;
+    }
   }
 
   function ensureLightboxReady() {
@@ -280,7 +314,12 @@
             closeButton: true,
             closeOnOutsideClick: true,
             onOpen: addFullscreenToggle,
-            onClose: exitLightboxFullscreen
+            onClose: exitLightboxFullscreen,
+            afterSlideChange: () => {
+              if (document.querySelector('.glightbox-container.is-fullscreen')) {
+                applyFullQualityImage();
+              }
+            }
           });
           resolve(galleryLightbox);
         }, 100);
