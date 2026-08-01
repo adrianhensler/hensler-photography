@@ -221,7 +221,7 @@ All `/manage/*` pages use shared template inheritance.
 
 **Public Gallery**:
 - `GET /api/gallery/published?user_id=1` — Published images with WebP variant URLs (used by public sites)
-- `GET /api/gallery/published/{slug}` — Single published image by slug (groundwork for `/photo/{slug}` permalinks; no frontend route consumes this yet)
+- `GET /api/gallery/published/{slug}?user_id=1` — Single published image by slug (`user_id` required; groundwork for `/photo/{slug}` permalinks; no frontend route consumes this yet)
 
 **Analytics**:
 - `POST /api/track` — Record events (no auth; privacy-preserving)
