@@ -177,6 +177,8 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-sm);
+    min-height: 44px;
+    justify-content: center;
 }
 
 .btn:disabled {
@@ -185,13 +187,14 @@
 }
 
 .btn-primary {
-    background: var(--brand-gradient);
-    color: #fff;
+    background: var(--accent);
+    color: var(--bg-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+    background: var(--accent-hover);
+    box-shadow: var(--card-shadow-hover);
 }
 
 .btn-secondary {
@@ -218,6 +221,7 @@
 .btn-small {
     padding: 6px 12px;
     font-size: var(--font-size-xs);
+    min-height: 32px;
 }
 
 .btn-large {
@@ -340,8 +344,9 @@
 }
 
 .badge-info {
-    background: rgba(0, 102, 204, 0.1);
-    color: var(--brand-blue);
+    background: var(--focus-ring);
+    /* accent-hover, not accent: 12px text on the focus-ring tint needs it for AA */
+    color: var(--accent-hover);
 }
 
 /* ============================================

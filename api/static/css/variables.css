@@ -48,10 +48,12 @@
     --warning-text: #a8722e;
     --warning-border: #a8722e;
     --error-bg: rgba(168, 74, 63, 0.10);
-    --error-text: #a84a3f;
+    /* Text-role danger tokens sit darker than --error so small text passes
+       WCAG AA on the tinted danger/error backgrounds (5.4:1 vs 4.1:1). */
+    --error-text: #8f3a30;
     --error-border: #a84a3f;
     --danger-bg: rgba(168, 74, 63, 0.10);
-    --danger-text: #a84a3f;
+    --danger-text: #8f3a30;
     --danger-hover: rgba(168, 74, 63, 0.18);
 
     /* Component-Specific */
