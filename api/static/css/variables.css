@@ -29,6 +29,10 @@
     --text-tertiary: #a2977f;
     --border-light: #e3dbc9;
     --border-medium: #d0c4a8;
+    /* Aliases: gallery/analytics templates reference these names; without them
+       the declarations are invalid and borders fall back to currentColor. */
+    --border-color: var(--border-light);
+    --border: var(--border-light);
 
     /* Interactive States */
     --hover-bg: #e9e1cd;

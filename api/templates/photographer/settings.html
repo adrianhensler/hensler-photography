@@ -88,11 +88,11 @@
         </div>
         <div class="settings-field">
             <label for="bio">Bio</label>
-            <textarea id="bio" name="bio" rows="3" placeholder="Short introduction"></textarea>
+            <textarea id="bio" name="bio" rows="3" placeholder="Short introduction">{{ current_user.bio or '' }}</textarea>
         </div>
         <div class="settings-actions">
-            <button class="btn-primary" type="button">Save profile</button>
-            <button class="btn-secondary" type="button">Cancel</button>
+            <button id="cancel-profile" class="btn-secondary" type="button">Cancel</button>
+            <button id="save-profile" class="btn-primary" type="button">Save profile</button>
         </div>
     </div>
 
@@ -117,8 +117,8 @@
             <strong>Artistic:</strong> "Whispers of Morning Mist" - Poetic, emotional
         </div>
         <div class="settings-actions">
-            <button class="btn-primary" type="button" onclick="saveAIStyle()">Save AI style</button>
-            <button class="btn-secondary" type="button">Cancel</button>
+            <button id="cancel-ai-style" class="btn-secondary" type="button">Cancel</button>
+            <button id="save-ai-style" class="btn-primary" type="button">Save AI style</button>
         </div>
     </div>
 
@@ -138,31 +138,8 @@
             When disabled, your activity is not tracked at all.
         </div>
         <div class="settings-actions">
-            <button class="btn-primary" type="button" onclick="saveTrackingPreference()">Save tracking preference</button>
-            <button class="btn-secondary" type="button">Cancel</button>
-        </div>
-    </div>
-
-    <div class="settings-card">
-        <h2>Notifications</h2>
-        <p>Choose how you want to hear about uploads, shares, and analytics.</p>
-        <div class="settings-field">
-            <label for="email_frequency">Email frequency</label>
-            <select id="email_frequency" name="email_frequency">
-                <option value="daily">Daily summary</option>
-                <option value="weekly" selected>Weekly digest</option>
-                <option value="off">Off</option>
-            </select>
-        </div>
-        <div class="settings-field">
-            <label>
-                <input type="checkbox" name="upload_alerts" checked>
-                Notify me when uploads finish
-            </label>
-        </div>
-        <div class="settings-actions">
-            <button class="btn-primary" type="button">Save preferences</button>
-            <button class="btn-secondary" type="button">Cancel</button>
+            <button id="cancel-tracking" class="btn-secondary" type="button">Cancel</button>
+            <button id="save-tracking" class="btn-primary" type="button">Save tracking preference</button>
         </div>
     </div>
 </div>
@@ -170,78 +147,83 @@
 
 {% block scripts %}
 <script>
-async function saveAIStyle() {
-    const aiStyle = document.getElementById('ai_style').value;
-    const button = event.target;
+(() => {
+    const field = (id) => document.getElementById(id);
 
-    button.disabled = true;
-    button.textContent = 'Saving...';
+    // Per-card snapshots of last-saved values; Cancel restores these.
+    const snapshots = {
+        profile: () => ({ display_name: field('display_name').value, bio: field('bio').value }),
+        aiStyle: () => ({ ai_style: field('ai_style').value }),
+        tracking: () => ({ track_own_activity: field('track_own_activity').checked })
+    };
+    const saved = {
+        profile: snapshots.profile(),
+        aiStyle: snapshots.aiStyle(),
+        tracking: snapshots.tracking()
+    };
 
-    try {
-        const response = await fetch('/api/users/me', {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ ai_style: aiStyle })
-        });
+    async function patchUser(payload, button, idleLabel) {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        button.disabled = true;
+        button.textContent = 'Saving...';
 
-        if (response.ok) {
-            button.textContent = 'Saved!';
-            button.style.background = 'var(--success)';
-            setTimeout(() => {
-                button.textContent = 'Save AI style';
-                button.style.background = 'var(--accent)';
-                button.disabled = false;
-            }, 2000);
-        } else {
+        try {
+            const response = await fetch('/api/users/me', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfMeta ? csrfMeta.getAttribute('content') : ''
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                button.textContent = 'Saved!';
+                button.style.background = 'var(--success)';
+                setTimeout(() => {
+                    button.textContent = idleLabel;
+                    button.style.background = 'var(--accent)';
+                    button.disabled = false;
+                }, 2000);
+                return true;
+            }
             const error = await response.json();
-            alert('Error saving AI style: ' + (error.detail || 'Unknown error'));
-            button.textContent = 'Save AI style';
-            button.disabled = false;
+            alert('Error saving: ' + (error.detail || 'Unknown error'));
+        } catch (error) {
+            alert('Network error: ' + error.message);
         }
-    } catch (error) {
-        alert('Network error: ' + error.message);
-        button.textContent = 'Save AI style';
+        button.textContent = idleLabel;
         button.disabled = false;
+        return false;
     }
-}
 
-async function saveTrackingPreference() {
-    const trackOwnActivity = document.getElementById('track_own_activity').checked;
-    const button = event.target;
-
-    button.disabled = true;
-    button.textContent = 'Saving...';
-
-    try {
-        const response = await fetch('/api/users/me', {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ track_own_activity: trackOwnActivity })
-        });
-
-        if (response.ok) {
-            button.textContent = 'Saved!';
-            button.style.background = 'var(--success)';
-            setTimeout(() => {
-                button.textContent = 'Save tracking preference';
-                button.style.background = 'var(--accent)';
-                button.disabled = false;
-            }, 2000);
-        } else {
-            const error = await response.json();
-            alert('Error saving tracking preference: ' + (error.detail || 'Unknown error'));
-            button.textContent = 'Save tracking preference';
-            button.disabled = false;
+    field('save-profile').addEventListener('click', async (e) => {
+        if (await patchUser(snapshots.profile(), e.currentTarget, 'Save profile')) {
+            saved.profile = snapshots.profile();
         }
-    } catch (error) {
-        alert('Network error: ' + error.message);
-        button.textContent = 'Save tracking preference';
-        button.disabled = false;
-    }
-}
+    });
+    field('cancel-profile').addEventListener('click', () => {
+        field('display_name').value = saved.profile.display_name;
+        field('bio').value = saved.profile.bio;
+    });
+
+    field('save-ai-style').addEventListener('click', async (e) => {
+        if (await patchUser(snapshots.aiStyle(), e.currentTarget, 'Save AI style')) {
+            saved.aiStyle = snapshots.aiStyle();
+        }
+    });
+    field('cancel-ai-style').addEventListener('click', () => {
+        field('ai_style').value = saved.aiStyle.ai_style;
+    });
+
+    field('save-tracking').addEventListener('click', async (e) => {
+        if (await patchUser(snapshots.tracking(), e.currentTarget, 'Save tracking preference')) {
+            saved.tracking = snapshots.tracking();
+        }
+    });
+    field('cancel-tracking').addEventListener('click', () => {
+        field('track_own_activity').checked = saved.tracking.track_own_activity;
+    });
+})();
 </script>
 {% endblock %}
