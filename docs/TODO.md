@@ -28,8 +28,8 @@ gallery redesign (PRs #43, #50–#56).
       view"); retire off-palette colors (`#667eea/#764ba2` purple, `#34c759` green,
       `#06c` blue); remove AI/cost language from photographer-facing copy; replace
       div-as-button patterns with real elements. Upload workflow first (confirmed).
-      Upload page done 2026-08-01 (this PR); remaining: gallery manager, dashboard,
-      analytics, settings, /admin decision.
+      Upload page done 2026-08-01; gallery manager done 2026-08-01 (phase 3, this PR);
+      remaining: dashboard, analytics, settings, /admin decision.
       Separate decision needed: fold `/admin` pages into the manage shell or retire them.
 - [ ] **SEO metadata fixes** — remaining gaps (Adrian `og:description`/`og:image` fixed):
       - Liam has no `og:image`
