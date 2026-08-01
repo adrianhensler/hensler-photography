@@ -1258,10 +1258,15 @@
             }
         }
 
+        // Escapes quotes too: values are interpolated into HTML attributes,
+        // where the textContent/innerHTML trick is not sufficient.
         function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            return String(text ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         // Batch operation functions
