@@ -195,7 +195,7 @@ class ImageMetadataUpdate(BaseModel):
 
             # Allow formats: 1/250s, 1/1000, 1", 30", 2.5s, etc.
             valid_patterns = [
-                r"^\d+/\d+s?$",  # 1/250s or 1/250
+                r"^\d+(\.\d+)?/\d+(\.\d+)?s?$",  # 1/250s, 1/250, 1/2.5s (phone EXIF)
                 r'^\d+(\.\d+)?"$',  # 1" or 2.5"
                 r"^\d+(\.\d+)?s$",  # 1s or 2.5s
             ]
@@ -212,9 +212,10 @@ class ImageMetadataUpdate(BaseModel):
             if not v:
                 return None
 
-            # Allow formats: 50mm, 24-70mm, 100-400mm
-            if not re.match(r"^\d+(-\d+)?mm$", v, re.IGNORECASE):
-                raise ValueError("Focal length must be in format 50mm or 24-70mm")
+            # Allow formats: 50mm, 24-70mm, 100-400mm -- and decimals
+            # (phone lenses report values like 4.38mm or 6.9mm).
+            if not re.match(r"^\d+(\.\d+)?(-\d+(\.\d+)?)?mm$", v, re.IGNORECASE):
+                raise ValueError("Focal length must be in format 50mm, 6.9mm, or 24-70mm")
 
         return v
 

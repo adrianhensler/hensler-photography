@@ -238,7 +238,7 @@ Pydantic models enforce these formats:
 - **ISO**: Numeric, range 1–10,000,000 (phone sensors report base ISO as low as 10–16)
 - **Aperture**: `f/2.8` or `f/1.4`
 - **Shutter Speed**: `1/250s`, `1/1000`, `1"`, `2.5s`
-- **Focal Length**: `50mm` or `24-70mm`
+- **Focal Length**: `50mm`, `6.9mm`, or `24-70mm` (decimals allowed; phone lenses report them)
 - **Date Taken**: `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD`
 
 ### File Storage
