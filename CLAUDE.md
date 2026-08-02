@@ -131,43 +131,7 @@ Canonical names — use these instead of ad-hoc alternatives:
 
 ## Backend API System
 
-Python/FastAPI backend for image management on the same port as the static sites.
-
-### Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Port 443 (Production) / 8080 (Development)                 │
-│                                                              │
-│  Public Routes:                                              │
-│  - adrian.hensler.photography/                              │
-│  - liam.hensler.photography/                                │
-│  - Dynamic loading via /api/gallery/published               │
-│  - Responsive WebP variants (400px/800px/1200px)            │
-│                                                              │
-│  Management Routes (JWT auth required):                      │
-│  - /admin/login (authentication)                            │
-│  - /manage (dashboard)                                       │
-│  - /manage/upload (image upload with AI metadata)           │
-│  - /manage/gallery (publish workflow, EXIF editing)          │
-│  - /manage/analytics (engagement metrics)                    │
-│  - /manage/settings (account + portfolio settings)          │
-│                                                              │
-│  Backend: Python/FastAPI + SQLite                            │
-│  - JWT authentication with httpOnly cookies                 │
-│  - AI-powered metadata (Claude Vision API)                  │
-│  - WebP variant generation (400px/800px/1200px)             │
-│  - Analytics tracking (privacy-preserving)                   │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Backend Stack
-
-- **Framework**: Python 3.11+ / FastAPI / Uvicorn ASGI
-- **Database**: SQLite at `/data/gallery.db` (see DATABASE.md for full schema)
-- **Auth**: JWT tokens in httpOnly cookies, bcrypt (12 rounds), role-based (admin/photographer)
-- **Image Processing**: PIL/Pillow — EXIF extraction, WebP conversion, 3 variant sizes
-- **AI**: Claude Vision API — title, caption, tags, category generation (~$0.02/image)
+Python/FastAPI backend for image management on the same port as the static sites (routes in `api/main.py` and `api/routes/`; stack and dependencies in `api/requirements.txt`; database schema in DATABASE.md).
 
 ### Admin Interface Features
 
@@ -201,54 +165,13 @@ All `/manage/*` pages use shared template inheritance.
 2. Add route to `api/main.py` (pass `request` in context for nav detection)
 3. Add nav link to `api/templates/photographer/_header.html`
 
-### API Endpoints
+### API Endpoints and Validation
 
-**Authentication**:
-- `POST /api/auth/login` — Login (returns JWT cookie)
-- `POST /api/auth/logout` — Logout
-- `GET /api/auth/me` — Get current user
-
-**Image Management**:
-- `POST /api/images/ingest` — Upload image(s) with AI analysis
-- `GET /api/images/list?user_id=1&limit=1000` — List images
-- `GET /api/images/{id}` — Get image details with EXIF
-- `PATCH /api/images/{id}` — Update metadata (validated)
-- `DELETE /api/images/{id}` — Delete image
-- `POST /api/images/{id}/publish` — Toggle publish status
-- `POST /api/images/{id}/featured?featured=true` — Toggle featured
-- `POST /api/images/{id}/reextract-exif` — Re-extract EXIF (free)
-- `POST /api/images/{id}/regenerate-ai` — Regenerate AI metadata (~$0.02)
-
-**Public Gallery**:
-- `GET /api/gallery/published?user_id=1` — Published images with WebP variant URLs (used by public sites)
-- `GET /api/gallery/published/{slug}?user_id=1` — Single published image by slug (`user_id` required; groundwork for `/photo/{slug}` permalinks; no frontend route consumes this yet)
-
-**Analytics**:
-- `POST /api/track` — Record events (no auth; privacy-preserving)
-- `GET /api/analytics/overview?days=30` — Overall stats
-- `GET /api/analytics/timeline?days=30&metric=views` — Time series
-- `GET /api/analytics/top-images?days=30&limit=10&metric=impressions` — Top images
-- `GET /api/analytics/category-performance?days=30` — Category breakdown
-- `GET /api/analytics/scroll-depth?days=30` — Scroll milestones
-- `GET /api/analytics/referrers?days=30` — Traffic sources
-
-### Validation Rules
-
-Pydantic models enforce these formats:
-- **ISO**: Numeric, range 1–10,000,000 (phone sensors report base ISO as low as 10–16)
-- **Aperture**: `f/2.8` or `f/1.4`
-- **Shutter Speed**: `1/250s`, `1/1000`, `1"`, `2.5s`
-- **Focal Length**: `50mm`, `6.9mm`, or `24-70mm` (decimals allowed; phone lenses report them)
-- **Date Taken**: `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD`
+Endpoints are defined in `api/routes/` (read them there; this file listing them has gone stale twice). Metadata formats on save are enforced by the Pydantic validators in `api/models.py` — camera-reported values are ground truth, so validators must accept everything real cameras emit (see PRs #71/#72). Note the asymmetry: ingest stores EXIF unvalidated, saves re-validate.
 
 ### File Storage
 
-**Image Storage** (API container `/app/assets/gallery/`):
-- **Originals**: `YYYYMMDD_HHMMSS_hash.jpg`
-- **Thumbnail**: `YYYYMMDD_HHMMSS_hash_thumbnail.webp` (400px, ~10-30KB)
-- **Medium**: `YYYYMMDD_HHMMSS_hash_medium.webp` (800px, ~30-80KB)
-- **Large**: `YYYYMMDD_HHMMSS_hash_large.webp` (1200px, ~40-150KB)
-- Served via: `https://adrian.hensler.photography/assets/gallery/filename`
+Variant naming and sizes live in `api/services/image_processor.py`; files are stored in the API container at `/app/assets/gallery/` and served via `/assets/gallery/<filename>`.
 
 **Public Gallery Loading**:
 - Frontend fetches `/api/gallery/published?user_id=1` on page load
@@ -322,28 +245,9 @@ hero → category row → justified grid → about/contact → footer.
 
 ### Gallery.js Architecture
 
-**File**: `sites/shared/gallery.js` — IIFE module, used by both adrian and liam sites.
-
-**Module Structure**:
-1. **Configuration & State**: `window.GALLERY_CONFIG`, dataset + category state
-2. **Security Helpers**: `escapeHtml()` XSS prevention
-3. **Lightbox Description**: `buildLightboxDescription()` — caption/EXIF/metadata HTML
-4. **Gallery Grid**: `createGalleryItem()`, `renderGallery()` — justified grid from `aspect_ratio`
-5. **Lightbox**: GLightbox lifecycle (`ensureLightboxReady`, rebuild on rerender)
-6. **Slideshow**: hero carousel — featured images when ≥ 3 exist, else all published
-7. **Category Filtering**: `filterByCategory()`, URL sync, popstate handling
-8. **Analytics Tracking**: delegated event tracking (impression, click, scroll)
-9. **Main Initialization + Public API**: `window.GalleryApp`
+**File**: `sites/shared/gallery.js` — IIFE module, used by both adrian and liam sites; its section comments map the module structure, and the analytics event names are defined inline.
 
 **Modifying gallery.js**: Changes affect both sites. Use DocumentFragment for batch DOM inserts. All user input (URL params, DB values) must be escaped.
-
-**Analytics Events**:
-- `page_view` — Page load
-- `image_impression` — Image 50% visible in viewport
-- `gallery_click` — Thumbnail clicked
-- `lightbox_open` — Full-screen opened
-- `lightbox_close` — Full-screen closed (includes duration)
-- `scroll_depth` — 25%, 50%, 75%, 100% milestones
 
 ## Critical Architecture Decisions
 
@@ -441,18 +345,6 @@ npx playwright test --debug tests/sites.spec.js
 **Test credentials** (development):
 - Login: `https://adrian.hensler.photography:8080/admin/login`
 - Username: `adrian` / Password: see DATABASE.md
-
-## Testing Architecture
-
-Playwright tests in `tests/sites.spec.js` verify page loads, external links, hero images, health endpoints, responsive viewports, and multi-browser compatibility (Chromium, Firefox, WebKit). Generates screenshots to `screenshots/`.
-
-## Security Headers (Applied to All Sites)
-
-Configured in both Caddyfiles:
-- `Strict-Transport-Security`: Force HTTPS
-- `X-Frame-Options: DENY`: Prevent clickjacking
-- `X-Content-Type-Options: nosniff`: Prevent MIME sniffing
-- `Referrer-Policy: strict-origin-when-cross-origin`: Privacy
 
 ## Adding a New Site
 
