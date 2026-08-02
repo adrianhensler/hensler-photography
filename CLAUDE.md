@@ -131,7 +131,7 @@ Canonical names — use these instead of ad-hoc alternatives:
 
 ## Backend API System
 
-Python/FastAPI backend for image management on the same port as the static sites (routes in `api/main.py` and `api/routes/`; stack and dependencies in `requirements.txt`; database schema in DATABASE.md).
+Python/FastAPI backend for image management on the same port as the static sites (routes in `api/main.py` and `api/routes/`; stack and dependencies in `api/requirements.txt`; database schema in DATABASE.md).
 
 ### Admin Interface Features
 
