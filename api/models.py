@@ -165,10 +165,11 @@ class ImageMetadataUpdate(BaseModel):
             if not re.match(r"^\d+$", v):
                 raise ValueError("ISO must be a number (e.g., 100, 400, 3200)")
 
-            # Validate reasonable ISO range (25 to 10,000,000 for modern cameras)
+            # Phone sensors report base ISO as low as 10-16 (e.g. Pixel long
+            # exposure), so the floor must sit below classic film speeds.
             iso_int = int(v)
-            if iso_int < 25 or iso_int > 10000000:
-                raise ValueError("ISO must be between 25 and 10,000,000")
+            if iso_int < 1 or iso_int > 10000000:
+                raise ValueError("ISO must be between 1 and 10,000,000")
 
         return v
 

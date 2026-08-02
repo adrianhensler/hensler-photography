@@ -1204,17 +1204,38 @@
 
                 if (response.ok) {
                     showToast('success', 'Saved', 'Metadata saved successfully');
-                } else {
-                    showToast('error', 'Save Failed', 'Failed to save metadata');
+                    return true;
                 }
+
+                // Surface the API's validation details (e.g. which field was
+                // rejected and why) instead of a generic failure message.
+                let message = 'Failed to save metadata';
+                try {
+                    const errorData = await response.json();
+                    if (Array.isArray(errorData.detail)) {
+                        message = errorData.detail
+                            .map(err => `${err.loc[err.loc.length - 1]}: ${err.msg}`)
+                            .join('; ');
+                    } else if (errorData.detail) {
+                        message = errorData.detail;
+                    }
+                } catch (parseError) {
+                    // Non-JSON error body; keep the generic message.
+                }
+                showToast('error', 'Save Failed', message);
+                return false;
             } catch (error) {
                 console.error('Save error:', error);
                 showToast('error', 'Save Failed', 'Error saving metadata');
+                return false;
             }
         }
 
         async function publishImage(fileId, imageId) {
-            await saveMetadata(fileId, imageId);
+            // Do not publish over a failed save: the toast from saveMetadata
+            // already explains what was rejected.
+            const saved = await saveMetadata(fileId, imageId);
+            if (!saved) return false;
 
             try {
                 const response = await fetch(`/api/images/${imageId}/publish`, {
@@ -1226,12 +1247,14 @@
                 if (response.ok) {
                     showToast('success', 'Published', 'Image published successfully');
                     updateStatus(fileId, 'success', 'Published ✓');
-                } else {
-                    showToast('error', 'Publish Failed', 'Failed to publish image');
+                    return true;
                 }
+                showToast('error', 'Publish Failed', 'Failed to publish image');
+                return false;
             } catch (error) {
                 console.error('Publish error:', error);
                 showToast('error', 'Publish Failed', 'Error publishing image');
+                return false;
             }
         }
 
@@ -1323,16 +1346,14 @@
             for (const fileId of fileIds) {
                 const fileData = uploadQueue.find(f => f.id === fileId);
                 if (fileData && fileData.imageId) {
-                    try {
-                        await saveMetadata(fileId, fileData.imageId);
-                        success++;
-                    } catch (e) {
-                        failed++;
-                    }
+                    // saveMetadata reports failures via its return value, not
+                    // by throwing, so count on the result.
+                    const saved = await saveMetadata(fileId, fileData.imageId);
+                    if (saved) success++; else failed++;
                 }
             }
 
-            showToast('success', 'Batch Save Complete', `${success} images saved, ${failed} failed`);
+            showToast(failed > 0 ? 'warning' : 'success', 'Batch Save Complete', `${success} images saved, ${failed} failed`);
         }
 
         async function batchPublish() {
@@ -1350,16 +1371,12 @@
             for (const fileId of fileIds) {
                 const fileData = uploadQueue.find(f => f.id === fileId);
                 if (fileData && fileData.imageId) {
-                    try {
-                        await publishImage(fileId, fileData.imageId);
-                        success++;
-                    } catch (e) {
-                        failed++;
-                    }
+                    const published = await publishImage(fileId, fileData.imageId);
+                    if (published) success++; else failed++;
                 }
             }
 
-            showToast('success', 'Batch Publish Complete', `${success} images published, ${failed} failed`);
+            showToast(failed > 0 ? 'warning' : 'success', 'Batch Publish Complete', `${success} images published, ${failed} failed`);
         }
 
         async function batchDelete() {
