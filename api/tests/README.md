@@ -203,3 +203,22 @@ This is TDD at its best:
 - Creates lasting value
 
 **Use this pattern for all security-critical code.**
+
+## Running the tests
+
+Run the suite inside the dev api container (the host has no Python deps):
+
+```bash
+cd /opt/dev/hensler_photography
+docker compose -p hensler_test exec api python -m pytest api/tests/ -q -o asyncio_mode=auto
+```
+
+The `-o asyncio_mode=auto` flag is required in the container: only `api/` is
+mounted, so the repo-root `pytest.ini` (which sets the same option) is not
+visible there. Without it, every async fixture silently fails to resolve and
+DB-backed tests error with `'async_generator' object has no attribute ...`.
+
+Tests run against a throwaway temp-file database. `conftest.py` sets
+`DATABASE_PATH` *before* importing any `api.*` module (the module freezes the
+path at import time) and builds the schema from the real `SCHEMA` +
+`run_migrations()`, so the test schema cannot drift from production.

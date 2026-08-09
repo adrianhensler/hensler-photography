@@ -109,10 +109,12 @@ class TestMultiTenancyIsolation:
         adrian_image_id = 1
 
         # Liam tries to publish/unpublish Adrian's image
+        # toggle_publish takes `published` as a query parameter; a JSON body
+        # would 422 on validation before the ownership check even runs.
         response = await client.patch(
             f"/api/photographer/images/{adrian_image_id}/publish",
             headers=auth_headers_liam,
-            json={"published": False},
+            params={"published": "false"},
         )
 
         # EXPECTED: 403 Forbidden
@@ -131,10 +133,12 @@ class TestMultiTenancyIsolation:
         liam_image_id = 2  # Created in conftest.py, belongs to Liam
 
         # Liam edits his own image - should succeed
+        # update_image takes metadata as query parameters (a JSON body is
+        # ignored, which the route reports as "No fields to update").
         response = await client.put(
             f"/api/photographer/images/{liam_image_id}",
             headers=auth_headers_liam,
-            json={
+            params={
                 "title": "Updated by Liam",
                 "caption": "This should work",
             },

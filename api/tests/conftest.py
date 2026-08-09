@@ -10,16 +10,19 @@ This file provides shared test infrastructure:
 
 import asyncio
 import os
+import tempfile
+
+# Must run before any api.* import: api.database freezes DATABASE_PATH at
+# import time, so assigning it later (as this file previously did inside the
+# test_db fixture) silently points every connection at the real database.
+_TEST_DB = tempfile.NamedTemporaryFile(prefix="hensler_test_", suffix=".db", delete=False)
+os.environ["DATABASE_PATH"] = _TEST_DB.name
 
 import pytest
 from httpx import AsyncClient, ASGITransport
 from api.main import app
-from api.database import get_db_connection
+from api.database import get_db_connection, SCHEMA, run_migrations
 from api.routes.auth import hash_password, create_access_token
-
-
-# Test database path (in-memory for speed)
-TEST_DB_PATH = ":memory:"
 
 
 @pytest.fixture(scope="session")
@@ -33,59 +36,23 @@ def event_loop():
 @pytest.fixture
 async def test_db():
     """
-    Create a fresh test database for each test
+    Provide a fully-migrated schema with clean seeded state for each test.
 
-    This ensures test isolation - each test starts with clean state.
+    Uses the real SCHEMA plus run_migrations() so the test schema can never
+    drift from production (the previous hand-copied DDL here drifted twice).
+    The temp-file database persists for the pytest session; row state is
+    reset per test for isolation.
     """
-    # Set test database path
-    os.environ["DATABASE_PATH"] = TEST_DB_PATH
-
-    # Initialize schema
+    # Initialize schema (idempotent: SCHEMA uses IF NOT EXISTS throughout)
     async with get_db_connection() as db:
-        # Users table
-        await db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE,
-                password_hash TEXT NOT NULL,
-                role TEXT NOT NULL DEFAULT 'photographer',
-                subdomain TEXT,
-                display_name TEXT,
-                bio TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_login TIMESTAMP
-            )
-        """
-        )
+        await db.executescript(SCHEMA)
+        await db.commit()
+    run_migrations()
 
-        # Images table
-        await db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS images (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                filename TEXT NOT NULL,
-                slug TEXT NOT NULL,
-                title TEXT,
-                caption TEXT,
-                tags TEXT,
-                category TEXT,
-                width INTEGER,
-                height INTEGER,
-                aspect_ratio REAL,
-                published BOOLEAN DEFAULT 0,
-                share_exif BOOLEAN DEFAULT 0,
-                sort_order INTEGER DEFAULT 0,
-                deleted_at TIMESTAMP DEFAULT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id),
-                UNIQUE(user_id, slug)
-            )
-        """
-        )
+    async with get_db_connection() as db:
+        # Reset state; children before parents to satisfy foreign keys.
+        for table in ("image_events", "audit_log", "images", "users"):
+            await db.execute(f"DELETE FROM {table}")
 
         # Seed test users
         adrian_hash = hash_password("adrian123")
@@ -169,16 +136,28 @@ def liam_token():
     return create_access_token(liam_user)
 
 
+def _session_headers(token: str) -> dict:
+    """Session cookie plus a CSRF token bound to that session.
+
+    get_current_user reads the JWT from the session_token cookie (not an
+    Authorization header), and mutating routes require a session-bound
+    X-CSRF-Token header, which manage-header.js attaches in production.
+    """
+    from api.csrf import generate_csrf_token
+
+    return {
+        "Cookie": f"session_token={token}",
+        "X-CSRF-Token": generate_csrf_token(session_data=token),
+    }
+
+
 @pytest.fixture
 def auth_headers_adrian(adrian_token):
-    """Auth headers for Adrian. get_current_user reads the JWT from the
-    session_token cookie, not an Authorization header, so send it as a
-    raw Cookie header to match production auth behavior."""
-    return {"Cookie": f"session_token={adrian_token}"}
+    """Auth headers for Adrian (session cookie + bound CSRF token)."""
+    return _session_headers(adrian_token)
 
 
 @pytest.fixture
 def auth_headers_liam(liam_token):
-    """Auth headers for Liam. See auth_headers_adrian for why this is a
-    Cookie header rather than Authorization: Bearer."""
-    return {"Cookie": f"session_token={liam_token}"}
+    """Auth headers for Liam (session cookie + bound CSRF token)."""
+    return _session_headers(liam_token)
