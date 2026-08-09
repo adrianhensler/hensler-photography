@@ -63,11 +63,15 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    full_name TEXT,
-    role TEXT NOT NULL DEFAULT 'photographer',  -- 'admin' or 'photographer'
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    password_hash TEXT,
+    display_name TEXT,
+    role TEXT DEFAULT 'photographer',       -- 'admin' or 'photographer'
+    subdomain TEXT,                         -- portfolio subdomain the account manages
+    bio TEXT,
+    ai_style TEXT DEFAULT 'balanced',       -- metadata writing style preference
+    track_own_activity BOOLEAN DEFAULT 1,   -- include own visits in analytics
+    token_version INTEGER NOT NULL DEFAULT 0,  -- bumped to revoke outstanding JWTs
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
