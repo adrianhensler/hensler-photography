@@ -129,6 +129,16 @@ async def test_password_change_revokes_old_sessions_but_reissues_caller(client):
     )
     assert fresh.status_code == 200
 
+    # The response also returns a CSRF token bound to the replacement
+    # session, so a still-open page can keep making mutating requests.
+    new_csrf = response.json().get("csrf_token")
+    assert new_csrf is not None
+    follow_up = await client.post(
+        "/api/auth/logout",
+        headers={"Cookie": f"session_token={new_token}", "X-CSRF-Token": new_csrf},
+    )
+    assert follow_up.status_code == 200
+
 
 @pytest.mark.asyncio
 async def test_csrf_token_must_match_session(client):

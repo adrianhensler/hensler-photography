@@ -20,7 +20,7 @@ from api.logging_config import get_logger
 from api.rate_limit import limiter, RATE_LIMITS
 from api.models import UserCreate, PasswordChange
 from api.audit import audit_login, audit_logout, audit_password_change, audit_user_create
-from api.csrf import verify_csrf_token
+from api.csrf import verify_csrf_token, generate_csrf_token
 from api.security import get_jwt_secret_key
 
 # Initialize logger
@@ -553,19 +553,27 @@ async def change_password(
     # Hash new password
     new_password_hash = hash_password(password_data.new_password)
 
-    # Update database
+    # Update the password and revoke every existing session (a stolen or
+    # shared cookie dies here) in one transaction: committing the password
+    # without the revocation would leave old sessions valid with no way to
+    # retry, since the submitted current password would no longer match.
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         await db.execute(
-            "UPDATE users SET password_hash = ? WHERE id = ?", (new_password_hash, current_user.id)
+            "UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?",
+            (new_password_hash, current_user.id),
         )
         await db.commit()
+        cursor = await db.execute(
+            "SELECT token_version FROM users WHERE id = ?", (current_user.id,)
+        )
+        row = await cursor.fetchone()
 
-    # Revoke every existing session (a stolen or shared cookie dies here),
-    # then reissue a fresh token so the session that changed the password
-    # stays signed in.
-    current_user.token_version = await bump_token_version(current_user.id)
-    set_session_cookie(response, create_access_token(current_user))
+    # Reissue a fresh token so the session that changed the password stays
+    # signed in.
+    current_user.token_version = row[0]
+    new_session_token = create_access_token(current_user)
+    set_session_cookie(response, new_session_token)
 
     logger.info(
         f"Password changed for user: {current_user.username}",
@@ -575,4 +583,11 @@ async def change_password(
     # Audit log: password change
     await audit_password_change(current_user.id, current_user.username, request)
 
-    return {"success": True, "message": "Password changed successfully"}
+    # Page-embedded CSRF tokens were bound to the old session cookie and stop
+    # validating once the rotated cookie lands, so hand back a token bound to
+    # the replacement session for clients that keep the page open.
+    return {
+        "success": True,
+        "message": "Password changed successfully",
+        "csrf_token": generate_csrf_token(session_data=new_session_token),
+    }
