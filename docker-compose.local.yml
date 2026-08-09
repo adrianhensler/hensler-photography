@@ -35,6 +35,9 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       CSRF_SECRET_KEY: ${CSRF_SECRET_KEY}
+      # Session cookies default to secure=True; only an explicit development
+      # environment drops the flag (dev is reachable over plain HTTP).
+      ENVIRONMENT: development
     volumes:
       - ./api:/app/api:ro
       - gallery-data:/data

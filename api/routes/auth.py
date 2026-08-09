@@ -9,6 +9,7 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, timezone
 import os
+import secrets
 import bcrypt
 import aiosqlite
 import re
@@ -47,6 +48,7 @@ class User:
         bio: Optional[str] = None,
         ai_style: Optional[str] = None,
         track_own_activity: Optional[bool] = None,
+        token_version: int = 0,
     ):
         self.id = id
         self.username = username
@@ -57,6 +59,7 @@ class User:
         self.bio = bio
         self.ai_style = ai_style or "balanced"
         self.track_own_activity = track_own_activity if track_own_activity is not None else True
+        self.token_version = token_version
 
 
 # Password validation and hashing functions
@@ -123,6 +126,30 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
+# Hashed once at import so failed logins for unknown usernames burn the same
+# bcrypt cost as a real verification; without this, response timing reveals
+# whether a username exists. The plaintext is random and discarded, so this
+# hash can never verify successfully.
+_TIMING_EQUALIZER_HASH = hash_password(secrets.token_urlsafe(32))
+
+
+def set_session_cookie(response: Response, token: str) -> None:
+    """Attach the session JWT as an httpOnly cookie.
+
+    The secure flag fails closed: it is dropped only when ENVIRONMENT is
+    explicitly "development", so a missing variable in production still
+    yields HTTPS-only cookies.
+    """
+    response.set_cookie(
+        key="session_token",
+        value=token,
+        httponly=True,
+        secure=os.getenv("ENVIRONMENT", "production") != "development",
+        samesite="lax",
+        max_age=ACCESS_TOKEN_EXPIRE_HOURS * 3600,  # seconds
+    )
+
+
 # Database helper functions
 async def get_user_by_username(username: str) -> Optional[User]:
     """Fetch user from database by username"""
@@ -130,7 +157,8 @@ async def get_user_by_username(username: str) -> Optional[User]:
         await db.execute("PRAGMA foreign_keys = ON")
         cursor = await db.execute(
             """
-            SELECT id, username, display_name, email, role, password_hash, subdomain, bio
+            SELECT id, username, display_name, email, role, password_hash, subdomain, bio,
+                   token_version
             FROM users
             WHERE username = ?
             """,
@@ -150,6 +178,7 @@ async def get_user_by_username(username: str) -> Optional[User]:
                 role=row[4],
                 subdomain=row[6],
                 bio=row[7],
+                token_version=row[8],
             ),
             row[5],
         )  # Return user and password_hash
@@ -162,7 +191,7 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
         cursor = await db.execute(
             """
             SELECT id, username, display_name, email, role, subdomain,
-                   bio, ai_style, track_own_activity
+                   bio, ai_style, track_own_activity, token_version
             FROM users
             WHERE id = ?
             """,
@@ -183,14 +212,39 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
             bio=row[6],
             ai_style=row[7],
             track_own_activity=bool(row[8]) if row[8] is not None else True,
+            token_version=row[9],
         )
+
+
+async def bump_token_version(user_id: int) -> int:
+    """Revoke every outstanding JWT for a user by incrementing token_version.
+
+    Returns the new version so callers can mint a fresh token that stays valid.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+        await db.execute(
+            "UPDATE users SET token_version = token_version + 1 WHERE id = ?", (user_id,)
+        )
+        await db.commit()
+        cursor = await db.execute(
+            "SELECT token_version FROM users WHERE id = ?", (user_id,)
+        )
+        row = await cursor.fetchone()
+        return row[0] if row else 0
 
 
 # JWT token functions
 def create_access_token(user: User) -> str:
     """Create a JWT access token for a user"""
     expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    to_encode = {"user_id": user.id, "username": user.username, "role": user.role, "exp": expire}
+    to_encode = {
+        "user_id": user.id,
+        "username": user.username,
+        "role": user.role,
+        "tv": user.token_version,
+        "exp": expire,
+    }
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -226,6 +280,15 @@ async def get_current_user(request: Request) -> User:
         user = await get_user_by_id(user_id)
         if user is None:
             raise HTTPException(401, "User not found")
+
+        # Reject tokens minted before the last logout or password change.
+        # Tokens without the claim (pre-upgrade sessions) fail closed.
+        if payload.get("tv") != user.token_version:
+            logger.warning(
+                "Authentication failed: Token version mismatch (revoked session)",
+                extra={"context": {"user_id": user.id, "path": str(request.url.path)}},
+            )
+            raise HTTPException(401, "Session has been signed out. Please log in again.")
 
         return user
 
@@ -307,28 +370,23 @@ async def login(
     result = await get_user_by_username(username)
 
     if not result:
+        # Burn the same bcrypt cost as a real check so response timing does
+        # not reveal whether the username exists.
+        verify_password(password, _TIMING_EQUALIZER_HASH)
         logger.warning(f"Login failed: User not found: {username}")
         raise HTTPException(401, "Invalid username or password")
 
     user, password_hash = result
 
-    # Verify password
-    if not password_hash or not verify_password(password, password_hash):
+    # Verify password. Accounts without a local hash verify against the
+    # equalizer, which always fails but costs the same as a normal check.
+    if not verify_password(password, password_hash or _TIMING_EQUALIZER_HASH):
         logger.warning(f"Login failed: Invalid password for user: {username}")
         raise HTTPException(401, "Invalid username or password")
 
-    # Generate JWT token
+    # Generate JWT token and set httpOnly cookie
     access_token = create_access_token(user)
-
-    # Set httpOnly cookie
-    response.set_cookie(
-        key="session_token",
-        value=access_token,
-        httponly=True,
-        secure=os.getenv("ENVIRONMENT") == "production",  # HTTPS only in production
-        samesite="lax",
-        max_age=ACCESS_TOKEN_EXPIRE_HOURS * 3600,  # seconds
-    )
+    set_session_cookie(response, access_token)
 
     logger.info(
         f"Login successful: {username} (role={user.role})",
@@ -358,8 +416,12 @@ async def logout(
     _csrf: str = Depends(verify_csrf_token),
 ):
     """
-    Log out the current user by clearing the session cookie.
+    Log out the current user.
+
+    Clears the session cookie and increments token_version, which revokes
+    every outstanding JWT for the account (all devices), not just this cookie.
     """
+    await bump_token_version(current_user.id)
     response.delete_cookie(key="session_token")
 
     logger.info(f"User logged out: {current_user.username}")
@@ -386,7 +448,10 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @router.post("/register", response_model=dict)
 async def register(
-    request: Request, user_data: UserCreate, current_user: User = Depends(get_current_user)
+    request: Request,
+    user_data: UserCreate,
+    current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Create a new user account (admin only).
@@ -458,7 +523,11 @@ async def register(
 
 @router.post("/change-password")
 async def change_password(
-    request: Request, password_data: PasswordChange, current_user: User = Depends(get_current_user)
+    request: Request,
+    response: Response,
+    password_data: PasswordChange,
+    current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
 ):
     """
     Change the current user's password.
@@ -491,6 +560,12 @@ async def change_password(
             "UPDATE users SET password_hash = ? WHERE id = ?", (new_password_hash, current_user.id)
         )
         await db.commit()
+
+    # Revoke every existing session (a stolen or shared cookie dies here),
+    # then reissue a fresh token so the session that changed the password
+    # stays signed in.
+    current_user.token_version = await bump_token_version(current_user.id)
+    set_session_cookie(response, create_access_token(current_user))
 
     logger.info(
         f"Password changed for user: {current_user.username}",

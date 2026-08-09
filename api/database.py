@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
     bio TEXT,
     ai_style TEXT DEFAULT 'balanced',
     track_own_activity BOOLEAN DEFAULT 1,
+    token_version INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -307,6 +308,14 @@ def run_migrations():
             print("Running migration: Adding ai_style column to users table")
             cursor.execute("ALTER TABLE users ADD COLUMN ai_style TEXT DEFAULT 'balanced'")
             print("✓ Migration complete: ai_style column added")
+
+        # JWT revocation support (see api/migrations/005_add_token_version.py)
+        if "token_version" not in user_columns:
+            print("Running migration: Adding token_version column to users table")
+            cursor.execute(
+                "ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"
+            )
+            print("✓ Migration complete: token_version column added")
 
         # Photographer tracking preference (see api/migrations/003_add_photographer_tracking.py)
         if "track_own_activity" not in user_columns:

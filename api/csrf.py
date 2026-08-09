@@ -35,7 +35,7 @@ def generate_csrf_token(session_data: Optional[str] = None) -> str:
     # Use session data if provided, otherwise use a default value
     payload = session_data or "csrf-token"
     token = serializer.dumps(payload)
-    logger.debug(f"Generated CSRF token for session: {session_data}")
+    logger.debug(f"Generated CSRF token (session-bound: {session_data is not None})")
     return token
 
 
@@ -45,7 +45,8 @@ def validate_csrf_token(token: str, session_data: Optional[str] = None) -> bool:
 
     Args:
         token: The CSRF token to validate
-        session_data: Optional session identifier to verify token binding
+        session_data: Session identifier the token must be bound to, or None
+            for the anonymous (no-session) context
 
     Returns:
         True if valid, False otherwise
@@ -54,9 +55,13 @@ def validate_csrf_token(token: str, session_data: Optional[str] = None) -> bool:
         # Verify token signature and expiration
         payload = serializer.loads(token, max_age=CSRF_TOKEN_EXPIRY)
 
-        # If session_data provided, verify it matches
-        if session_data and payload != session_data:
-            logger.warning(f"CSRF token session mismatch: expected {session_data}, got {payload}")
+        # Enforce session binding: a token minted for one session (or for no
+        # session) is not valid for another. Without this check, any visitor
+        # could mint a signed token and replay it against a victim's session.
+        # Never log the values themselves; the payload is the session JWT.
+        expected = session_data or "csrf-token"
+        if payload != expected:
+            logger.warning("CSRF token session mismatch")
             return False
 
         return True
@@ -138,9 +143,11 @@ async def verify_csrf_token(request: Request, csrf_token: str = None) -> str:
             detail="CSRF token missing. This request cannot be processed for security reasons.",
         )
 
-    # Validate token
-    # TODO: Bind to session when user is authenticated
-    if not validate_csrf_token(token):
+    # Validate with strict session binding: the token must have been minted
+    # for this exact session cookie (or for the anonymous context when there
+    # is no session cookie).
+    session_token = request.cookies.get("session_token")
+    if not validate_csrf_token(token, session_data=session_token):
         logger.warning(
             "CSRF token invalid",
             extra={"context": {"path": str(request.url.path), "method": request.method}},
