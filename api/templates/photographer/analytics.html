@@ -1568,7 +1568,8 @@
 
         async function loadCategoryFilterClicks() {
             try {
-                const res = await fetch(`/api/analytics/category-filter-clicks?days=${currentDays}`, {
+                const filterParams = getPhotographerFilterParams();
+                const res = await fetch(`/api/analytics/category-filter-clicks?days=${currentDays}${filterParams}`, {
                     credentials: 'include'
                 });
 

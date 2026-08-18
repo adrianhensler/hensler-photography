@@ -551,7 +551,10 @@
       button.classList.toggle('active', isActive);
       button.setAttribute('aria-pressed', String(isActive));
       button.addEventListener('click', () => {
-        trackEvent('category_filter', null, { category: category || 'all' });
+        // site is the current page's own hostname, not document.referrer
+        // (which is the page the visitor arrived FROM and would be wrong
+        // for anyone reaching the gallery from an external site)
+        trackEvent('category_filter', null, { category: category || 'all', site: window.location.hostname });
         filterByCategory(category);
       });
       return button;

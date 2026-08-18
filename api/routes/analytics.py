@@ -930,15 +930,19 @@ async def get_category_filter_clicks(
     Get click counts for the public category-row filter, broken down by category.
 
     category_filter events carry no image_id (they're a site-level
-    interaction, not an image one), so they're attributed to this
-    photographer's site via referrer rather than an images join.
+    interaction, not an image one). Unlike other site-level events, they
+    are NOT attributed via the referrer/subdomain-match trick: document.referrer
+    reflects the page the visitor arrived FROM and is fixed for the whole
+    page lifetime, so it's wrong for anyone who arrived from an external
+    site or a different subdomain. Instead, gallery.js embeds the current
+    page's own hostname directly in the event metadata at click-time, which
+    is always correct regardless of how the visitor got there.
     """
-    user_id = current_user.id
     subdomain = current_user.subdomain or ""
-    subdomain_pattern = f"%{subdomain}.hensler.photography%"
+    site_hostname = f"{subdomain}.hensler.photography"
     since = datetime.now() - timedelta(days=days)
-    subdomain_filter = get_subdomain_filter(subdomain)
     photographer_filter = get_photographer_filter(include_photographer, photographer_only)
+    site_pattern = f'%"site":"{site_hostname}"%'
 
     try:
         async with get_db_connection() as db:
@@ -946,27 +950,30 @@ async def get_category_filter_clicks(
                 f"""
                 SELECT e.metadata, COUNT(*) as clicks, COUNT(DISTINCT e.session_id) as sessions
                 FROM image_events e
-                LEFT JOIN images i ON e.image_id = i.id
                 WHERE e.event_type = 'category_filter'
                 AND e.timestamp >= ?
-                AND {subdomain_filter}
+                AND e.metadata LIKE ?
                 {photographer_filter}
                 GROUP BY e.metadata
                 """,
-                (since, user_id, subdomain_pattern),
+                (since, site_pattern),
             )
 
             rows = await cursor.fetchall()
 
             counts: Dict[str, Dict[str, int]] = {}
             for row in rows:
-                category = "all"
-                if row[0]:
-                    try:
-                        parsed = json.loads(row[0])
-                        category = parsed.get("category") or "all"
-                    except (ValueError, TypeError):
-                        pass
+                if not row[0]:
+                    continue
+                try:
+                    parsed = json.loads(row[0])
+                except (ValueError, TypeError):
+                    continue
+                if not isinstance(parsed, dict) or parsed.get("site") != site_hostname:
+                    continue
+                category = parsed.get("category")
+                if not isinstance(category, str) or not category:
+                    category = "all"
                 bucket = counts.setdefault(category, {"clicks": 0, "sessions": 0})
                 bucket["clicks"] += row[1]
                 bucket["sessions"] += row[2]
