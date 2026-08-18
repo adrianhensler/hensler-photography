@@ -46,7 +46,9 @@ def get_subdomain_filter(subdomain: Optional[str]) -> str:
     )
 
 
-def get_photographer_filter(include_photographer: bool = True, photographer_only: bool = False) -> str:
+def get_photographer_filter(
+    include_photographer: bool = True, photographer_only: bool = False
+) -> str:
     """
     Get SQL WHERE clause for filtering photographer's own activity.
 
@@ -915,6 +917,72 @@ async def get_category_performance(
     except Exception as e:
         logger.error(f"Failed to get category performance: {str(e)}", exc_info=e)
         raise HTTPException(500, "Failed to retrieve category data")
+
+
+@router.get("/category-filter-clicks")
+async def get_category_filter_clicks(
+    days: int = Query(30, ge=1, le=365, description="Number of days to include"),
+    include_photographer: bool = Query(True, description="Include photographer's own activity"),
+    photographer_only: bool = Query(False, description="Show only photographer's activity"),
+    current_user: User = Depends(get_current_user_for_subdomain),
+):
+    """
+    Get click counts for the public category-row filter, broken down by category.
+
+    category_filter events carry no image_id (they're a site-level
+    interaction, not an image one), so they're attributed to this
+    photographer's site via referrer rather than an images join.
+    """
+    user_id = current_user.id
+    subdomain = current_user.subdomain or ""
+    subdomain_pattern = f"%{subdomain}.hensler.photography%"
+    since = datetime.now() - timedelta(days=days)
+    subdomain_filter = get_subdomain_filter(subdomain)
+    photographer_filter = get_photographer_filter(include_photographer, photographer_only)
+
+    try:
+        async with get_db_connection() as db:
+            cursor = await db.execute(
+                f"""
+                SELECT e.metadata, COUNT(*) as clicks, COUNT(DISTINCT e.session_id) as sessions
+                FROM image_events e
+                LEFT JOIN images i ON e.image_id = i.id
+                WHERE e.event_type = 'category_filter'
+                AND e.timestamp >= ?
+                AND {subdomain_filter}
+                {photographer_filter}
+                GROUP BY e.metadata
+                """,
+                (since, user_id, subdomain_pattern),
+            )
+
+            rows = await cursor.fetchall()
+
+            counts: Dict[str, Dict[str, int]] = {}
+            for row in rows:
+                category = "all"
+                if row[0]:
+                    try:
+                        parsed = json.loads(row[0])
+                        category = parsed.get("category") or "all"
+                    except (ValueError, TypeError):
+                        pass
+                bucket = counts.setdefault(category, {"clicks": 0, "sessions": 0})
+                bucket["clicks"] += row[1]
+                bucket["sessions"] += row[2]
+
+            categories = [
+                {"category": category, "clicks": data["clicks"], "sessions": data["sessions"]}
+                for category, data in sorted(
+                    counts.items(), key=lambda item: item[1]["clicks"], reverse=True
+                )
+            ]
+
+            return {"period_days": days, "categories": categories}
+
+    except Exception as e:
+        logger.error(f"Failed to get category filter clicks: {str(e)}", exc_info=e)
+        raise HTTPException(500, "Failed to retrieve category filter click data")
 
 
 @router.get("/scroll-depth")

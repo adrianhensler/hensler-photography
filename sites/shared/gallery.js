@@ -550,7 +550,10 @@
       const isActive = activeCategory === category;
       button.classList.toggle('active', isActive);
       button.setAttribute('aria-pressed', String(isActive));
-      button.addEventListener('click', () => filterByCategory(category));
+      button.addEventListener('click', () => {
+        trackEvent('category_filter', null, { category: category || 'all' });
+        filterByCategory(category);
+      });
       return button;
     };
 
