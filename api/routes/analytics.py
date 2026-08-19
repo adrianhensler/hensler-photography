@@ -46,7 +46,9 @@ def get_subdomain_filter(subdomain: Optional[str]) -> str:
     )
 
 
-def get_photographer_filter(include_photographer: bool = True, photographer_only: bool = False) -> str:
+def get_photographer_filter(
+    include_photographer: bool = True, photographer_only: bool = False
+) -> str:
     """
     Get SQL WHERE clause for filtering photographer's own activity.
 
@@ -915,6 +917,79 @@ async def get_category_performance(
     except Exception as e:
         logger.error(f"Failed to get category performance: {str(e)}", exc_info=e)
         raise HTTPException(500, "Failed to retrieve category data")
+
+
+@router.get("/category-filter-clicks")
+async def get_category_filter_clicks(
+    days: int = Query(30, ge=1, le=365, description="Number of days to include"),
+    include_photographer: bool = Query(True, description="Include photographer's own activity"),
+    photographer_only: bool = Query(False, description="Show only photographer's activity"),
+    current_user: User = Depends(get_current_user_for_subdomain),
+):
+    """
+    Get click counts for the public category-row filter, broken down by category.
+
+    category_filter events carry no image_id (they're a site-level
+    interaction, not an image one). Unlike other site-level events, they
+    are NOT attributed via the referrer/subdomain-match trick: document.referrer
+    reflects the page the visitor arrived FROM and is fixed for the whole
+    page lifetime, so it's wrong for anyone who arrived from an external
+    site or a different subdomain. Instead, gallery.js embeds the current
+    page's own hostname directly in the event metadata at click-time, which
+    is always correct regardless of how the visitor got there.
+    """
+    subdomain = current_user.subdomain or ""
+    site_hostname = f"{subdomain}.hensler.photography"
+    since = datetime.now() - timedelta(days=days)
+    photographer_filter = get_photographer_filter(include_photographer, photographer_only)
+    site_pattern = f'%"site":"{site_hostname}"%'
+
+    try:
+        async with get_db_connection() as db:
+            cursor = await db.execute(
+                f"""
+                SELECT e.metadata, COUNT(*) as clicks, COUNT(DISTINCT e.session_id) as sessions
+                FROM image_events e
+                WHERE e.event_type = 'category_filter'
+                AND e.timestamp >= ?
+                AND e.metadata LIKE ?
+                {photographer_filter}
+                GROUP BY e.metadata
+                """,
+                (since, site_pattern),
+            )
+
+            rows = await cursor.fetchall()
+
+            counts: Dict[str, Dict[str, int]] = {}
+            for row in rows:
+                if not row[0]:
+                    continue
+                try:
+                    parsed = json.loads(row[0])
+                except (ValueError, TypeError):
+                    continue
+                if not isinstance(parsed, dict) or parsed.get("site") != site_hostname:
+                    continue
+                category = parsed.get("category")
+                if not isinstance(category, str) or not category:
+                    category = "all"
+                bucket = counts.setdefault(category, {"clicks": 0, "sessions": 0})
+                bucket["clicks"] += row[1]
+                bucket["sessions"] += row[2]
+
+            categories = [
+                {"category": category, "clicks": data["clicks"], "sessions": data["sessions"]}
+                for category, data in sorted(
+                    counts.items(), key=lambda item: item[1]["clicks"], reverse=True
+                )
+            ]
+
+            return {"period_days": days, "categories": categories}
+
+    except Exception as e:
+        logger.error(f"Failed to get category filter clicks: {str(e)}", exc_info=e)
+        raise HTTPException(500, "Failed to retrieve category filter click data")
 
 
 @router.get("/scroll-depth")

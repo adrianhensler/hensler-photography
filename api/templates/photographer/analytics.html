@@ -1088,6 +1088,15 @@
             </div>
         </div>
 
+        <!-- Category Filter Clicks -->
+        <div class="top-images-section">
+            <h3>Category Filter Clicks</h3>
+            <div class="subtitle">How visitors use the public category row</div>
+            <div id="categoryFilterList" class="top-images-list">
+                <div class="loading">Loading category filter data...</div>
+            </div>
+        </div>
+
         <!-- Scroll Depth -->
         <div class="top-images-section">
             <h3>Scroll Depth Analysis</h3>
@@ -1116,6 +1125,15 @@
             }
         }
 
+        function escapeHtml(text) {
+            return String(text ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         const CURRENT_USER_ID = {{ current_user.id }};
         let currentDays = 30;
         let currentActivityFilter = 'combined'; // 'visitors', 'mine', 'combined'
@@ -1135,6 +1153,7 @@
                 loadRecentEngagement(),
                 loadTopImages(),
                 loadCategoryPerformance(),
+                loadCategoryFilterClicks(),
                 loadScrollDepth()
             ]);
         }
@@ -1526,7 +1545,7 @@
                     <div class="top-image-card">
                         <div class="top-image-rank">#${index + 1}</div>
                         <div class="top-image-info" style="margin-left: 1rem;">
-                            <div class="top-image-title">${cat.category}</div>
+                            <div class="top-image-title">${escapeHtml(cat.category)}</div>
                             <div class="top-image-stats">
                                 <span>${cat.image_count} images</span>
                                 <span>•</span>
@@ -1544,6 +1563,51 @@
 
             } catch (error) {
                 console.error('Category performance load error:', error);
+            }
+        }
+
+        async function loadCategoryFilterClicks() {
+            try {
+                const filterParams = getPhotographerFilterParams();
+                const res = await fetch(`/api/analytics/category-filter-clicks?days=${currentDays}${filterParams}`, {
+                    credentials: 'include'
+                });
+
+                if (!res.ok) throw new Error('Failed to load category filter click data');
+
+                const data = await res.json();
+
+                const container = document.getElementById('categoryFilterList');
+
+                if (data.categories.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🖱️</div>
+                            <div class="empty-state-title">No category filter clicks yet</div>
+                            <div class="empty-state-description">
+                                Shown once visitors start using the category row on your public gallery.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.categories.map((cat, index) => `
+                    <div class="top-image-card">
+                        <div class="top-image-rank">#${index + 1}</div>
+                        <div class="top-image-info" style="margin-left: 1rem;">
+                            <div class="top-image-title">${escapeHtml(cat.category)}</div>
+                            <div class="top-image-stats">
+                                <span>${cat.clicks} clicks</span>
+                                <span>•</span>
+                                <span>${cat.sessions} sessions</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Category filter clicks load error:', error);
             }
         }
 
