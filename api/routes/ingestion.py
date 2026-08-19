@@ -10,6 +10,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 import hashlib
+import secrets
 import sqlite3
 
 from api.csrf import verify_csrf_token
@@ -120,11 +121,16 @@ async def ingest_image(
     warnings = []  # Collect non-fatal warnings
 
     try:
-        # Generate unique filename using hash
+        # Generate unique filename. A random component (not just
+        # timestamp+content-hash) guarantees two concurrent uploads never
+        # share a path on disk, even when the same file is uploaded twice
+        # in the same second -- two DB rows sharing a file would mean
+        # deleting either one later deletes the other's image too.
         file_hash = hashlib.sha256(contents).hexdigest()[:16]
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_id = secrets.token_hex(4)
         ext = Path(file.filename).suffix.lower()
-        original_filename = f"{timestamp}_{file_hash}{ext}"
+        original_filename = f"{timestamp}_{file_hash}_{unique_id}{ext}"
 
         context["generated_filename"] = original_filename
 

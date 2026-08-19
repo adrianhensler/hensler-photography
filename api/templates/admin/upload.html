@@ -585,6 +585,8 @@
         const photographerSelect = document.getElementById('photographer');
 
         let uploadQueue = [];
+        let activeUploads = 0;
+        const MAX_CONCURRENT_UPLOADS = 3;
 
         // Toast Notification System
         function showToast(type, title, message, error = null) {
@@ -699,14 +701,39 @@
                 const fileData = {
                     id: fileId,
                     file: file,
-                    status: 'pending',
+                    status: 'queued',
                     metadata: {}
                 };
 
                 uploadQueue.push(fileData);
                 createPreviewCard(fileData);
-                uploadFile(fileData);
             });
+
+            processUploadQueue();
+        }
+
+        function processUploadQueue() {
+            // Concurrency is capped to keep multiple images resolving the
+            // same slug in this admin batch bounded, matching the
+            // photographer upload page's MAX_CONCURRENT_UPLOADS.
+            while (activeUploads < MAX_CONCURRENT_UPLOADS && uploadQueue.length > 0) {
+                const queuedItems = uploadQueue.filter(item => item.status === 'queued');
+                if (queuedItems.length === 0) break;
+
+                const fileData = queuedItems[0];
+                fileData.status = 'uploading';
+                activeUploads++;
+
+                uploadFile(fileData)
+                    .then(() => {
+                        activeUploads--;
+                        processUploadQueue();
+                    })
+                    .catch(() => {
+                        activeUploads--;
+                        processUploadQueue();
+                    });
+            }
         }
 
         function createPreviewCard(fileData) {
