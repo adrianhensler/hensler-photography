@@ -10,6 +10,8 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 import hashlib
+import secrets
+import sqlite3
 
 from api.csrf import verify_csrf_token
 from api.rate_limit import limiter, RATE_LIMITS
@@ -119,11 +121,16 @@ async def ingest_image(
     warnings = []  # Collect non-fatal warnings
 
     try:
-        # Generate unique filename using hash
+        # Generate unique filename. A random component (not just
+        # timestamp+content-hash) guarantees two concurrent uploads never
+        # share a path on disk, even when the same file is uploaded twice
+        # in the same second -- two DB rows sharing a file would mean
+        # deleting either one later deletes the other's image too.
         file_hash = hashlib.sha256(contents).hexdigest()[:16]
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_id = secrets.token_hex(4)
         ext = Path(file.filename).suffix.lower()
-        original_filename = f"{timestamp}_{file_hash}{ext}"
+        original_filename = f"{timestamp}_{file_hash}_{unique_id}{ext}"
 
         context["generated_filename"] = original_filename
 
@@ -240,81 +247,103 @@ async def ingest_image(
         # Generate slug from title or filename
         slug_base = slugify(ai_metadata.get("title", Path(file.filename).stem))
 
+        # AI-generated flags: 1 if AI succeeded, 0 if fallback was used
+        ai_generated = 1 if ai_error is None else 0
+
+        # Concurrent uploads in the same batch (up to 3 at once) can compute
+        # the same slug before either has committed, tripping the
+        # UNIQUE(user_id, slug) constraint. Retry with a fresh slug on
+        # conflict instead of failing the whole upload.
+        max_slug_attempts = 3
+
         try:
             async with get_db_connection() as db:
-                # Check if slug exists, make it unique
-                cursor = await db.execute(
-                    "SELECT COUNT(*) FROM images WHERE user_id = ? AND slug LIKE ?",
-                    (user_id, f"{slug_base}%"),
-                )
-                count = (await cursor.fetchone())[0]
-                slug = f"{slug_base}-{count + 1}" if count > 0 else slug_base
+                for attempt in range(max_slug_attempts):
+                    # Check if slug exists, make it unique
+                    cursor = await db.execute(
+                        "SELECT COUNT(*) FROM images WHERE user_id = ? AND slug LIKE ?",
+                        (user_id, f"{slug_base}%"),
+                    )
+                    count = (await cursor.fetchone())[0]
+                    slug = (
+                        f"{slug_base}-{count + 1 + attempt}"
+                        if (count > 0 or attempt > 0)
+                        else slug_base
+                    )
 
-                # Insert main image record
-                # AI-generated flags: 1 if AI succeeded, 0 if fallback was used
-                ai_generated = 1 if ai_error is None else 0
-
-                cursor = await db.execute(
-                    """
-                        INSERT INTO images (
-                            user_id, filename, slug, original_filename,
-                            title, caption, description, alt_text, tags, category,
-                            camera_make, camera_model, lens,
-                            focal_length, aperture, shutter_speed, iso,
-                            date_taken, location,
-                            width, height, aspect_ratio, file_size,
-                            published, featured, available_for_sale,
-                            ai_generated_title, ai_generated_caption, ai_generated_description,
-                            ai_generated_alt_text, ai_generated_tags, ai_generated_category
-                        ) VALUES (
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?
+                    try:
+                        cursor = await db.execute(
+                            """
+                                INSERT INTO images (
+                                    user_id, filename, slug, original_filename,
+                                    title, caption, description, alt_text, tags, category,
+                                    camera_make, camera_model, lens,
+                                    focal_length, aperture, shutter_speed, iso,
+                                    date_taken, location,
+                                    width, height, aspect_ratio, file_size,
+                                    published, featured, available_for_sale,
+                                    ai_generated_title, ai_generated_caption,
+                                    ai_generated_description,
+                                    ai_generated_alt_text, ai_generated_tags,
+                                    ai_generated_category
+                                ) VALUES (
+                                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                                    ?, ?, ?, ?, ?, ?
+                                )
+                            """,
+                            (
+                                user_id,
+                                original_filename,
+                                slug,
+                                file.filename,
+                                ai_metadata.get("title", ""),
+                                ai_metadata.get("caption", ""),
+                                ai_metadata.get("description", ""),
+                                ai_metadata.get(
+                                    "caption", ""
+                                ),  # Auto-populate alt_text from caption for accessibility
+                                (
+                                    ",".join(ai_metadata.get("tags", []))
+                                    if isinstance(ai_metadata.get("tags"), list)
+                                    else ai_metadata.get("tags", "")
+                                ),
+                                ai_metadata.get("category", ""),
+                                exif_data.get("camera_make", ""),
+                                exif_data.get("camera_model", ""),
+                                exif_data.get("lens", ""),
+                                exif_data.get("focal_length", ""),
+                                exif_data.get("aperture", ""),
+                                exif_data.get("shutter_speed", ""),
+                                exif_data.get("iso"),
+                                exif_data.get("date_taken", ""),
+                                exif_data.get("location", ""),
+                                exif_data.get("width"),
+                                exif_data.get("height"),
+                                exif_data.get("aspect_ratio"),
+                                len(contents),
+                                0,  # Not published by default
+                                0,  # Not featured
+                                0,  # Not for sale yet
+                                ai_generated,  # ai_generated_title
+                                ai_generated,  # ai_generated_caption
+                                ai_generated,  # ai_generated_description
+                                ai_generated,  # ai_generated_alt_text
+                                ai_generated,  # ai_generated_tags
+                                ai_generated,  # ai_generated_category
+                            ),
                         )
-                    """,
-                    (
-                        user_id,
-                        original_filename,
-                        slug,
-                        file.filename,
-                        ai_metadata.get("title", ""),
-                        ai_metadata.get("caption", ""),
-                        ai_metadata.get("description", ""),
-                        ai_metadata.get(
-                            "caption", ""
-                        ),  # Auto-populate alt_text from caption for accessibility
-                        (
-                            ",".join(ai_metadata.get("tags", []))
-                            if isinstance(ai_metadata.get("tags"), list)
-                            else ai_metadata.get("tags", "")
-                        ),
-                        ai_metadata.get("category", ""),
-                        exif_data.get("camera_make", ""),
-                        exif_data.get("camera_model", ""),
-                        exif_data.get("lens", ""),
-                        exif_data.get("focal_length", ""),
-                        exif_data.get("aperture", ""),
-                        exif_data.get("shutter_speed", ""),
-                        exif_data.get("iso"),
-                        exif_data.get("date_taken", ""),
-                        exif_data.get("location", ""),
-                        exif_data.get("width"),
-                        exif_data.get("height"),
-                        exif_data.get("aspect_ratio"),
-                        len(contents),
-                        0,  # Not published by default
-                        0,  # Not featured
-                        0,  # Not for sale yet
-                        ai_generated,  # ai_generated_title
-                        ai_generated,  # ai_generated_caption
-                        ai_generated,  # ai_generated_description
-                        ai_generated,  # ai_generated_alt_text
-                        ai_generated,  # ai_generated_tags
-                        ai_generated,  # ai_generated_category
-                    ),
-                )
+                    except sqlite3.IntegrityError:
+                        if attempt == max_slug_attempts - 1:
+                            raise
+                        logger.warning(
+                            f"Slug '{slug}' collided with a concurrent upload, retrying",
+                            extra={"context": context},
+                        )
+                        continue
 
-                image_id = cursor.lastrowid
+                    image_id = cursor.lastrowid
+                    break
 
                 # Insert variant records
                 for variant in variants:
@@ -525,7 +554,8 @@ async def list_images(
         if image_ids:
             placeholders = ",".join("?" * len(image_ids))
             variant_cursor = await db.execute(
-                f"SELECT image_id, size, filename FROM image_variants WHERE image_id IN ({placeholders})",
+                "SELECT image_id, size, filename FROM image_variants "
+                f"WHERE image_id IN ({placeholders})",
                 tuple(image_ids),
             )
             for variant_row in await variant_cursor.fetchall():
@@ -537,8 +567,11 @@ async def list_images(
             thumbnail_filename = variants.get("thumbnail") or f"{Path(row[2]).stem}_thumbnail.webp"
             large_filename = variants.get("large") or f"{Path(row[2]).stem}_large.webp"
             full_filename = (
-                variants.get("full") or variants.get("large") or variants.get("medium")
-                or variants.get("thumbnail") or thumbnail_filename
+                variants.get("full")
+                or variants.get("large")
+                or variants.get("medium")
+                or variants.get("thumbnail")
+                or thumbnail_filename
             )
 
             image = {
