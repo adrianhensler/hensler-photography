@@ -189,6 +189,23 @@
   flex-grow: 1000000;
 }
 
+/* Shown in place of the grid when there are no published images yet */
+.empty-gallery {
+  width: 100%;
+  text-align: center;
+  padding: clamp(48px, 12vh, 120px) 24px;
+}
+
+.empty-gallery p {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(18px, 2.6vw, 24px);
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: rgba(245, 245, 245, 0.5);
+  margin: 0;
+}
+
 .gallery-item {
   position: relative;
   display: block;

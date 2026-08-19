@@ -779,13 +779,32 @@
     }
   }
 
+  // Hides the (otherwise permanently-shimmering) hero skeleton and shows a
+  // brand-consistent message in the grid instead of leaving the page looking
+  // broken/loading forever.
+  function renderEmptyState() {
+    console.warn('No published images found');
+
+    const hero = document.querySelector('.hero');
+    if (hero) hero.hidden = true;
+
+    const grid = document.getElementById('gallery-grid');
+    if (grid) {
+      grid.innerHTML = `
+        <div class="empty-gallery">
+          <p>New work is on its way. Check back soon.</p>
+        </div>
+      `;
+    }
+  }
+
   // ===== MAIN INITIALIZATION =====
 
   async function init() {
     const loaded = await loadGalleryData();
 
     if (!loaded || galleryData.length === 0) {
-      console.warn('No published images found');
+      renderEmptyState();
       return;
     }
 
