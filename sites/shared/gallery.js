@@ -779,22 +779,36 @@
     }
   }
 
-  // Hides the (otherwise permanently-shimmering) hero skeleton and shows a
-  // brand-consistent message in the grid instead of leaving the page looking
-  // broken/loading forever.
-  function renderEmptyState() {
-    console.warn('No published images found');
+  // Hides the (otherwise permanently-shimmering) slideshow skeleton and its
+  // nav, without touching .hero-title -- the page's only <h1> lives there,
+  // so the portfolio keeps its identity and heading hierarchy even with no
+  // images to show. Shows a brand-consistent message in the grid instead of
+  // leaving the page looking broken/loading forever.
+  //
+  // `failed` distinguishes a genuinely empty gallery (friendly, expected)
+  // from an API/network failure (retryable, don't claim "no photos yet"
+  // when the truth is "couldn't reach the server").
+  function renderEmptyState({ failed } = {}) {
+    console.warn(failed ? 'Failed to load gallery data' : 'No published images found');
 
-    const hero = document.querySelector('.hero');
-    if (hero) hero.hidden = true;
+    const slideshow = document.getElementById('slideshow');
+    if (slideshow) slideshow.hidden = true;
+    document.querySelectorAll('.slideshow-nav').forEach(btn => { btn.hidden = true; });
 
     const grid = document.getElementById('gallery-grid');
     if (grid) {
-      grid.innerHTML = `
-        <div class="empty-gallery">
-          <p>New work is on its way. Check back soon.</p>
-        </div>
-      `;
+      grid.innerHTML = failed
+        ? `
+          <div class="empty-gallery">
+            <p>Having trouble loading the gallery right now.</p>
+            <p class="empty-gallery-secondary">Please refresh, or check back shortly.</p>
+          </div>
+        `
+        : `
+          <div class="empty-gallery">
+            <p>New work is on its way. Check back soon.</p>
+          </div>
+        `;
     }
   }
 
@@ -804,7 +818,7 @@
     const loaded = await loadGalleryData();
 
     if (!loaded || galleryData.length === 0) {
-      renderEmptyState();
+      renderEmptyState({ failed: !loaded });
       return;
     }
 

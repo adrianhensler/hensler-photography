@@ -124,6 +124,8 @@
   border-color: rgba(232, 213, 181, 0.4);
 }
 
+.slideshow-nav[hidden] { display: none; }
+
 .slideshow-prev { left: 16px; }
 .slideshow-next { right: 16px; }
 
@@ -204,6 +206,12 @@
   text-transform: lowercase;
   color: rgba(245, 245, 245, 0.5);
   margin: 0;
+}
+
+.empty-gallery p.empty-gallery-secondary {
+  font-size: clamp(14px, 1.8vw, 16px);
+  color: rgba(245, 245, 245, 0.35);
+  margin-top: 10px;
 }
 
 .gallery-item {
