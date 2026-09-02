@@ -260,6 +260,14 @@
     animation: none;
   }
 
+  /* Browser-generated view-transition pseudo-elements aren't touched by
+     the transition/animation overrides above and need their own rule. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+
   .gallery-item {
     opacity: 1;
     transform: none;

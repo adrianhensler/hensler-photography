@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
   <meta charset="utf-8">
   <title>About | Adrian Hensler</title>
@@ -12,6 +12,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:wght@300;600;700&display=swap" rel="stylesheet">
 
   <style>
+    /* Gentle cross-fade between gallery and about (progressive enhancement;
+       browsers without support just navigate normally) */
+    @view-transition {
+      navigation: auto;
+    }
+
     /* Base & Layout */
     body {
       margin: 0;
@@ -125,91 +131,104 @@
       margin-bottom: 0;
     }
 
-    /* Toggle/Accordion Styles */
-    .toggle-section {
-      margin: 24px 0;
+    /* Process disclosure (plain, non-interactive — no accordion chrome) */
+    .disclosure {
+      margin: 32px 0 0;
+      padding: 20px 0 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
-    .toggle-btn {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 16px 20px;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      color: rgba(245, 245, 245, 0.7);
+    .disclosure h3 {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 16px;
       font-weight: 300;
-      letter-spacing: 0.03em;
+      font-size: 15px;
+      letter-spacing: 0.06em;
       text-transform: lowercase;
-      transition: all 0.3s ease;
+      opacity: 0.45;
+      margin: 0 0 12px;
     }
 
-    .toggle-btn:hover {
-      border-color: rgba(232, 213, 181, 0.3);
-      background: rgba(232, 213, 181, 0.03);
-    }
-
-    .toggle-btn[aria-expanded="true"] {
-      border-color: rgba(232, 213, 181, 0.4);
-      background: rgba(232, 213, 181, 0.05);
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-    }
-
-    .toggle-icon {
-      font-size: 20px;
-      opacity: 0.5;
-      transition: transform 0.3s ease;
-      font-style: normal;
-    }
-
-    .toggle-btn[aria-expanded="true"] .toggle-icon {
-      transform: rotate(45deg);
-    }
-
-    .toggle-content {
-      background: rgba(15, 15, 15, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-top: none;
-      border-radius: 0 0 8px 8px;
-      padding: 20px;
-      overflow: hidden;
-    }
-
-    .toggle-content p {
+    .disclosure p {
       margin: 0 0 12px;
       font-size: 15px;
       line-height: 1.7;
-      color: rgba(245, 245, 245, 0.8);
+      color: rgba(245, 245, 245, 0.75);
     }
 
-    .toggle-content p:last-child {
+    .disclosure p:last-child {
       margin-bottom: 0;
     }
 
-    .toggle-content ul {
+    .disclosure ul {
       margin: 0 0 12px;
       padding-left: 20px;
-      color: rgba(245, 245, 245, 0.8);
+      color: rgba(245, 245, 245, 0.75);
     }
 
-    .toggle-content li {
+    .disclosure li {
       margin-bottom: 8px;
       font-size: 15px;
       line-height: 1.6;
     }
 
-    .toggle-content code {
+    .disclosure code {
       background: rgba(232, 213, 181, 0.1);
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 14px;
       color: #e8d5b5;
+    }
+
+    /* Bio photo — the box (and its space in the layout) is reserved
+       immediately so the fetched photo fading in never reflows text the
+       visitor may already be reading. */
+    .about-photo {
+      margin: 0 0 28px;
+      aspect-ratio: 3 / 2;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .about-photo img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .about-photo img.is-loaded {
+      opacity: 1;
+    }
+
+    .about-photo figcaption {
+      margin-top: 10px;
+      font-size: 13px;
+      letter-spacing: 0.03em;
+      color: rgba(245, 245, 245, 0.4);
+      font-style: italic;
+    }
+
+    /* Scroll-reveal (progressive enhancement; JS adds .is-visible as
+       sections enter the viewport — see script at bottom) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.is-visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Without JS, content must stay visible */
+    .no-js .reveal {
+      opacity: 1;
+      transform: none;
     }
 
     /* AI Aside Styling */
@@ -247,7 +266,6 @@
     }
 
     a.button:focus-visible,
-    .toggle-btn:focus-visible,
     .nav-link:focus-visible {
       outline: 2px solid rgba(232, 213, 181, 0.6);
       outline-offset: 3px;
@@ -299,10 +317,6 @@
       animation: fadeIn 1s ease-out 0.15s both;
     }
 
-    .about-content {
-      animation: fadeIn 1s ease-out 0.3s both;
-    }
-
     /* Footer */
     footer {
       margin-top: 48px;
@@ -318,11 +332,6 @@
         margin: 32px 0;
         padding-bottom: 32px;
       }
-
-      .toggle-btn {
-        padding: 14px 16px;
-        font-size: 15px;
-      }
     }
 
     /* Reduce motion for accessibility */
@@ -334,6 +343,15 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
       }
+
+      /* The reduce-motion rule above only touches ordinary elements —
+         browser-generated view-transition pseudo-elements need their own
+         override or the cross-document fade still plays. */
+      ::view-transition-group(*),
+      ::view-transition-old(*),
+      ::view-transition-new(*) {
+        animation: none !important;
+      }
     }
   </style>
 
@@ -341,6 +359,7 @@
   <meta property="og:description" content="Photography from Halifax, Nova Scotia by Adrian Hensler, and a working demonstration of a website built end-to-end with AI. Open source; prints available on request.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://adrian.hensler.photography/assets/adrian-hero.jpg">
+  <script>document.documentElement.classList.remove('no-js');</script>
 </head>
 <body>
   <main class="wrap about-page">
@@ -355,8 +374,33 @@
 
     <article class="about-content">
 
-      <!-- Section 1: The showcase: what this site is -->
-      <section class="about-section">
+      <!-- Section 1: The person -->
+      <section class="about-section reveal">
+        <h2>about adrian</h2>
+
+        <figure class="about-photo reveal" id="about-photo">
+          <img id="about-photo-img" alt="" loading="lazy">
+          <figcaption id="about-photo-caption"></figcaption>
+        </figure>
+
+        <p>
+          I'm Adrian Hensler. I live in Halifax, Nova Scotia, and I photograph the land, light,
+          and life around me: wildlife on the milkweed, fog rolling over the harbour, the
+          boardwalk at golden hour. Most of what you'll find here was made within an hour of home.
+        </p>
+        <p>
+          I work in technology by profession; photography is how I slow down and pay attention.
+          The gallery favours patient subjects: birds, shorelines, weather, and the occasional
+          architectural line that won't stop staring back.
+        </p>
+        <p>
+          Photography runs in the family; my son Liam shoots too. You can find his work at
+          <a href="https://liam.hensler.photography">liam.hensler.photography</a>.
+        </p>
+      </section>
+
+      <!-- Section 2: The showcase: what this site is -->
+      <section class="about-section reveal">
         <h2>about this site</h2>
         <p>
           This is a photography portfolio showcasing images from Halifax, Nova Scotia and
@@ -381,68 +425,39 @@
           </a>
         </div>
 
-        <div class="toggle-section">
-          <button class="toggle-btn" aria-expanded="false">
-            <span class="toggle-text">where ai is used (and where it isn't)</span>
-            <span class="toggle-icon">+</span>
-          </button>
-          <div class="toggle-content" hidden>
-            <p>
-              Image descriptions, titles, and tags are drafted by Claude's Vision API when I upload
-              a photo. Descriptions I haven't personally edited carry a small
-              &ldquo;AI-generated description&rdquo; label in the lightbox. When that label is
-              absent, a human reviewed the words.
-            </p>
-            <p>
-              The code itself is written through conversation: I describe what I want, review what
-              comes back, and we iterate. Design decisions worth remembering get written down in the
-              repository, so the process is auditable end to end. The working design notes for the
-              site's photographer console are public too, at
-              <a href="https://hensler.photography/design.html">hensler.photography/design.html</a>.
-            </p>
-          </div>
+        <div class="disclosure">
+          <h3>where ai is used (and where it isn't)</h3>
+          <p>
+            Image descriptions, titles, and tags are drafted by Claude's Vision API when I upload
+            a photo. Descriptions I haven't personally edited carry a small
+            &ldquo;AI-generated description&rdquo; label in the lightbox. When that label is
+            absent, a human reviewed the words.
+          </p>
+          <p>
+            The code itself is written through conversation: I describe what I want, review what
+            comes back, and we iterate. Design decisions worth remembering get written down in the
+            repository, so the process is auditable end to end. The working design notes for the
+            site's photographer console are public too, at
+            <a href="https://hensler.photography/design.html">hensler.photography/design.html</a>.
+          </p>
         </div>
 
-        <div class="toggle-section">
-          <button class="toggle-btn" aria-expanded="false">
-            <span class="toggle-text">under the hood</span>
-            <span class="toggle-icon">+</span>
-          </button>
-          <div class="toggle-content" hidden>
-            <p>The technical stack, for those curious:</p>
-            <ul>
-              <li><strong>Frontend:</strong> Vanilla HTML, CSS, JavaScript. No frameworks.</li>
-              <li><strong>Backend:</strong> Python with FastAPI for the image management API</li>
-              <li><strong>Database:</strong> SQLite storing image metadata, EXIF data, and analytics</li>
-              <li><strong>Image processing:</strong> Automatic WebP conversion (images are 10-20x smaller)</li>
-              <li><strong>Hosting:</strong> Docker containers on a VPS, Caddy for HTTPS</li>
-              <li><strong>Analytics:</strong> Privacy-preserving (no cookies, hashed IPs, no personal data)</li>
-            </ul>
-          </div>
+        <div class="disclosure">
+          <h3>under the hood</h3>
+          <p>The technical stack, for those curious:</p>
+          <ul>
+            <li><strong>Frontend:</strong> Vanilla HTML, CSS, JavaScript. No frameworks.</li>
+            <li><strong>Backend:</strong> Python with FastAPI for the image management API</li>
+            <li><strong>Database:</strong> SQLite storing image metadata, EXIF data, and analytics</li>
+            <li><strong>Image processing:</strong> Automatic WebP conversion (images are 10-20x smaller)</li>
+            <li><strong>Hosting:</strong> Docker containers on a VPS, Caddy for HTTPS</li>
+            <li><strong>Analytics:</strong> Privacy-preserving (no cookies, hashed IPs, no personal data)</li>
+          </ul>
         </div>
-      </section>
-
-      <!-- Section 2: The person -->
-      <section class="about-section">
-        <h2>about adrian</h2>
-        <p>
-          I'm Adrian Hensler. I live in Halifax, Nova Scotia, and I photograph the land, light,
-          and life around me: wildlife on the milkweed, fog rolling over the harbour, the
-          boardwalk at golden hour. Most of what you'll find here was made within an hour of home.
-        </p>
-        <p>
-          I work in technology by profession; photography is how I slow down and pay attention.
-          The gallery favours patient subjects: birds, shorelines, weather, and the occasional
-          architectural line that won't stop staring back.
-        </p>
-        <p>
-          Photography runs in the family; my son Liam shoots too. You can find his work at
-          <a href="https://liam.hensler.photography">liam.hensler.photography</a>.
-        </p>
       </section>
 
       <!-- Section 3: Prints & contact -->
-      <section class="about-section">
+      <section class="about-section reveal">
         <h2>prints &amp; contact</h2>
         <p>
           Prints of any photograph in the gallery are available on request. If an image
@@ -472,33 +487,68 @@
     </footer>
   </main>
 
-  <!-- Toggle functionality -->
+  <!-- Scroll-reveal + bio photo -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Toggle/accordion functionality
-      const toggleButtons = document.querySelectorAll('.toggle-btn');
-
-      toggleButtons.forEach(button => {
-        button.addEventListener('click', function() {
-          const isExpanded = this.getAttribute('aria-expanded') === 'true';
-          const content = this.nextElementSibling;
-
-          // Toggle state
-          this.setAttribute('aria-expanded', !isExpanded);
-
-          if (isExpanded) {
-            content.hidden = true;
-          } else {
-            content.hidden = false;
-          }
-        });
-      });
-
       // Copyright year
       const yearEl = document.getElementById('y');
       if (yearEl) {
         yearEl.textContent = new Date().getFullYear();
       }
+
+      // Scroll-reveal: fade sections in as they enter the viewport
+      const revealTargets = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window && revealTargets.length) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+
+        revealTargets.forEach((el) => observer.observe(el));
+      } else {
+        revealTargets.forEach((el) => el.classList.add('is-visible'));
+      }
+
+      // Bio photo: pull a real, currently-published photo from the API
+      // (no hardcoded filenames — see CLAUDE.md). The figure's box is
+      // reserved by CSS from first paint (aspect-ratio placeholder), so
+      // swapping the image in never shifts the text below it.
+      const figure = document.getElementById('about-photo');
+      const img = document.getElementById('about-photo-img');
+      const caption = document.getElementById('about-photo-caption');
+
+      fetch('/api/gallery/published?user_id=1')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const images = data && Array.isArray(data.images) ? data.images : [];
+          // A photo standing in as page content (not decoration) needs a
+          // real accessible description — skip any without alt text
+          // rather than falling back to the title or an empty string.
+          const withAlt = images.filter((i) => i.alt_text && i.alt_text.trim());
+          if (!withAlt.length || !figure || !img || !caption) {
+            if (figure) figure.remove();
+            return;
+          }
+
+          const photo = withAlt.find((i) => i.category === 'landscape') || withAlt[0];
+
+          img.src = photo.medium_url || photo.large_url || photo.image_url;
+          if (photo.medium_url && photo.large_url) {
+            img.srcset = `${photo.medium_url} 800w, ${photo.large_url} 1200w`;
+            img.sizes = '(max-width: 700px) 100vw, 700px';
+          }
+          img.alt = photo.alt_text;
+          img.addEventListener('load', () => img.classList.add('is-loaded'), { once: true });
+          caption.textContent = photo.title || '';
+        })
+        .catch(() => {
+          // No photo, no problem: the bio text stands on its own.
+          if (figure) figure.remove();
+        });
     });
   </script>
 
