@@ -179,16 +179,29 @@
       color: #e8d5b5;
     }
 
-    /* Bio photo */
+    /* Bio photo — the box (and its space in the layout) is reserved
+       immediately so the fetched photo fading in never reflows text the
+       visitor may already be reading. */
     .about-photo {
       margin: 0 0 28px;
+      aspect-ratio: 3 / 2;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 4px;
+      overflow: hidden;
     }
 
     .about-photo img {
       display: block;
       width: 100%;
-      height: auto;
+      height: 100%;
+      object-fit: cover;
       border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .about-photo img.is-loaded {
+      opacity: 1;
     }
 
     .about-photo figcaption {
@@ -330,6 +343,15 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
       }
+
+      /* The reduce-motion rule above only touches ordinary elements —
+         browser-generated view-transition pseudo-elements need their own
+         override or the cross-document fade still plays. */
+      ::view-transition-group(*),
+      ::view-transition-old(*),
+      ::view-transition-new(*) {
+        animation: none !important;
+      }
     }
   </style>
 
@@ -356,7 +378,7 @@
       <section class="about-section reveal">
         <h2>about adrian</h2>
 
-        <figure class="about-photo reveal" id="about-photo" hidden>
+        <figure class="about-photo reveal" id="about-photo">
           <img id="about-photo-img" alt="" loading="lazy">
           <figcaption id="about-photo-caption"></figcaption>
         </figure>
@@ -492,35 +514,40 @@
       }
 
       // Bio photo: pull a real, currently-published photo from the API
-      // (no hardcoded filenames — see CLAUDE.md).
+      // (no hardcoded filenames — see CLAUDE.md). The figure's box is
+      // reserved by CSS from first paint (aspect-ratio placeholder), so
+      // swapping the image in never shifts the text below it.
+      const figure = document.getElementById('about-photo');
+      const img = document.getElementById('about-photo-img');
+      const caption = document.getElementById('about-photo-caption');
+
       fetch('/api/gallery/published?user_id=1')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           const images = data && Array.isArray(data.images) ? data.images : [];
-          if (!images.length) return;
+          // A photo standing in as page content (not decoration) needs a
+          // real accessible description — skip any without alt text
+          // rather than falling back to the title or an empty string.
+          const withAlt = images.filter((i) => i.alt_text && i.alt_text.trim());
+          if (!withAlt.length || !figure || !img || !caption) {
+            if (figure) figure.remove();
+            return;
+          }
 
-          const photo = images.find((img) => img.category === 'landscape') || images[0];
-          const figure = document.getElementById('about-photo');
-          const img = document.getElementById('about-photo-img');
-          const caption = document.getElementById('about-photo-caption');
-          if (!figure || !img || !caption) return;
+          const photo = withAlt.find((i) => i.category === 'landscape') || withAlt[0];
 
           img.src = photo.medium_url || photo.large_url || photo.image_url;
           if (photo.medium_url && photo.large_url) {
             img.srcset = `${photo.medium_url} 800w, ${photo.large_url} 1200w`;
             img.sizes = '(max-width: 700px) 100vw, 700px';
           }
-          if (photo.width && photo.height) {
-            img.width = photo.width;
-            img.height = photo.height;
-          }
-          img.alt = photo.alt_text || photo.title || '';
+          img.alt = photo.alt_text;
+          img.addEventListener('load', () => img.classList.add('is-loaded'), { once: true });
           caption.textContent = photo.title || '';
-
-          figure.hidden = false;
         })
         .catch(() => {
           // No photo, no problem: the bio text stands on its own.
+          if (figure) figure.remove();
         });
     });
   </script>
