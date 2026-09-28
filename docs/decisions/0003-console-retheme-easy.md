@@ -1,7 +1,7 @@
 # 0003 — Console retheme "easy.": cotton-rag and darkroom for the management console
 
 - **Date:** 2026-07-10
-- **Status:** accepted; "AI stays invisible" superseded by [0004](0004-goals-ai-showcase-and-photography.md)
+- **Status:** accepted
 - **PR:** (feature/console-retheme-phase1)
 
 ## Context
