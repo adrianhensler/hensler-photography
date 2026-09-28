@@ -376,7 +376,7 @@
             display: flex;
             align-items: center;
             gap: 0.45rem;
-            margin: 0 0 0.75rem;
+            margin: 0;
             font-size: var(--font-size-sm);
             color: var(--text-secondary);
         }
@@ -616,6 +616,11 @@
 
 
     <div class="container">
+        <div class="page-head page-head--inline">
+            <h1 class="page-title">upload</h1>
+            <p id="suggestedLegend" class="suggested-legend" hidden><span class="suggested-dot" aria-hidden="true"></span> Suggested: edit anything</p>
+        </div>
+
         <div class="upload-area" id="uploadArea">
             <div class="upload-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -640,7 +645,6 @@
             <button type="button" id="batchPublish" class="btn btn-primary">Publish selected</button>
         </div>
 
-        <p id="suggestedLegend" class="suggested-legend" hidden><span class="suggested-dot" aria-hidden="true"></span> Suggested: edit anything</p>
         <div id="previews" class="previews"></div>
     </div>
 

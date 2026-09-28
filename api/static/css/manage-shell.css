@@ -344,3 +344,9 @@
     outline: 2px solid var(--focus-border);
     outline-offset: 2px;
 }
+
+/* Title with its note beside it rather than pushed to the far edge
+   (design.html upload mock: "upload" + the suggested-dot legend). */
+.page-head--inline {
+    justify-content: flex-start;
+}
