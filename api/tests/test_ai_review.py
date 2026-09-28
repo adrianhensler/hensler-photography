@@ -95,13 +95,16 @@ async def test_publishing_does_not_approve(client, auth_headers_adrian):
 
 
 @pytest.mark.asyncio
-async def test_approve_without_body_clears_every_flag(client, auth_headers_adrian):
+async def test_approve_without_body_clears_reviewable_flags_only(client, auth_headers_adrian):
     await _mark_all_ai(1)
 
     response = await client.post("/api/images/1/approve", headers=auth_headers_adrian)
 
     assert response.status_code == 200
-    assert all(v == 0 for v in (await _flags(1)).values())
+    flags = await _flags(1)
+    assert all(flags[f] == 0 for f in ("title", "caption", "alt_text", "tags", "category"))
+    # The description is never shown in the console, so a bare approval can't vouch for it
+    assert flags["description"] == 1
 
 
 @pytest.mark.asyncio

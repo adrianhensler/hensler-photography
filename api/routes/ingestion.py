@@ -63,6 +63,12 @@ AI_TRACKED_FIELDS = {
 }
 
 
+# Fields a person can read and edit in the console. A bare approval covers only
+# these: approving text nobody was shown (e.g. the long description) would
+# make the provenance record inaccurate.
+REVIEWABLE_FIELDS = ["title", "caption", "alt_text", "tags", "category"]
+
+
 def _normalized(value, field: str = "") -> str:
     """Comparison form for detecting a real edit.
 
@@ -755,12 +761,12 @@ async def approve_ai_metadata(
     Mark AI-drafted fields as human-reviewed without editing them (ADR 0004).
 
     Optional JSON body {"fields": ["title", "caption", ...]}; with no body
-    (or no fields) every tracked field is approved. Unknown field names
-    are rejected rather than ignored.
+    (or no fields) the REVIEWABLE_FIELDS shown in the console are approved.
+    Any tracked field may be named explicitly; unknown names are rejected.
     """
     await verify_image_ownership(image_id, current_user)
 
-    fields = list(AI_TRACKED_FIELDS)
+    fields = list(REVIEWABLE_FIELDS)
     if await request.body():
         try:
             payload = await request.json()

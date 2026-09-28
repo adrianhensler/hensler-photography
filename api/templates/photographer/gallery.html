@@ -1194,8 +1194,16 @@
         // Set by the "Approve text" button so the one submit handler saves, then approves.
         let approveOnSave = false;
         document.getElementById('approveEditBtn').addEventListener('click', () => {
+            const form = document.getElementById('editForm');
+            // Blocked native validation dispatches no submit event, which would
+            // leave the flag armed for a later plain Save; check first.
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
             approveOnSave = true;
-            document.getElementById('editForm').requestSubmit();
+            form.requestSubmit();
+            approveOnSave = false; // the handler reads it synchronously before any await
         });
 
         function syncApproveEditButton() {
