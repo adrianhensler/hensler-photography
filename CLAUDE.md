@@ -101,9 +101,18 @@ Multi-site photography portfolio using a **single Caddy container** serving thre
 
 ## Project Direction
 
-**North star**: evolve from a personal portfolio experiment into a public-facing, marketable photography site for two photographers (Adrian and Liam), eventually selling prints.
+**Two co-equal goals** (ADR 0004). Neither is traded away for the other; a change that serves one while undermining the other needs Adrian's sign-off and a decision record.
 
-Sequence (each stage must earn the next):
+1. **AI showcase.** The site is openly an AI-built project and demonstrates what AI can do: the code, the workflow, and the metadata pipeline.
+2. **Photographers' showcase.** A public, marketable home for the photographers' work (Adrian, Liam, and anyone hosted later), eventually selling prints.
+
+**Principles that reconcile them:**
+- **AI is honest, never hidden.** Visitors can tell AI-drafted text from human-reviewed text. The site never pretends there is no AI.
+- **The photograph is the loudest thing.** AI provenance is quiet (a small note, not a badge), and console chrome stays calm: no robot badges and no cost talk in UI copy.
+- **Humans review AI output.** AI-drafted metadata stays marked (the sand dot in the console, a quiet note for visitors) until a person edits it or explicitly approves it. Publishing does not count as approval.
+- **Decisions are recorded.** Work done from the "AI tools" frame and from the "photography" frame must not quietly contradict each other: goal-affecting changes get an ADR; console changes update design.html's change log.
+
+Sequence for the photography goal (each stage must earn the next):
 1. **Visitor-first galleries** — polished public UX; no admin/CMS concepts leaking into visitor-facing surfaces
 2. **Per-image permalink pages** (`/photo/{slug}`) + **inquiry-based print sales** — validate demand at near-zero build cost
 3. **Storefront** under the Hensler Photography umbrella — only after inquiries prove demand
