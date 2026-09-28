@@ -618,7 +618,7 @@
     <div class="container">
         <div class="page-head page-head--inline">
             <h1 class="page-title">upload</h1>
-            <p id="suggestedLegend" class="suggested-legend" hidden><span class="suggested-dot" aria-hidden="true"></span> Suggested: edit anything</p>
+            <p id="suggestedLegend" class="suggested-legend" hidden><span class="suggested-dot" aria-hidden="true"></span> Drafted: edit it, or approve it as written</p>
         </div>
 
         <div class="upload-area" id="uploadArea">
@@ -824,7 +824,7 @@
                 openRowMenu(btn, fileId, imageId);
                 return;
             }
-            const handlers = { save: saveMetadata, publish: publishImage };
+            const handlers = { save: saveMetadata, publish: publishImage, approve: approveText };
             handlers[btn.dataset.action]?.(fileId, imageId);
         });
 
@@ -832,16 +832,49 @@
         previewsContainer.addEventListener('input', (e) => {
             if (!e.target.id) return;
             previewsContainer.querySelector(`[data-suggested-for="${CSS.escape(e.target.id)}"]`)?.remove();
+            syncApproveButton(e.target.id.split('-').pop());
         });
 
         function markSuggested(fieldId) {
+            const fileId = fieldId.split('-').pop();
             const label = previewsContainer.querySelector(`label[for="${CSS.escape(fieldId)}"]`);
             if (!label || label.querySelector('.suggested-dot')) return;
             const dot = document.createElement('span');
             dot.className = 'suggested-dot';
             dot.dataset.suggestedFor = fieldId;
-            dot.title = 'Suggested; edit anything';
+            dot.title = 'Drafted; edit or approve';
             label.appendChild(dot);
+            syncApproveButton(fileId);
+        }
+
+        // "Approve text" is offered only while the row still has drafted fields.
+        function syncApproveButton(fileId) {
+            const row = document.getElementById(`preview-${fileId}`);
+            const button = row?.querySelector('[data-action="approve"]');
+            if (button) button.hidden = !row.querySelector('.suggested-dot');
+        }
+
+        // Approve the text as written (ADR 0004): save any edits first so the
+        // approval covers what is on screen, then clear every drafted flag.
+        async function approveText(fileId, imageId) {
+            const saved = await saveMetadata(fileId, imageId);
+            if (!saved) return false;
+            try {
+                const response = await fetch(`/api/images/${imageId}/approve`, {
+                    method: 'POST',
+                    headers: csrfHeaders(),
+                    credentials: 'include'
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                document.querySelectorAll(`#preview-${fileId} .suggested-dot`).forEach((dot) => dot.remove());
+                syncApproveButton(fileId);
+                showToast('success', 'Approved', 'The text is marked as reviewed.');
+                return true;
+            } catch (error) {
+                console.error('Approve error:', error);
+                showToast('error', 'Approve Failed', 'Could not mark the text as reviewed.');
+                return false;
+            }
         }
 
         // ===== Row overflow menu (singleton; mirrors the gallery manager's) =====
@@ -1330,8 +1363,9 @@
 
             const summaryText = buildExifSummary(exif);
             // Sand dot marks a suggested value until the photographer edits it.
-            const dot = (field) => (metadata[field]
-                ? ` <span class="suggested-dot" data-suggested-for="${field}-${fileId}" title="Suggested; edit anything"></span>`
+            const drafted = metadata.ai_disclosure || {};
+            const dot = (field) => (drafted[field] && metadata[field]
+                ? ` <span class="suggested-dot" data-suggested-for="${field}-${fileId}" title="Drafted; edit or approve"></span>`
                 : '');
 
             const html = `
@@ -1344,6 +1378,11 @@
                     <div>
                         <label class="field-label" for="caption-${fileId}">Caption${dot('caption')}</label>
                         <textarea id="caption-${fileId}">${escapeHtml(metadata.caption || '')}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="field-label" for="alt_text-${fileId}">Alt text (read aloud to screen-reader visitors)${dot('alt_text')}</label>
+                        <textarea id="alt_text-${fileId}" rows="2">${escapeHtml(metadata.alt_text || '')}</textarea>
                     </div>
 
                     <div class="field-row">
@@ -1425,18 +1464,21 @@
 
             container.innerHTML = `
                 <div class="actions">
+                    <button type="button" class="btn btn-secondary btn-small" data-action="approve" data-file-id="${fileId}" data-image-id="${imageId}">Approve text</button>
                     <button type="button" class="btn btn-secondary btn-small" data-action="save" data-file-id="${fileId}" data-image-id="${imageId}">Save draft</button>
                     <button type="button" class="btn btn-primary btn-small" data-action="publish" data-file-id="${fileId}" data-image-id="${imageId}">Publish</button>
                     <button type="button" class="menu-trigger" data-action="menu" data-file-id="${fileId}" data-image-id="${imageId}"
                             aria-haspopup="menu" aria-expanded="false" aria-label="More actions">&#8942;</button>
                 </div>
             `;
+            syncApproveButton(fileId);
         }
 
         async function saveMetadata(fileId, imageId) {
             const metadata = {
                 title: document.getElementById(`title-${fileId}`).value,
                 caption: document.getElementById(`caption-${fileId}`).value,
+                alt_text: document.getElementById(`alt_text-${fileId}`).value,
                 tags: document.getElementById(`tags-${fileId}`).value,
                 category: document.getElementById(`category-${fileId}`).value,
                 // Technical metadata (now editable)
@@ -1503,8 +1545,6 @@
                 if (response.ok) {
                     showToast('success', 'Published', 'Image published successfully');
                     updateStatus(fileId, 'success', 'Published ✓');
-                    // Published suggestions are the photographer's now: drop the dots.
-                    document.querySelectorAll(`#preview-${fileId} .suggested-dot`).forEach((dot) => dot.remove());
                     return true;
                 }
                 showToast('error', 'Publish Failed', 'Failed to publish image');
@@ -1736,7 +1776,7 @@
 
                     // Update UI fields with new metadata
                     // Fresh suggestions get their sand dot back.
-                    ['title', 'caption', 'tags', 'category'].forEach((field) => {
+                    ['title', 'caption', 'alt_text', 'tags', 'category'].forEach((field) => {
                         if (!result[field]) return;
                         const id = `${field}-${fileId}`;
                         document.getElementById(id).value = result[field];

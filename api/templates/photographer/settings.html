@@ -105,8 +105,8 @@
     </div>
 
     <div class="settings-card">
-        <h2>AI Metadata Style</h2>
-        <p>Choose how AI generates titles, captions, and descriptions for your images.</p>
+        <h2>Writing style</h2>
+        <p>Choose the voice for drafted titles, captions, and descriptions.</p>
         <div class="settings-field">
             <label for="ai_style">Description style</label>
             <select id="ai_style" name="ai_style">
@@ -118,7 +118,7 @@
             </select>
         </div>
         <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px; line-height: 1.5;">
-            <strong>Minimal:</strong> "Oak Tree in Winter Field" - Bare facts, avoids AI-speak<br>
+            <strong>Minimal:</strong> "Oak Tree in Winter Field" - Bare facts, avoids flowery language<br>
             <strong>Technical:</strong> "Foggy Valley at Dawn" - Photography craft focus<br>
             <strong>Balanced:</strong> Professional tone, technical + artistic<br>
             <strong>Documentary:</strong> "Street Market in Morning Light" - Who, what, where, when<br>
@@ -126,7 +126,7 @@
         </div>
         <div class="settings-actions">
             <button id="cancel-ai-style" class="btn-secondary" type="button">Cancel</button>
-            <button id="save-ai-style" class="btn-primary" type="button">Save AI style</button>
+            <button id="save-ai-style" class="btn-primary" type="button">Save writing style</button>
         </div>
     </div>
 
@@ -219,7 +219,7 @@
 
     field('save-ai-style').addEventListener('click', async (e) => {
         const payload = snapshots.aiStyle();
-        if (await patchUser(payload, e.currentTarget, 'Save AI style')) {
+        if (await patchUser(payload, e.currentTarget, 'Save writing style')) {
             saved.aiStyle = payload;
         }
     });

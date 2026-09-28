@@ -51,6 +51,37 @@ async def verify_image_ownership(image_id: int, current_user: User) -> None:
             raise HTTPException(status_code=404, detail="Image not found")
 
 
+# Content fields whose provenance is tracked: ai_generated_<field> is 1 while
+# the text is an unreviewed AI draft, 0 once a human edits or approves it.
+AI_TRACKED_FIELDS = {
+    "title": "ai_generated_title",
+    "caption": "ai_generated_caption",
+    "description": "ai_generated_description",
+    "alt_text": "ai_generated_alt_text",
+    "tags": "ai_generated_tags",
+    "category": "ai_generated_category",
+}
+
+
+# Fields a person can read and edit in the console. A bare approval covers only
+# these: approving text nobody was shown (e.g. the long description) would
+# make the provenance record inaccurate.
+REVIEWABLE_FIELDS = ["title", "caption", "alt_text", "tags", "category"]
+
+
+def _normalized(value, field: str = "") -> str:
+    """Comparison form for detecting a real edit.
+
+    Ignores surrounding whitespace, and for tags the separator spacing:
+    ingest stores "a,b" while the save validator rewrites it as "a, b",
+    which must not count as a human edit.
+    """
+    text = "" if value is None else str(value).strip()
+    if field == "tags":
+        return ",".join(tag.strip() for tag in text.split(",") if tag.strip())
+    return text
+
+
 # ROUTE ORDER MATTERS: Specific literal paths MUST come before generic path parameters
 # Otherwise FastAPI will match /{image_id} before /ingest
 
@@ -416,8 +447,11 @@ async def ingest_image(
             "title": ai_metadata.get("title", ""),
             "caption": ai_metadata.get("caption", ""),
             "description": ai_metadata.get("description", ""),
+            "alt_text": ai_metadata.get("alt_text") or ai_metadata.get("caption", ""),
             "tags": ai_metadata.get("tags", ""),
             "category": ai_metadata.get("category", ""),
+            # Every text field starts as an unreviewed AI draft when analysis succeeded
+            "ai_disclosure": {field: bool(ai_generated) for field in AI_TRACKED_FIELDS},
             "width": exif_data.get("width"),
             "height": exif_data.get("height"),
             "exif": exif_display,
@@ -489,7 +523,11 @@ async def list_images(
         # Build query dynamically
         query = """
             SELECT id, user_id, filename, slug, title, caption, tags, category,
-                   published, featured, share_exif, width, height, created_at, updated_at
+                   published, featured, share_exif, width, height, created_at, updated_at,
+                   -- Visitor-visible text still an unreviewed AI draft (NULL = legacy AI)
+                   (COALESCE(ai_generated_title, 1) + COALESCE(ai_generated_caption, 1)
+                    + COALESCE(ai_generated_alt_text, 1) + COALESCE(ai_generated_tags, 1)
+                    + COALESCE(ai_generated_category, 1)) > 0 AS needs_review
             FROM images
             WHERE deleted_at IS NULL
         """
@@ -590,6 +628,7 @@ async def list_images(
                 "height": row[12],
                 "created_at": row[13],
                 "updated_at": row[14],
+                "needs_review": bool(row[15]),
                 "thumbnail_url": f"/assets/gallery/{thumbnail_filename}",
                 "large_url": f"/assets/gallery/{large_filename}",
                 "image_url": f"/assets/gallery/{full_filename}",
@@ -709,6 +748,54 @@ async def set_exif_sharing(
         await db.commit()
 
     return {"success": True, "image_id": image_id, "share_exif": share}
+
+
+@router.post("/{image_id}/approve")
+async def approve_ai_metadata(
+    image_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
+):
+    """
+    Mark AI-drafted fields as human-reviewed without editing them (ADR 0004).
+
+    Optional JSON body {"fields": ["title", "caption", ...]}; with no body
+    (or no fields) the REVIEWABLE_FIELDS shown in the console are approved.
+    Any tracked field may be named explicitly; unknown names are rejected.
+    """
+    await verify_image_ownership(image_id, current_user)
+
+    fields = list(REVIEWABLE_FIELDS)
+    if await request.body():
+        try:
+            payload = await request.json()
+        except ValueError:
+            raise HTTPException(400, "Body must be JSON")
+        requested = payload.get("fields") if isinstance(payload, dict) else None
+        if requested:
+            if not isinstance(requested, list):
+                raise HTTPException(400, "fields must be a list")
+            unknown = [f for f in requested if f not in AI_TRACKED_FIELDS]
+            if unknown:
+                raise HTTPException(400, f"Unknown fields: {', '.join(map(str, unknown))}")
+            fields = requested
+
+    from api.database import get_db_connection
+
+    assignments = ", ".join(f"{AI_TRACKED_FIELDS[f]} = 0" for f in fields)
+    async with get_db_connection() as db:
+        await db.execute(
+            f"UPDATE images SET {assignments}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (image_id,),
+        )
+        await db.commit()
+
+    logger.info(
+        f"AI metadata approved: {image_id}",
+        extra={"context": {"image_id": image_id, "fields": fields, "user_id": current_user.id}},
+    )
+    return {"success": True, "image_id": image_id, "approved_fields": fields}
 
 
 @router.post("/{image_id}/featured")
@@ -835,21 +922,15 @@ async def update_image_metadata(
     Update image metadata (title, caption, tags, etc.)
 
     Uses Pydantic ImageMetadataUpdate model for validation.
-    When a user edits a field, also marks it as human-reviewed (ai_generated = 0).
+
+    A tracked AI field is marked human-reviewed (ai_generated_<field> = 0)
+    only when its value actually changes. Forms send every field on save,
+    and saving or publishing is not approval (ADR 0004); unchanged AI text
+    stays marked until it is edited or approved via POST /{id}/approve.
     """
     await verify_image_ownership(image_id, current_user)
 
     from api.database import get_db_connection
-
-    # Mapping of content fields to their ai_generated tracking columns
-    ai_tracked_fields = {
-        "title": "ai_generated_title",
-        "caption": "ai_generated_caption",
-        "description": "ai_generated_description",
-        "alt_text": "ai_generated_alt_text",
-        "tags": "ai_generated_tags",
-        "category": "ai_generated_category",
-    }
 
     async with get_db_connection() as db:
         # Build update query dynamically based on provided fields
@@ -859,6 +940,15 @@ async def update_image_metadata(
         if not metadata_dict:
             raise HTTPException(400, "No valid fields to update")
 
+        tracked_sent = [f for f in metadata_dict if f in AI_TRACKED_FIELDS]
+        stored = {}
+        if tracked_sent:
+            cursor = await db.execute(
+                f"SELECT {', '.join(tracked_sent)} FROM images WHERE id = ?", (image_id,)
+            )
+            row = await cursor.fetchone()
+            stored = dict(zip(tracked_sent, row)) if row else {}
+
         updates = []
         values = []
 
@@ -866,9 +956,11 @@ async def update_image_metadata(
             updates.append(f"{field} = ?")
             values.append(value)
 
-            # If this is a tracked AI field, mark as human-reviewed
-            if field in ai_tracked_fields:
-                updates.append(f"{ai_tracked_fields[field]} = ?")
+            # A real edit makes the field the photographer's own
+            if field in AI_TRACKED_FIELDS and _normalized(value, field) != _normalized(
+                stored.get(field), field
+            ):
+                updates.append(f"{AI_TRACKED_FIELDS[field]} = ?")
                 values.append(0)  # 0 = human-reviewed, no longer AI-generated
 
         values.append(image_id)

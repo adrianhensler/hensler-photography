@@ -413,7 +413,7 @@
       <div class="m-body">
         <div class="m-page-title">
           <span class="serif">upload</span>
-          <span class="dot-legend"><span class="dot"></span> suggested: edit anything</span>
+          <span class="dot-legend"><span class="dot"></span> drafted: edit it, or approve it as written</span>
         </div>
         <div class="m-cards">
           <article class="m-card m-upload-row">
@@ -427,6 +427,10 @@
                 <label>Caption <span class="dot"></span></label>
                 <textarea rows="2">A heron stands motionless in still water as first light breaks.</textarea>
               </div>
+              <div class="m-field">
+                <label>Alt text <span class="dot"></span></label>
+                <input type="text" value="A great blue heron standing in shallow water at sunrise.">
+              </div>
               <div class="m-pair">
                 <div class="m-field"><label>Tags <span class="dot"></span></label><input type="text" value="heron, marsh, dawn"></div>
                 <div class="m-field"><label>Category</label><input type="text" value="wildlife"></div>
@@ -435,6 +439,7 @@
                 <span>R5 &middot; 500mm</span><span><b>f/5.6</b></span><span><b>1/1000</b></span><span><b>ISO 800</b></span><span>12 Jul 2026</span>
               </div>
               <div class="m-actions is-row">
+                <button class="btn btn-quiet" type="button">Approve text</button>
                 <button class="btn btn-quiet" type="button">Save draft</button>
                 <button class="btn btn-primary" type="button">Publish</button>
                 <button class="btn-more" type="button" aria-label="More actions">&#8942;</button>
@@ -461,13 +466,13 @@
         </div>
       </div>
     </div>
-    <p class="hint mock-note">Regenerate suggestions, re-extract EXIF, and delete all live behind the &#8942; menu: present, never prominent. The camera line is a one-line summary; the full EXIF fields open from it on request. Editing a field clears its dot: it is yours now.</p>
+    <p class="hint mock-note">Regenerate suggestions, re-extract EXIF, and delete all live behind the &#8942; menu: present, never prominent. The camera line is a one-line summary; the full EXIF fields open from it on request. Editing a field clears its dot: it is yours now. Approve text clears the rest when the draft is already right. Alt text is reviewed here too, since screen-reader visitors hear it. Publishing leaves the dots alone.</p>
   </section>
 
   <section>
     <p class="eyebrow">the gallery manager</p>
     <h2 class="serif">curation, at a glance</h2>
-    <p>Rows read like a contact sheet: image first, state second, everything else on request. Published is a quiet green; a draft is sand. Featured is a star you tap, not a form you fill. (The star takes the accent color, bronze on light, so it keeps 3:1 contrast on the cotton ground.)</p>
+    <p>Rows read like a contact sheet: image first, state second, everything else on request. Published is a quiet green; a draft is sand. Featured is a star you tap, not a form you fill. A sand dot after a title means its words are still an unreviewed draft, and a Needs review filter gathers those rows. (The star takes the accent color, bronze on light, so it keeps 3:1 contrast on the cotton ground.)</p>
     <div class="mock" inert aria-hidden="true">
       <div class="m-body">
         <div class="m-rows">
@@ -522,6 +527,7 @@
     <p class="eyebrow">change log</p>
     <h2 class="serif">what changed, and why</h2>
     <ul class="rules">
+      <li><b>2026-09-28: review means review.</b><span>Saving unchanged text or publishing no longer clears a draft's mark; only an edit or Approve text does. Upload shows alt text for review, the gallery manager marks unreviewed rows and can filter them, the lightbox note reads "Description drafted by AI, not yet reviewed," and the settings card is called Writing style.</span></li>
       <li><b>2026-09-28: "the intelligence is invisible" replaced by "the AI is honest, and quiet."</b><span>The old rule asked for no AI in visitor copy, which a site built openly with AI cannot honestly keep, and it let publishing count as approval. The site now has two co-equal goals, an AI showcase and a photographers' showcase (decision record 0004): drafted text stays marked until a person edits or approves it. The console catches up in the next change.</span></li>
       <li><b>2026-09-28: every console page opens with its title in the serif.</b><span>Gallery, upload, and settings joined dashboard and analytics; on upload the suggested-dot legend sits beside the title, as in the mock above.</span></li>
       <li><b>2026-09-28: dashboard and analytics layout pass.</b><span>Emoji launcher cards replaced by counts and a contact sheet of recent photos; page titles set in the serif; analytics numbers moved out of mono; filled filter tabs became quiet segmented controls; loading text became skeletons.</span></li>

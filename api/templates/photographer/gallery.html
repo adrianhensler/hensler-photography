@@ -641,6 +641,7 @@
                 <option value="">All</option>
                 <option value="published">Published</option>
                 <option value="draft">Draft</option>
+                <option value="review">Needs review</option>
             </select>
         </div>
 
@@ -690,7 +691,7 @@
             <div class="form-group">
                 <label>Alt text (for accessibility) <span id="aiIndicatorAltText" class="suggested-dot" hidden title="Suggested; edit anything"></span></label>
                 <textarea id="editAltText" placeholder="Descriptive text for screen readers" rows="2"></textarea>
-                <div class="form-hint">Alternative text for accessibility (screen readers). Usually auto-populated from caption.</div>
+                <div class="form-hint">Read aloud to screen-reader visitors: describe what is in the frame, not the mood.</div>
             </div>
 
             <div class="form-group">
@@ -789,6 +790,7 @@
             </div>
 
             <div class="modal-actions">
+                <button type="button" id="approveEditBtn" class="btn btn-secondary" title="Save, and mark every drafted field as reviewed">Approve text</button>
                 <button type="button" id="cancelEditBtn" class="btn btn-secondary">Cancel</button>
                 <button type="submit" class="btn btn-primary">Save changes</button>
             </div>
@@ -913,6 +915,8 @@
                 filtered = filtered.filter(img => img.published);
             } else if (status === 'draft') {
                 filtered = filtered.filter(img => !img.published);
+            } else if (status === 'review') {
+                filtered = filtered.filter(img => img.needs_review);
             }
 
             const tag = document.getElementById('filterTag').value.toLowerCase();
@@ -977,7 +981,7 @@
                         <img src="${escapeHtml(img.thumbnail_url)}" alt="" loading="lazy">
                     </button>
                     <button type="button" class="row-main" data-action="edit">
-                        <span class="row-title">${safeTitle}</span>
+                        <span class="row-title">${safeTitle}${img.needs_review ? REVIEW_MARK : ''}</span>
                         <span class="row-sub">${escapeHtml(buildRowSub(img))}</span>
                     </button>
                     <button type="button" class="pill ${publishedPillClass}"
@@ -1166,6 +1170,48 @@
             }
         }
 
+        // ===== Review state (ADR 0004) =====
+
+        // Drafted text a visitor can see and no human has reviewed yet.
+        const REVIEW_MARK = ' <span class="suggested-dot" title="Drafted text not yet reviewed"></span>'
+            + '<span class="visually-hidden"> (text not yet reviewed)</span>';
+        const REVIEWED_FIELDS = ['title', 'caption', 'alt_text', 'tags', 'category'];
+
+        // Re-read provenance after a save or approval so the row marker is honest.
+        async function refreshReviewState(imageId) {
+            const image = allImages.find(img => img.id == imageId);
+            if (!image) return;
+            try {
+                const response = await fetch(`/api/images/${imageId}`, { credentials: 'include' });
+                if (!response.ok) return;
+                const disclosure = (await response.json()).ai_disclosure || {};
+                image.needs_review = REVIEWED_FIELDS.some((field) => disclosure[field]);
+            } catch (error) {
+                console.error('Review state refresh failed:', error);
+            }
+        }
+
+        // Set by the "Approve text" button so the one submit handler saves, then approves.
+        let approveOnSave = false;
+        document.getElementById('approveEditBtn').addEventListener('click', () => {
+            const form = document.getElementById('editForm');
+            // Blocked native validation dispatches no submit event, which would
+            // leave the flag armed for a later plain Save; check first.
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            approveOnSave = true;
+            form.requestSubmit();
+            approveOnSave = false; // the handler reads it synchronously before any await
+        });
+
+        function syncApproveEditButton() {
+            const anyDrafted = ['Title', 'Caption', 'AltText', 'Tags', 'Category']
+                .some((key) => !document.getElementById(`aiIndicator${key}`).hidden);
+            document.getElementById('approveEditBtn').hidden = !anyDrafted;
+        }
+
         // ===== Row menu (singleton) =====
 
         const rowMenu = document.getElementById('rowMenu');
@@ -1302,6 +1348,7 @@
                 document.getElementById('aiIndicatorAltText').hidden = !aiDisclosure.alt_text;
                 document.getElementById('aiIndicatorTags').hidden = !aiDisclosure.tags;
                 document.getElementById('aiIndicatorCategory').hidden = !aiDisclosure.category;
+                syncApproveEditButton();
 
                 // Technical metadata (from nested exif object)
                 const exif = fullImage.exif || {};
@@ -1348,6 +1395,9 @@
 
         document.getElementById('editForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            // Consume the flag up front so a failed save can't leave it armed.
+            const approving = approveOnSave;
+            approveOnSave = false;
 
             const imageId = document.getElementById('editImageId').value;
             const metadata = {
@@ -1400,18 +1450,29 @@
 
                 if (!exifResponse.ok) throw new Error('Failed to save EXIF sharing setting');
 
+                // "Approve text" saves first, then marks every drafted field reviewed
+                if (approving) {
+                    const approveResponse = await fetch(`/api/images/${imageId}/approve`, {
+                        method: 'POST',
+                        headers: csrfHeaders(),
+                        credentials: 'include'
+                    });
+                    if (!approveResponse.ok) throw new Error('Failed to approve the text');
+                }
+
                 // Update local data
                 const image = allImages.find(img => img.id == imageId);
                 if (image) {
                     Object.assign(image, metadata);
                     image.share_exif = shareEXIF;
                 }
+                await refreshReviewState(imageId);
 
                 // Success! Close modal and show confirmation
                 closeEditModal();
                 populateTagFilter();
                 applyFilters();
-                showToast('success', 'Changes saved');
+                showToast('success', approving ? 'Saved and approved' : 'Changes saved');
 
             } catch (error) {
                 console.error('Save error:', error);
@@ -1530,6 +1591,12 @@
                     if (result.alt_text) document.getElementById('editAltText').value = result.alt_text;
                     if (result.tags) document.getElementById('editTags').value = result.tags;
                     if (result.category) document.getElementById('editCategory').value = result.category;
+                    ['Title', 'Caption', 'AltText', 'Tags', 'Category'].forEach((key) => {
+                        document.getElementById(`aiIndicator${key}`).hidden = false;
+                    });
+                    syncApproveEditButton();
+                    const regenerated = allImages.find(img => img.id == imageId);
+                    if (regenerated) regenerated.needs_review = true;
 
                     showToast('success', 'Metadata regenerated');
                 } else {
