@@ -75,7 +75,7 @@
       font-weight: 300;
       font-size: clamp(14px, 2vw, 16px);
       letter-spacing: 0.06em;
-      color: rgba(245, 245, 245, 0.4);
+      color: rgba(245, 245, 245, 0.55);
       text-decoration: none;
       text-transform: lowercase;
       border-bottom: 1px solid transparent;
@@ -144,7 +144,7 @@
       font-size: 15px;
       letter-spacing: 0.06em;
       text-transform: lowercase;
-      opacity: 0.45;
+      opacity: 0.6;
       margin: 0 0 12px;
     }
 
@@ -179,11 +179,17 @@
       color: #e8d5b5;
     }
 
-    /* Bio photo — the box (and its space in the layout) is reserved
-       immediately so the fetched photo fading in never reflows text the
-       visitor may already be reading. */
+    /* Bio photo: runs wider than the text column so the photograph has
+       presence. The frame's space is reserved immediately (3:2 until the
+       real ratio is known; the script only picks near-3:2 photos) so the
+       photo fading in doesn't reflow text the visitor may be reading. */
     .about-photo {
-      margin: 0 0 28px;
+      --photo-w: min(1000px, calc(100vw - 48px));
+      width: var(--photo-w);
+      margin: 0 0 28px calc((100% - var(--photo-w)) / 2);
+    }
+
+    .about-photo-frame {
       aspect-ratio: 3 / 2;
       background: rgba(255, 255, 255, 0.04);
       border-radius: 4px;
@@ -195,7 +201,6 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 4px;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
@@ -208,8 +213,18 @@
       margin-top: 10px;
       font-size: 13px;
       letter-spacing: 0.03em;
-      color: rgba(245, 245, 245, 0.4);
+      color: rgba(245, 245, 245, 0.6);
       font-style: italic;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
     }
 
     /* Scroll-reveal (progressive enhancement; JS adds .is-visible as
@@ -256,13 +271,25 @@
       color: #f5f5f5;
       font-weight: 500;
       transition: all 0.2s ease;
-      margin: 8px;
+      margin: 8px 12px 8px 0;
     }
 
     a.button:hover {
       background: rgba(232, 213, 181, 0.04);
       border-color: rgba(232, 213, 181, 0.45);
       transform: translateY(-1px);
+    }
+
+    /* The print inquiry is the page's one primary action */
+    a.button.button-primary {
+      background: #e8d5b5;
+      border-color: #e8d5b5;
+      color: #0a0a0a;
+    }
+
+    a.button.button-primary:hover {
+      background: #f1e4cc;
+      border-color: #f1e4cc;
     }
 
     a.button:focus-visible,
@@ -376,10 +403,12 @@
 
       <!-- Section 1: The person -->
       <section class="about-section reveal">
-        <h2>about adrian</h2>
+        <h2 class="visually-hidden">about adrian</h2>
 
         <figure class="about-photo reveal" id="about-photo">
-          <img id="about-photo-img" alt="" loading="lazy">
+          <div class="about-photo-frame" id="about-photo-frame">
+            <img id="about-photo-img" alt="" loading="lazy">
+          </div>
           <figcaption id="about-photo-caption"></figcaption>
         </figure>
 
@@ -470,7 +499,7 @@
         </p>
 
         <div class="button-group">
-          <a href="mailto:adrianhensler@gmail.com?subject=Print%20inquiry" class="button" id="print-inquiry">
+          <a href="mailto:adrianhensler@gmail.com?subject=Print%20inquiry" class="button button-primary" id="print-inquiry">
             Ask about a print
           </a>
         </div>
@@ -534,12 +563,25 @@
             return;
           }
 
-          const photo = withAlt.find((i) => i.category === 'landscape') || withAlt[0];
+          // Prefer photos the photographer has featured, then landscapes,
+          // and only near-3:2 frames so the reserved box barely changes
+          // and panoramas aren't cropped.
+          const nearThreeTwo = (i) => i.aspect_ratio >= 1.3 && i.aspect_ratio <= 1.7;
+          const photo =
+            withAlt.find((i) => i.featured && nearThreeTwo(i)) ||
+            withAlt.find((i) => i.category === 'landscape' && nearThreeTwo(i)) ||
+            withAlt.find(nearThreeTwo) ||
+            withAlt[0];
 
-          img.src = photo.medium_url || photo.large_url || photo.image_url;
+          const frame = document.getElementById('about-photo-frame');
+          if (frame && photo.width && photo.height) {
+            frame.style.aspectRatio = `${photo.width} / ${photo.height}`;
+          }
+
+          img.src = photo.large_url || photo.medium_url || photo.image_url;
           if (photo.medium_url && photo.large_url) {
             img.srcset = `${photo.medium_url} 800w, ${photo.large_url} 1200w`;
-            img.sizes = '(max-width: 700px) 100vw, 700px';
+            img.sizes = '(max-width: 1048px) calc(100vw - 48px), 1000px';
           }
           img.alt = photo.alt_text;
           img.addEventListener('load', () => img.classList.add('is-loaded'), { once: true });

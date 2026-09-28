@@ -8,9 +8,10 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
             background: var(--bg-secondary);
-            color: var(--text-primary); transition: background-color 0.3s ease, color 0.3s ease;
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
             line-height: 1.6;
         }
 
@@ -20,6 +21,7 @@
             padding: 0 2rem;
         }
 
+        /* Drop zone: full size until previews exist, then a slim bar */
         .upload-area {
             background: var(--bg-primary);
             border: 2px dashed var(--border-medium);
@@ -27,8 +29,12 @@
             padding: 3rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s ease, padding 0.3s ease;
             margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .upload-area.dragover {
@@ -41,14 +47,18 @@
         }
 
         .upload-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
+            width: 2.5rem;
+            height: 2.5rem;
+            color: var(--text-tertiary);
+        }
+
+        .upload-icon svg {
+            width: 100%;
+            height: 100%;
         }
 
         .upload-area h2 {
             font-size: 1.25rem;
-            margin-bottom: 0.5rem;
             font-weight: 500;
         }
 
@@ -58,56 +68,102 @@
         }
 
         .upload-area .btn {
-            margin-top: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Collapsed state: once at least one preview exists */
+        .upload-area.is-compact {
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1.5rem;
+            text-align: left;
+        }
+
+        .upload-area.is-compact .upload-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .upload-area.is-compact h2 {
+            font-size: 0.95rem;
+        }
+
+        .upload-area.is-compact p {
+            font-size: 0.8rem;
+        }
+
+        .upload-area.is-compact .btn {
+            margin-top: 0;
         }
 
         #fileInput {
             display: none;
         }
 
+        /* Preview rows: full-width contact-sheet style */
         .previews {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1.5rem;
         }
 
         .preview-card {
+            position: relative;
             background: var(--bg-primary);
+            border: 1px solid var(--border-light);
             border-radius: 12px;
-            overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: grid;
+            grid-template-columns: auto 320px 1fr;
+            gap: 1.25rem;
+            padding: 1.25rem;
+            align-items: start;
+        }
+
+        .preview-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--accent);
+            margin-top: 0.15rem;
+        }
+
+        .preview-image-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
         .preview-image {
             width: 100%;
-            height: 200px;
-            object-fit: cover;
+            height: auto;
+            max-height: 260px;
+            object-fit: contain;
             background: var(--bg-secondary);
-        }
-
-        .preview-content {
-            padding: 1rem;
+            border-radius: 8px;
         }
 
         .preview-filename {
             font-weight: 500;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
             word-break: break-all;
         }
 
         .preview-size {
             color: var(--text-tertiary);
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
         }
 
         .preview-status {
-            padding: 0.25rem 0.5rem;
+            padding: 0.2rem 0.5rem;
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             display: inline-block;
+            align-self: flex-start;
         }
 
         .status-pending {
@@ -131,176 +187,18 @@
             color: var(--error-text);
         }
 
-        .ai-metadata {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            font-size: 0.85rem;
-        }
-
-        .ai-metadata label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-            margin-top: 0.75rem;
-        }
-
-        .ai-metadata label:first-child {
-            margin-top: 0;
-        }
-
-        .ai-metadata input,
-        .ai-metadata textarea {
-            width: 100%;
-            padding: 0.5rem;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-light);
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 0.85rem;
-            transition: background-color 0.2s, border-color 0.2s;
-        }
-
-        .ai-metadata input:focus,
-        .ai-metadata textarea:focus {
-            outline: none;
-            background: var(--bg-primary);
-            border-color: var(--accent);
-        }
-
-        .ai-metadata textarea {
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        /* Technical Metadata Display */
-        .tech-metadata {
-            margin-top: 1rem;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 0.75rem;
-        }
-
-        .meta-section {
-            background: var(--bg-primary);
-            padding: 0.75rem;
-            border-radius: 6px;
-            border: 1px solid var(--border-light);
-        }
-
-        .meta-section-title {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-tertiary);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
+        .preview-content {
             display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .meta-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
             gap: 0.5rem;
-            padding: 0.35rem 0;
-            border-bottom: 1px solid var(--bg-secondary);
+            min-width: 0;
         }
 
-        .meta-row:last-child {
-            border-bottom: none;
-        }
-
-        .meta-label {
-            font-size: 0.75rem;
-            color: var(--text-tertiary);
-        }
-
-        .meta-value {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            font-family: 'SF Mono', Monaco, monospace;
-        }
-
-        input.meta-value {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-light);
-            border-radius: 4px;
-            padding: 0.25rem;
-            flex: 1;
-            transition: background-color 0.2s, border-color 0.2s;
-        }
-
-        input.meta-value:focus {
-            outline: none;
-            background: var(--bg-primary);
-            border-color: var(--accent);
-        }
-
-        .exposure-triangle {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-
-        .exposure-item {
-            text-align: center;
-            padding: 0.5rem;
-            background: var(--bg-secondary);
-            border-radius: 6px;
-        }
-
-        .exposure-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            color: var(--text-tertiary);
-            margin-bottom: 0.25rem;
-        }
-
-        .exposure-value {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            font-family: 'SF Mono', Monaco, monospace;
-        }
-
-        input.exposure-value {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-light);
-            border-radius: 4px;
-            padding: 0.25rem;
-            text-align: center;
-            width: 100%;
-            transition: background-color 0.2s, border-color 0.2s;
-        }
-
-        input.exposure-value:focus {
-            outline: none;
-            background: var(--bg-primary);
-            border-color: var(--accent);
-        }
-
-        .print-sizes {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-
-        .print-size {
-            padding: 0.25rem 0.5rem;
-            background: var(--bg-tertiary);
-            /* text-primary, not -secondary: small text on bg-tertiary needs it for AA */
-            color: var(--text-primary);
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 500;
+        /* Once a row finishes successfully, hide the progress bar/stage text
+           and keep only the status pill. Errors keep everything visible. */
+        .preview-card.is-done .progress-bar,
+        .preview-card.is-done .progress-stage {
+            display: none;
         }
 
         .progress-bar {
@@ -309,7 +207,6 @@
             background: var(--border-light);
             border-radius: 2px;
             overflow: hidden;
-            margin-top: 0.5rem;
         }
 
         .progress-fill {
@@ -334,23 +231,174 @@
         .progress-stage {
             font-size: 0.75rem;
             color: var(--text-tertiary);
-            margin-top: 0.25rem;
             font-style: italic;
         }
 
-        .preview-checkbox {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            z-index: 10;
-            accent-color: var(--accent);
+        .field-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
         }
 
-        .preview-card {
-            position: relative;
+        .ai-metadata {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .field-row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .field-row > div {
+            flex: 1 1 200px;
+            min-width: 0;
+        }
+
+        .ai-metadata input,
+        .ai-metadata textarea,
+        .tech-grid input {
+            width: 100%;
+            padding: 0.5rem 0.6rem;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .ai-metadata input:focus,
+        .ai-metadata textarea:focus,
+        .tech-grid input:focus {
+            outline: none;
+            background: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        .ai-metadata textarea {
+            resize: vertical;
+            min-height: 4.5rem;
+            line-height: 1.5;
+        }
+
+        /* Camera details: collapsed by default */
+        .camera-details {
+            border-top: 1px solid var(--border-light);
+            padding-top: 0.5rem;
+        }
+
+        .camera-details summary {
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            list-style: none;
+            padding: 0.25rem 0;
+        }
+
+        .camera-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .camera-details summary::before {
+            content: '▸';
+            display: inline-block;
+            margin-right: 0.4rem;
+            transition: transform 0.15s ease;
+        }
+
+        .camera-details[open] summary::before {
+            transform: rotate(90deg);
+        }
+
+        .camera-details summary:focus-visible {
+            outline: 2px solid var(--focus-border);
+            outline-offset: 2px;
+        }
+
+        .camera-details-body {
+            padding-top: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .tech-field label {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .specs-line {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem 0.9rem;
+        }
+
+        .specs-line strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .print-sizes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .print-size {
+            padding: 0.2rem 0.5rem;
+            background: var(--bg-tertiary);
+            /* text-primary, not -secondary: small text on bg-tertiary needs it for AA */
+            color: var(--text-primary);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .meta-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .actions .actions-left {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .actions .actions-right {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-left: auto;
         }
 
         .batch-controls {
@@ -377,23 +425,6 @@
         .batch-controls .btn-danger {
             margin-left: auto;
             margin-right: var(--space-md);
-        }
-
-        .meta-actions {
-            margin-top: 1rem;
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .actions .btn-danger {
-            margin-right: auto;
         }
 
         /* Toast Notification System */
@@ -487,7 +518,7 @@
         .toast-details-content {
             margin-top: 8px;
             font-size: 0.75rem;
-            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-family: var(--font-mono, 'SF Mono', Monaco, 'Courier New', monospace);
             background: var(--bg-secondary);
             padding: 8px;
             border-radius: 4px;
@@ -539,6 +570,43 @@
                 opacity: 0;
             }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            .upload-area,
+            .progress-fill,
+            .camera-details summary::before,
+            .toast {
+                transition: none;
+                animation: none;
+            }
+        }
+
+        /* Responsive: stack rows below ~800px */
+        @media (max-width: 800px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .preview-card {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .preview-checkbox {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                margin-top: 0;
+            }
+
+            .preview-image-col {
+                width: 100%;
+            }
+
+            .upload-area.is-compact {
+                flex-wrap: wrap;
+            }
+        }
     </style>
 {% endblock %}
 
@@ -550,9 +618,16 @@
 
     <div class="container">
         <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">📸</div>
-            <h2>Drag & Drop Photos</h2>
-            <p>or click to browse (JPG, PNG, up to 20MB each)</p>
+            <div class="upload-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 16l4.586-4.586a2 2 0 0 1 2.828 0L16 16" />
+                    <path d="M14 14l1.586-1.586a2 2 0 0 1 2.828 0L20 14" />
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <circle cx="8" cy="9" r="1.5" />
+                </svg>
+            </div>
+            <h2 id="uploadAreaTitle">Drag &amp; Drop Photos</h2>
+            <p id="uploadAreaHint">or click to browse (JPG, PNG, up to 20MB each)</p>
             <button type="button" id="browseBtn" class="btn btn-primary">Browse Files</button>
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg" multiple>
         </div>
@@ -568,6 +643,8 @@
 
         <div id="previews" class="previews"></div>
     </div>
+
+    <datalist id="categoryOptions"></datalist>
 {% endblock %}
 
 {% block scripts %}
@@ -681,6 +758,28 @@
             }
         });
 
+        // Populate the category <datalist> from the photographer's existing
+        // published images, so category entry can pick a known value instead
+        // of silently forking a new one via a typo. Free text is still
+        // allowed (it's an <input>, not a <select>). Fails silently.
+        async function loadCategoryOptions() {
+            try {
+                const response = await fetch(`/api/gallery/published?user_id=${CURRENT_USER_ID}`, { credentials: 'include' });
+                if (!response.ok) return;
+                const data = await response.json();
+                const images = Array.isArray(data.images) ? data.images : [];
+                const categories = new Set(images.map(img => img.category).filter(Boolean));
+                const datalist = document.getElementById('categoryOptions');
+                if (!datalist) return;
+                datalist.innerHTML = Array.from(categories)
+                    .map(cat => `<option value="${escapeHtml(cat)}"></option>`)
+                    .join('');
+            } catch (error) {
+                // Non-critical: category autocomplete just won't be populated.
+            }
+        }
+        loadCategoryOptions();
+
         // Drag and drop handlers
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -765,6 +864,19 @@
             }
         }
 
+        // Collapses the drop zone into a slim bar once at least one preview
+        // exists, and restores it (with original copy) when none remain.
+        // Exported under this name so the screenshot harness can call it
+        // after injecting fake previews directly.
+        function onPreviewsChanged() {
+            const hasPreviews = previewsContainer.children.length > 0;
+            uploadArea.classList.toggle('is-compact', hasPreviews);
+            document.getElementById('uploadAreaTitle').textContent = hasPreviews ? 'Add more photos' : 'Drag & Drop Photos';
+            document.getElementById('uploadAreaHint').textContent = hasPreviews
+                ? 'or drag and drop'
+                : 'or click to browse (JPG, PNG, up to 20MB each)';
+        }
+
         function createPreviewCard(fileData) {
             const card = document.createElement('div');
             card.className = 'preview-card';
@@ -779,8 +891,12 @@
             checkbox.setAttribute('aria-label', 'Select ' + fileData.file.name + ' for batch actions');
             checkbox.addEventListener('change', updateBatchControls);
 
+            const imageCol = document.createElement('div');
+            imageCol.className = 'preview-image-col';
+
             const img = document.createElement('img');
             img.className = 'preview-image';
+            img.alt = '';
 
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -788,15 +904,28 @@
             };
             reader.readAsDataURL(fileData.file);
 
-            const content = document.createElement('div');
-            content.className = 'preview-content';
-
             const sizeInMB = (fileData.file.size / 1024 / 1024).toFixed(2);
 
-            content.innerHTML = `
+            // Build the text below the image as its own node instead of
+            // concatenating onto imageCol.innerHTML: mutating innerHTML after
+            // appendChild(img) would re-parse and detach `img`, so the src
+            // the FileReader sets later (asynchronously) would land on a
+            // node no longer in the document.
+            const imageMeta = document.createElement('div');
+            imageMeta.innerHTML = `
                 <div class="preview-filename">${escapeHtml(fileData.file.name)}</div>
                 <div class="preview-size">${sizeInMB} MB</div>
                 <div class="preview-status status-pending">Queued...</div>
+            `;
+
+            imageCol.appendChild(img);
+            while (imageMeta.firstChild) {
+                imageCol.appendChild(imageMeta.firstChild);
+            }
+
+            const content = document.createElement('div');
+            content.className = 'preview-content';
+            content.innerHTML = `
                 <div class="progress-bar">
                     <div class="progress-fill uploading" id="progress-${fileData.id}"></div>
                 </div>
@@ -806,9 +935,10 @@
             `;
 
             card.appendChild(checkbox);
-            card.appendChild(img);
+            card.appendChild(imageCol);
             card.appendChild(content);
             previewsContainer.appendChild(card);
+            onPreviewsChanged();
         }
 
         function uploadFile(fileData) {
@@ -931,6 +1061,13 @@
                 statusEl.className = `preview-status status-${status}`;
                 statusEl.textContent = text;
             }
+            // Reduce redundant chrome: once successfully complete, collapse
+            // the progress bar/stage text and keep only the status pill.
+            // Errors stay fully visible so the photographer can diagnose them.
+            const card = document.getElementById(`preview-${fileId}`);
+            if (card) {
+                card.classList.toggle('is-done', status === 'success');
+            }
         }
 
         function updateProgress(fileId, percent) {
@@ -954,133 +1091,130 @@
             }
         }
 
+        // Builds the one-line camera summary shown in the collapsed
+        // <details> element, e.g.
+        // "Google Pixel 8 Pro · 6.9mm · f/1.85 · 1/1250s · ISO 42 · 12 Jul 2026 · GPS set"
+        // GPS presence is called out explicitly since it's a privacy concern.
+        function buildExifSummary(exif) {
+            if (!exif) return 'No camera data';
+            const parts = [];
+            if (exif.camera) parts.push(exif.camera);
+            if (exif.focal_length) parts.push(exif.focal_length);
+            if (exif.aperture) parts.push(exif.aperture);
+            if (exif.shutter_speed) parts.push(exif.shutter_speed);
+            if (exif.iso) parts.push(`ISO ${exif.iso}`);
+            if (exif.date_taken) {
+                const parsed = new Date(exif.date_taken.replace(' ', 'T'));
+                if (!isNaN(parsed)) {
+                    parts.push(parsed.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }));
+                } else {
+                    parts.push(exif.date_taken);
+                }
+            }
+            if (exif.location) parts.push('GPS set');
+            return parts.length > 0 ? parts.map(escapeHtml).join(' &middot; ') : 'No camera data';
+        }
+
         function displayMetadata(fileId, metadata) {
             const container = document.getElementById(`metadata-${fileId}`);
             if (!container) return;
 
             // Calculate print sizes based on resolution
             const printSizes = calculatePrintSizes(metadata.width, metadata.height);
+            const exif = metadata.exif || null;
 
-            // Build technical metadata sections
-            let techMetadataHtml = '';
-
-            if (metadata.exif) {
-                const exif = metadata.exif;
-
-                // Exposure Triangle Section (now editable)
-                techMetadataHtml += `
-                    <div class="meta-section">
-                        <div class="meta-section-title">Exposure (editable)</div>
-                        <div class="exposure-triangle">
-                            <div class="exposure-item">
-                                <div class="exposure-label">Aperture</div>
-                                <input type="text" class="exposure-value" id="aperture-${fileId}"
-                                       value="${escapeHtml(exif.aperture || '')}"
-                                       placeholder="f/2.8"
-                                       pattern="f/\\d+(\\.\\d+)?"
-                                       title="Format: f/2.8 or f/1.4">
-                            </div>
-                            <div class="exposure-item">
-                                <div class="exposure-label">Shutter</div>
-                                <input type="text" class="exposure-value" id="shutter_speed-${fileId}"
-                                       value="${escapeHtml(exif.shutter_speed || '')}"
-                                       placeholder="1/250s"
-                                       pattern="(\\d+/\\d+s?)|(\\d+(\\.\\d+)?&quot;)|(\\d+(\\.\\d+)?s)"
-                                       title="Format: 1/250s, 1/1000, or 1&quot;">
-                            </div>
-                            <div class="exposure-item">
-                                <div class="exposure-label">ISO</div>
-                                <input type="text" class="exposure-value" id="iso-${fileId}"
-                                       value="${escapeHtml(exif.iso || '')}"
-                                       placeholder="400"
-                                       pattern="\\d+"
-                                       title="Numeric value only (e.g., 100, 400, 3200)">
-                            </div>
+            let exifFieldsHtml = '';
+            if (exif) {
+                exifFieldsHtml = `
+                    <div class="tech-grid">
+                        <div class="tech-field">
+                            <label for="aperture-${fileId}">Aperture</label>
+                            <input type="text" id="aperture-${fileId}"
+                                   value="${escapeHtml(exif.aperture || '')}"
+                                   placeholder="f/2.8"
+                                   pattern="f/\\d+(\\.\\d+)?"
+                                   title="Format: f/2.8 or f/1.4">
                         </div>
-                    </div>
-                `;
-
-                // Camera & Lens Section (now editable)
-                techMetadataHtml += `
-                    <div class="meta-section">
-                        <div class="meta-section-title">Equipment (editable)</div>
-                        <div class="meta-row">
-                            <span class="meta-label">Camera</span>
-                            <input type="text" class="meta-value" id="camera-${fileId}"
+                        <div class="tech-field">
+                            <label for="shutter_speed-${fileId}">Shutter</label>
+                            <input type="text" id="shutter_speed-${fileId}"
+                                   value="${escapeHtml(exif.shutter_speed || '')}"
+                                   placeholder="1/250s"
+                                   pattern="(\\d+/\\d+s?)|(\\d+(\\.\\d+)?&quot;)|(\\d+(\\.\\d+)?s)"
+                                   title="Format: 1/250s, 1/1000, or 1&quot;">
+                        </div>
+                        <div class="tech-field">
+                            <label for="iso-${fileId}">ISO</label>
+                            <input type="text" id="iso-${fileId}"
+                                   value="${escapeHtml(exif.iso || '')}"
+                                   placeholder="400"
+                                   pattern="\\d+"
+                                   title="Numeric value only (e.g., 100, 400, 3200)">
+                        </div>
+                        <div class="tech-field">
+                            <label for="camera-${fileId}">Camera</label>
+                            <input type="text" id="camera-${fileId}"
                                    value="${escapeHtml(exif.camera || '')}"
                                    placeholder="Canon EOS R5">
                         </div>
-                        <div class="meta-row">
-                            <span class="meta-label">Lens</span>
-                            <input type="text" class="meta-value" id="lens-${fileId}"
+                        <div class="tech-field">
+                            <label for="lens-${fileId}">Lens</label>
+                            <input type="text" id="lens-${fileId}"
                                    value="${escapeHtml(exif.lens || '')}"
                                    placeholder="RF 24-70mm f/2.8">
                         </div>
-                        <div class="meta-row">
-                            <span class="meta-label">Focal Length</span>
-                            <input type="text" class="meta-value" id="focal_length-${fileId}"
+                        <div class="tech-field">
+                            <label for="focal_length-${fileId}">Focal Length</label>
+                            <input type="text" id="focal_length-${fileId}"
                                    value="${escapeHtml(exif.focal_length || '')}"
                                    placeholder="50mm"
                                    pattern="\\d+(-\\d+)?mm"
                                    title="Format: 50mm or 24-70mm">
                         </div>
-                    </div>
-                `;
-
-                // GPS Location Section (editable, can clear for privacy)
-                techMetadataHtml += `
-                    <div class="meta-section">
-                        <div class="meta-section-title">Location (editable)</div>
-                        <div class="meta-row">
-                            <span class="meta-label">GPS</span>
-                            <input type="text" class="meta-value" id="location-${fileId}"
+                        <div class="tech-field">
+                            <label for="location-${fileId}">GPS</label>
+                            <input type="text" id="location-${fileId}"
                                    value="${escapeHtml(exif.location || '')}"
-                                   placeholder="37.7749° N, 122.4194° W or leave blank">
+                                   placeholder="Not set (blank keeps location private)">
                         </div>
-                    </div>
-                `;
-
-                // Date Taken (editable for timezone corrections)
-                techMetadataHtml += `
-                    <div class="meta-section">
-                        <div class="meta-section-title">Date (editable)</div>
-                        <div class="meta-row">
-                            <span class="meta-label">Captured</span>
-                            <input type="text" class="meta-value" id="date_taken-${fileId}"
+                        <div class="tech-field">
+                            <label for="date_taken-${fileId}">Captured</label>
+                            <input type="text" id="date_taken-${fileId}"
                                    value="${escapeHtml(exif.date_taken || '')}"
                                    placeholder="2024-01-15 14:30:00">
                         </div>
                     </div>
                 `;
+            } else {
+                // Keep the inputs in the DOM (hidden) so saveMetadata's
+                // optional-chaining lookups still resolve to `null` cleanly,
+                // and so a later re-extract can populate them.
+                exifFieldsHtml = `
+                    <div class="tech-grid" style="display:none;">
+                        <input type="text" id="aperture-${fileId}" value="">
+                        <input type="text" id="shutter_speed-${fileId}" value="">
+                        <input type="text" id="iso-${fileId}" value="">
+                        <input type="text" id="camera-${fileId}" value="">
+                        <input type="text" id="lens-${fileId}" value="">
+                        <input type="text" id="focal_length-${fileId}" value="">
+                        <input type="text" id="location-${fileId}" value="">
+                        <input type="text" id="date_taken-${fileId}" value="">
+                    </div>
+                `;
             }
 
-            // Image Specifications Section (always show)
+            // Image Specifications (compact line, always shown)
             const megapixels = ((metadata.width * metadata.height) / 1000000).toFixed(1);
-            techMetadataHtml += `
-                <div class="meta-section">
-                    <div class="meta-section-title">Specifications</div>
-                    <div class="meta-row">
-                        <span class="meta-label">Resolution</span>
-                        <span class="meta-value">${metadata.width} × ${metadata.height}</span>
-                    </div>
-                    <div class="meta-row">
-                        <span class="meta-label">Megapixels</span>
-                        <span class="meta-value">${megapixels} MP</span>
-                    </div>
-                    ${metadata.exif && metadata.exif.aspect_ratio ? `
-                        <div class="meta-row">
-                            <span class="meta-label">Aspect Ratio</span>
-                            <span class="meta-value">${metadata.exif.aspect_ratio}</span>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
+            let specsLine = `<strong>${metadata.width} &times; ${metadata.height}</strong> &middot; ${megapixels} MP`;
+            if (exif && exif.aspect_ratio) {
+                specsLine += ` &middot; ${escapeHtml(exif.aspect_ratio)}`;
+            }
 
-            // Print Sizes Section
+            let printSizesHtml = '';
             if (printSizes.length > 0) {
-                techMetadataHtml += `
-                    <div class="meta-section" style="grid-column: 1 / -1;">
-                        <div class="meta-section-title">Recommended Print Sizes (300 DPI)</div>
+                printSizesHtml = `
+                    <div>
+                        <span class="field-label">Recommended print sizes (300 DPI)</span>
                         <div class="print-sizes">
                             ${printSizes.map(size => `<span class="print-size">${size}</span>`).join('')}
                         </div>
@@ -1088,28 +1222,42 @@
                 `;
             }
 
+            const summaryText = buildExifSummary(exif);
+
             const html = `
-                <div class="tech-metadata">
-                    ${techMetadataHtml}
-                </div>
-
-                <div class="meta-actions">
-                    <button type="button" class="btn btn-secondary btn-small" data-action="reextract" data-file-id="${fileId}" data-image-id="${metadata.image_id}">Re-extract EXIF</button>
-                    <button type="button" class="btn btn-secondary btn-small" data-action="regenerate" data-file-id="${fileId}" data-image-id="${metadata.image_id}">Regenerate metadata</button>
-                </div>
-
                 <div class="ai-metadata">
-                    <label>Title:</label>
-                    <input type="text" id="title-${fileId}" value="${escapeHtml(metadata.title || '')}" />
+                    <div>
+                        <span class="field-label">Title</span>
+                        <input type="text" id="title-${fileId}" value="${escapeHtml(metadata.title || '')}" />
+                    </div>
 
-                    <label>Caption:</label>
-                    <textarea id="caption-${fileId}">${escapeHtml(metadata.caption || '')}</textarea>
+                    <div>
+                        <span class="field-label">Caption</span>
+                        <textarea id="caption-${fileId}">${escapeHtml(metadata.caption || '')}</textarea>
+                    </div>
 
-                    <label>Tags:</label>
-                    <input type="text" id="tags-${fileId}" value="${escapeHtml(metadata.tags || '')}" placeholder="landscape, nature, sunset" />
+                    <div class="field-row">
+                        <div>
+                            <span class="field-label">Tags</span>
+                            <input type="text" id="tags-${fileId}" value="${escapeHtml(metadata.tags || '')}" placeholder="landscape, nature, sunset" />
+                        </div>
+                        <div>
+                            <span class="field-label">Category</span>
+                            <input type="text" id="category-${fileId}" value="${escapeHtml(metadata.category || '')}" list="categoryOptions" />
+                        </div>
+                    </div>
 
-                    <label>Category:</label>
-                    <input type="text" id="category-${fileId}" value="${escapeHtml(metadata.category || '')}" />
+                    <details class="camera-details">
+                        <summary>${summaryText}</summary>
+                        <div class="camera-details-body">
+                            ${exifFieldsHtml}
+                            <div class="specs-line">${specsLine}</div>
+                            ${printSizesHtml}
+                            <div class="meta-actions">
+                                <button type="button" class="btn btn-secondary btn-small" data-action="reextract" data-file-id="${fileId}" data-image-id="${metadata.image_id}">Re-extract EXIF</button>
+                            </div>
+                        </div>
+                    </details>
                 </div>
             `;
 
@@ -1170,9 +1318,14 @@
 
             container.innerHTML = `
                 <div class="actions">
-                    <button type="button" class="btn btn-danger btn-small" data-action="delete" data-file-id="${fileId}" data-image-id="${imageId}">Delete</button>
-                    <button type="button" class="btn btn-secondary btn-small" data-action="save" data-file-id="${fileId}" data-image-id="${imageId}">Save draft</button>
-                    <button type="button" class="btn btn-primary btn-small" data-action="publish" data-file-id="${fileId}" data-image-id="${imageId}">Publish</button>
+                    <div class="actions-left">
+                        <button type="button" class="btn btn-secondary btn-small" data-action="regenerate" data-file-id="${fileId}" data-image-id="${imageId}">Regenerate metadata</button>
+                        <button type="button" class="btn btn-danger btn-small" data-action="delete" data-file-id="${fileId}" data-image-id="${imageId}">Delete</button>
+                    </div>
+                    <div class="actions-right">
+                        <button type="button" class="btn btn-secondary btn-small" data-action="save" data-file-id="${fileId}" data-image-id="${imageId}">Save draft</button>
+                        <button type="button" class="btn btn-primary btn-small" data-action="publish" data-file-id="${fileId}" data-image-id="${imageId}">Publish</button>
+                    </div>
                 </div>
             `;
         }
@@ -1271,6 +1424,7 @@
                 if (response.ok) {
                     const card = document.getElementById(`preview-${fileId}`);
                     if (card) card.remove();
+                    onPreviewsChanged();
                     showToast('success', 'Deleted', 'Image deleted successfully');
                 } else {
                     showToast('error', 'Delete Failed', 'Failed to delete image');
@@ -1440,6 +1594,10 @@
                         if (exif.focal_length) document.getElementById(`focal_length-${fileId}`).value = exif.focal_length;
                         if (exif.location) document.getElementById(`location-${fileId}`).value = exif.location;
                         if (exif.date_taken) document.getElementById(`date_taken-${fileId}`).value = exif.date_taken;
+
+                        // Keep the collapsed summary in sync with the refreshed EXIF.
+                        const summaryEl = document.querySelector(`#metadata-${fileId} .camera-details summary`);
+                        if (summaryEl) summaryEl.innerHTML = buildExifSummary(exif);
                     }
                 } else {
                     showToast('error', 'EXIF Extraction Failed', result.error?.user_message || 'Failed to extract EXIF');
