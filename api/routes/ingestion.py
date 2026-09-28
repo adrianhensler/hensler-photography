@@ -300,9 +300,9 @@ async def ingest_image(
                                 ai_metadata.get("title", ""),
                                 ai_metadata.get("caption", ""),
                                 ai_metadata.get("description", ""),
-                                ai_metadata.get(
-                                    "caption", ""
-                                ),  # Auto-populate alt_text from caption for accessibility
+                                # The model writes a dedicated alt text; fall back to
+                                # the caption only if it didn't provide one.
+                                ai_metadata.get("alt_text") or ai_metadata.get("caption", ""),
                                 (
                                     ",".join(ai_metadata.get("tags", []))
                                     if isinstance(ai_metadata.get("tags"), list)
@@ -1106,7 +1106,7 @@ async def regenerate_ai_metadata(
                     ai_metadata.get("title"),
                     ai_metadata.get("caption"),
                     ai_metadata.get("description"),
-                    ai_metadata.get("caption"),  # Auto-populate alt_text from caption
+                    ai_metadata.get("alt_text") or ai_metadata.get("caption"),
                     (
                         ",".join(ai_metadata.get("tags", []))
                         if isinstance(ai_metadata.get("tags"), list)
@@ -1125,6 +1125,7 @@ async def regenerate_ai_metadata(
                 "image_id": image_id,
                 "title": ai_metadata.get("title"),
                 "caption": ai_metadata.get("caption"),
+                "alt_text": ai_metadata.get("alt_text") or ai_metadata.get("caption"),
                 "description": ai_metadata.get("description"),
                 "tags": ai_metadata.get("tags"),
                 "category": ai_metadata.get("category"),

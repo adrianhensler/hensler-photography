@@ -1594,11 +1594,8 @@
                 if (response.ok && result.success) {
                     // Update UI fields with new metadata
                     if (result.title) document.getElementById('editTitle').value = result.title;
-                    if (result.caption) {
-                        document.getElementById('editCaption').value = result.caption;
-                        // Also update alt_text to match caption
-                        document.getElementById('editAltText').value = result.caption;
-                    }
+                    if (result.caption) document.getElementById('editCaption').value = result.caption;
+                    if (result.alt_text) document.getElementById('editAltText').value = result.alt_text;
                     if (result.tags) document.getElementById('editTags').value = result.tags;
                     if (result.category) document.getElementById('editCategory').value = result.category;
 
