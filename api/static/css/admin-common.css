@@ -179,6 +179,7 @@
     gap: var(--space-sm);
     min-height: 44px;
     justify-content: center;
+    text-decoration: none; /* .btn is also used on links */
 }
 
 .btn:disabled {

@@ -26,90 +26,56 @@
             padding: 0 2rem;
         }
 
-        .analytics-header {
+        /* Controls: two quiet segmented groups. The active segment is a
+           raised surface, not a filled accent, so the page keeps no
+           competing primary actions (design.html: one primary per view). */
+        .controls {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .analytics-header h2 {
-            font-size: 1.75rem;
-            font-weight: 600;
-        }
-
-        .date-range-tabs {
-            display: flex;
-            gap: 8px;
-        }
-
-        .date-tab {
-            padding: 8px 16px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .date-tab.active {
-            background: var(--accent);
-            color: var(--bg-primary);
-            border-color: var(--accent);
-        }
-
-        .date-tab:hover:not(.active) {
-            background: var(--bg-secondary);
-        }
-
-        /* Photographer activity filter */
-        .activity-filter {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
             flex-wrap: wrap;
+            align-items: center;
+            gap: var(--space-sm) var(--space-lg);
         }
 
-        .activity-filter-label {
-            font-size: 0.875rem;
+        .segmented {
+            display: inline-flex;
+            padding: 3px;
+            gap: 2px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+        }
+
+        .segmented button {
+            font: inherit;
+            font-size: var(--font-size-sm);
             font-weight: 500;
-            color: var(--text-secondary);
-        }
-
-        .activity-filter-tabs {
-            display: flex;
-            gap: 8px;
-        }
-
-        .activity-tab {
-            padding: 6px 14px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
+            padding: 5px 12px;
+            border: none;
+            border-radius: var(--radius-md);
+            background: transparent;
             color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.2s;
         }
 
-        .activity-tab.active {
-            background: var(--accent);
-            color: var(--bg-primary);
-            border-color: var(--accent);
+        .segmented button:hover {
+            color: var(--text-primary);
         }
 
-        .activity-tab:hover:not(.active) {
-            background: var(--bg-tertiary);
-            border-color: var(--border-medium);
+        .segmented button[aria-pressed="true"] {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            box-shadow: var(--card-shadow);
+        }
+
+        .segmented button:focus-visible {
+            outline: 2px solid var(--focus-border);
+            outline-offset: 1px;
+        }
+
+        .overview-rates {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            margin: 0 0 var(--space-lg);
+            min-height: 1.4em;
         }
 
         /* Overview cards */
@@ -130,7 +96,7 @@
         .overview-number {
             font-size: 2rem;
             font-weight: 600;
-            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-variant-numeric: tabular-nums;
             color: var(--text-primary);
             margin-bottom: 0.5rem;
         }
@@ -203,6 +169,10 @@
             font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 0.25rem;
+        }
+
+        .standout-label {
+            margin-bottom: 0.35rem;
         }
 
         .section-subtitle {
@@ -286,6 +256,10 @@
             box-shadow: var(--card-shadow);
         }
 
+        .scroll-depth {
+            padding: 2rem;
+        }
+
         .top-images-section h3 {
             font-size: 1.25rem;
             font-weight: 600;
@@ -350,7 +324,7 @@
             font-size: 1.5rem;
             font-weight: 600;
             color: var(--accent);
-            font-family: 'SF Mono', Monaco, monospace;
+            font-variant-numeric: tabular-nums;
             min-width: 40px;
             text-align: center;
         }
@@ -433,11 +407,20 @@
         }
 
         /* Loading and empty states */
+        /* Skeletons, never spinners: loading placeholders shimmer; their
+           text stays in the DOM for screen readers. */
         .loading {
-            text-align: center;
-            padding: 3rem;
-            font-size: 1.1rem;
-            color: var(--text-secondary);
+            min-height: 3.5rem;
+            border-radius: var(--radius-md);
+            color: transparent;
+            background: linear-gradient(90deg, var(--bg-secondary) 0%, var(--bg-tertiary) 50%, var(--bg-secondary) 100%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            user-select: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .loading { animation: none; }
         }
 
         .empty-state {
@@ -445,12 +428,6 @@
             padding: 4rem 2rem;
             background: var(--bg-primary);
             border-radius: 12px;
-        }
-
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 1.5rem;
-            opacity: 0.3;
         }
 
         .empty-state-title {
@@ -552,94 +529,47 @@
         /* Analytics Explanation Section */
         .analytics-info {
             background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin: 1.5rem 0;
-            overflow: hidden;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            margin: 2rem 0 0;
         }
 
-        .analytics-info-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .analytics-info summary {
             padding: 1rem 1.25rem;
             cursor: pointer;
-            user-select: none;
-            transition: background 0.2s;
-        }
-
-        .analytics-info-header:hover {
-            background: var(--bg-secondary);
-        }
-
-        .analytics-info-icon {
-            font-size: 1rem;
-            color: var(--accent);
-        }
-
-        .analytics-info-title {
-            font-size: 0.9rem;
+            font-size: var(--font-size-sm);
             font-weight: 500;
             color: var(--text-secondary);
-            flex: 1;
         }
 
-        .analytics-info-toggle {
-            font-size: 0.8rem;
-            color: var(--text-tertiary);
-            transition: transform 0.3s;
-        }
-
-        .analytics-info-toggle.expanded {
-            transform: rotate(180deg);
-        }
-
-        .analytics-info-content {
-            padding: 0 1.25rem;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease, padding 0.3s ease;
-        }
-
-        .analytics-info-content.expanded {
-            max-height: 1200px;
-            padding: 0 1.25rem 1.5rem;
-        }
-
-        .analytics-info-content h4 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin: 1rem 0 0.5rem;
+        .analytics-info summary:hover {
             color: var(--text-primary);
         }
 
-        .analytics-info-content h4:first-child {
-            margin-top: 0;
+        .analytics-info-content {
+            padding: 0 1.25rem 1.25rem;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
         }
 
-        .analytics-info-content p {
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: var(--text-secondary);
-            margin-bottom: 0.75rem;
+        .analytics-info-content h4 {
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+            margin: 1rem 0 0.4rem;
         }
 
         .analytics-info-content ul {
-            margin: 0.5rem 0 1rem 1.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
+            padding-left: 1.25rem;
         }
 
         .analytics-info-content li {
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.35rem;
         }
 
         .analytics-info-content strong {
             color: var(--text-primary);
-            font-weight: 500;
         }
 
-        /* Info Icon Tooltips */
         .info-icon {
             display: inline-flex;
             align-items: center;
@@ -713,64 +643,24 @@
 
 {% block content %}
 <div class="container">
-        <div class="analytics-header">
-            <h2>Your Performance</h2>
-            <div class="date-range-tabs">
-                <button class="date-tab" onclick="changeDateRange(7)">7 Days</button>
-                <button class="date-tab active" onclick="changeDateRange(30)">30 Days</button>
-                <button class="date-tab" onclick="changeDateRange(90)">90 Days</button>
+        <div class="page-head">
+            <h1 class="page-title">analytics</h1>
+            <div class="controls">
+                <div class="segmented" role="group" aria-label="Date range">
+                    <button type="button" data-days="7" aria-pressed="false">7 days</button>
+                    <button type="button" data-days="30" aria-pressed="true">30 days</button>
+                    <button type="button" data-days="90" aria-pressed="false">90 days</button>
+                </div>
+                <div class="segmented" role="group" aria-label="Show activity from">
+                    <button type="button" class="activity-tab" data-filter="visitors" aria-pressed="false">Visitors</button>
+                    <button type="button" class="activity-tab" data-filter="mine" aria-pressed="false">My activity</button>
+                    <button type="button" class="activity-tab" data-filter="combined" aria-pressed="true">Combined</button>
+                </div>
             </div>
         </div>
 
-        <!-- Photographer Activity Filter -->
-        <div class="activity-filter">
-            <span class="activity-filter-label">Show activity from:</span>
-            <div class="activity-filter-tabs">
-                <button class="activity-tab" data-filter="visitors" onclick="changeActivityFilter('visitors')">
-                    Visitors Only
-                </button>
-                <button class="activity-tab" data-filter="mine" onclick="changeActivityFilter('mine')">
-                    My Activity
-                </button>
-                <button class="activity-tab active" data-filter="combined" onclick="changeActivityFilter('combined')">
-                    Combined
-                </button>
-            </div>
-        </div>
-
-        <div class="section-subtitle" id="overviewRates" style="text-align: center; margin-top: -4px;">
-        </div>
-
-        <!-- Analytics Explanation -->
-        <div class="analytics-info">
-            <div class="analytics-info-header" onclick="toggleAnalyticsInfo()">
-                <span class="analytics-info-icon">ⓘ</span>
-                <span class="analytics-info-title">About Analytics & Data Collection</span>
-                <span class="analytics-info-toggle" id="analyticsInfoToggle">▼</span>
-            </div>
-            <div class="analytics-info-content" id="analyticsInfoContent">
-                <h4>How Metrics Are Collected</h4>
-                <p>All analytics are collected automatically as visitors interact with your public gallery. Data is anonymous and aggregates visitor behavior to help you understand what resonates with your audience.</p>
-
-                <h4>What Each Metric Means</h4>
-                <ul>
-                    <li><strong>Impressions:</strong> Times an image was actually seen (50%+ visible) in the grid or hero slideshow. Baseline reach for every frame.</li>
-                    <li><strong>Engaged viewers:</strong> Unique sessions that generated impressions, clicks, or lightbox views. Anonymous and session-based.</li>
-                    <li><strong>Clicks:</strong> Thumbnail or hero slideshow clicks that opened the lightbox. Signal intent to dive deeper.</li>
-                    <li><strong>Lightbox views:</strong> Full-screen opens of your images — the closest proxy to appreciating the work.</li>
-                    <li><strong>CTR (Click-Through Rate):</strong> Clicks divided by impressions. 2-5% is typical browsing, 10%+ indicates standout appeal.</li>
-                    <li><strong>View-through rate:</strong> Lightbox views divided by clicks. Should be high; drops suggest friction before the image opens.</li>
-                    <li><strong>Average view time:</strong> Mean seconds spent before closing the lightbox. Longer times = deeper engagement.</li>
-                </ul>
-
-                <h4>Privacy & Data</h4>
-                <p><strong>What's collected:</strong> Event types, timestamps, which images were viewed, where visitors came from (referrer), and session IDs (random strings).</p>
-                <p><strong>What's NOT collected:</strong> IP addresses, names, emails, personal information, tracking cookies, or any data that identifies individual visitors. All data is anonymous and aggregated.</p>
-
-                <h4>Understanding Scroll Depth</h4>
-                <p>Shows how far down visitors scroll through your gallery. Higher percentages at deeper depths indicate engaging content. It's normal for fewer visitors to reach 100% - attention naturally falls off as users scroll.</p>
-            </div>
-        </div>
+        <div id="analyticsBody">
+        <p class="overview-rates" id="overviewRates"></p>
 
         <!-- Overview Cards -->
         <div class="overview-cards">
@@ -812,14 +702,14 @@
         <div class="insights-grid">
             <div class="insight-card">
                 <div>
-                    <h3>Performance summary</h3>
+                    <h3>Summary</h3>
                     <div class="section-subtitle">Grounded highlights for the last <span id="summaryDays">30</span> days</div>
                 </div>
                 <div id="insightsList" class="insights-list">
                     <div class="loading">Building summary...</div>
                 </div>
                 <div>
-                    <div class="section-subtitle" style="margin-bottom: 0.35rem;">Standout images</div>
+                    <div class="section-subtitle standout-label">Standout images</div>
                     <div id="spotlightChips" class="chip-row"></div>
                 </div>
             </div>
@@ -835,7 +725,7 @@
 
         <!-- Chart -->
         <div class="chart-section">
-            <h3>Engagement Over Time</h3>
+            <h3>Engagement over time</h3>
             <div class="chart-container">
                 <canvas id="analyticsChart"></canvas>
             </div>
@@ -854,7 +744,7 @@
                 <div class="loading">Loading recent engagement...</div>
             </div>
             <div class="recent-engagement-actions">
-                <button id="loadMoreEngagement" class="btn-secondary" style="display: none;" onclick="loadMoreEngagement()">
+                <button type="button" id="loadMoreEngagement" class="btn-secondary" hidden>
                     Load more
                 </button>
             </div>
@@ -862,7 +752,7 @@
 
         <!-- Top Images -->
         <div class="top-images-section">
-            <h3>Top Performing Images</h3>
+            <h3>Top images</h3>
             <div class="subtitle">Ranked by impressions (viewport visibility)</div>
             <div id="topImagesList" class="top-images-list">
                 <div class="loading">Loading top images...</div>
@@ -871,7 +761,7 @@
 
         <!-- Category Performance -->
         <div class="top-images-section">
-            <h3>Category Performance</h3>
+            <h3>Categories</h3>
             <div class="subtitle">Engagement metrics by category</div>
             <div id="categoryList" class="top-images-list">
                 <div class="loading">Loading category data...</div>
@@ -880,7 +770,7 @@
 
         <!-- Category Filter Clicks -->
         <div class="top-images-section">
-            <h3>Category Filter Clicks</h3>
+            <h3>Category filter clicks</h3>
             <div class="subtitle">How visitors use the public category row</div>
             <div id="categoryFilterList" class="top-images-list">
                 <div class="loading">Loading category filter data...</div>
@@ -889,32 +779,44 @@
 
         <!-- Scroll Depth -->
         <div class="top-images-section">
-            <h3>Scroll Depth Analysis</h3>
+            <h3>Scroll depth</h3>
             <div class="subtitle">How far visitors scroll down the gallery</div>
-            <div id="scrollDepthChart" style="padding: 2rem;">
+            <div id="scrollDepthChart" class="scroll-depth">
                 <div class="loading">Loading scroll depth...</div>
             </div>
+        </div>
+
+        <details class="analytics-info">
+            <summary>About these numbers and what is collected</summary>
+            <div class="analytics-info-content">
+                <h4>How Metrics Are Collected</h4>
+                <p>All analytics are collected automatically as visitors interact with your public gallery. Data is anonymous and aggregates visitor behavior to help you understand what resonates with your audience.</p>
+
+                <h4>What Each Metric Means</h4>
+                <ul>
+                    <li><strong>Impressions:</strong> Times an image was actually seen (50%+ visible) in the grid or hero slideshow. Baseline reach for every frame.</li>
+                    <li><strong>Engaged viewers:</strong> Unique sessions that generated impressions, clicks, or lightbox views. Anonymous and session-based.</li>
+                    <li><strong>Clicks:</strong> Thumbnail or hero slideshow clicks that opened the lightbox. Signal intent to dive deeper.</li>
+                    <li><strong>Lightbox views:</strong> Full-screen opens of your images — the closest proxy to appreciating the work.</li>
+                    <li><strong>CTR (Click-Through Rate):</strong> Clicks divided by impressions. 2-5% is typical browsing, 10%+ indicates standout appeal.</li>
+                    <li><strong>View-through rate:</strong> Lightbox views divided by clicks. Should be high; drops suggest friction before the image opens.</li>
+                    <li><strong>Average view time:</strong> Mean seconds spent before closing the lightbox. Longer times = deeper engagement.</li>
+                </ul>
+
+                <h4>Privacy & Data</h4>
+                <p><strong>What's collected:</strong> Event types, timestamps, which images were viewed, where visitors came from (referrer), and session IDs (random strings).</p>
+                <p><strong>What's NOT collected:</strong> IP addresses, names, emails, personal information, tracking cookies, or any data that identifies individual visitors. All data is anonymous and aggregated.</p>
+
+                <h4>Understanding Scroll Depth</h4>
+                <p>Shows how far down visitors scroll through your gallery. Higher percentages at deeper depths indicate engaging content. It's normal for fewer visitors to reach 100% - attention naturally falls off as users scroll.</p>
+            </div>
+        </details>
         </div>
     </div>
 {% endblock %}
 
 {% block scripts %}
     <script>
-        // Analytics Info Toggle
-        function toggleAnalyticsInfo() {
-            const content = document.getElementById('analyticsInfoContent');
-            const toggle = document.getElementById('analyticsInfoToggle');
-            const isExpanded = content.classList.contains('expanded');
-
-            if (isExpanded) {
-                content.classList.remove('expanded');
-                toggle.classList.remove('expanded');
-            } else {
-                content.classList.add('expanded');
-                toggle.classList.add('expanded');
-            }
-        }
-
         function escapeHtml(text) {
             return String(text ?? '')
                 .replace(/&/g, '&amp;')
@@ -1021,7 +923,7 @@
                 if (!data.insights || data.insights.length === 0) {
                     insightsList.innerHTML = '<div class="insight-item">No engagement highlights for this window yet.</div>';
                 } else {
-                    insightsList.innerHTML = data.insights.map(text => `<div class="insight-item">${text}</div>`).join('');
+                    insightsList.innerHTML = data.insights.map(text => `<div class="insight-item">${escapeHtml(text)}</div>`).join('');
                 }
 
                 const chipRow = document.getElementById('spotlightChips');
@@ -1030,7 +932,7 @@
                 } else {
                     chipRow.innerHTML = data.top_images.map(img => `
                         <div class="chip">
-                            <span>${img.title}</span>
+                            <span>${escapeHtml(img.title)}</span>
                             <span style="color: var(--text-secondary);">${img.analytics.impressions} impressions • ${img.analytics.clicks} clicks • ${Math.round(img.analytics.view_rate * 100)}% view-through</span>
                         </div>
                     `).join('');
@@ -1041,7 +943,7 @@
                     theme.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
                             <div>
-                                <div style="font-weight: 600; font-size: 1rem;">${data.leading_category.category}</div>
+                                <div style="font-weight: 600; font-size: 1rem;">${escapeHtml(data.leading_category.category)}</div>
                                 <div class="section-subtitle">${data.leading_category.impressions} impressions • ${data.leading_category.clicks} clicks • ${Math.round(data.leading_category.view_rate * 100)}% view-through</div>
                             </div>
                             <div class="event-pill">${Math.round(data.leading_category.ctr * 100)}% CTR</div>
@@ -1149,7 +1051,7 @@
                             fill: false
                         },
                         {
-                            label: 'My Activity',
+                            label: 'My activity',
                             data: mineData.data.map(d => d.count),
                             borderColor: token('--text-tertiary'),
                             backgroundColor: 'transparent',
@@ -1265,14 +1167,14 @@
                     const label = event.event_type === 'gallery_click' ? 'Thumbnail click' : 'Lightbox view';
                     const relative = formatRelativeTime(event.timestamp);
                     const exact = formatExactTime(event.timestamp);
-                    const category = event.image.category ? `${event.image.category} • ` : '';
+                    const category = event.image.category ? `${escapeHtml(event.image.category)} • ` : '';
 
                     return `
                         <div class="recent-event">
-                            <img src="${event.image.thumbnail_url}" alt="${event.image.title}">
+                            <img src="${escapeHtml(event.image.thumbnail_url)}" alt="${escapeHtml(event.image.title)}">
                             <div>
-                                <div class="recent-event-title">${event.image.title}</div>
-                                <div class="recent-event-meta">${category}${event.referrer}</div>
+                                <div class="recent-event-title">${escapeHtml(event.image.title)}</div>
+                                <div class="recent-event-meta">${category}${escapeHtml(event.referrer)}</div>
                                 <div class="recent-event-meta">${relative} • ${exact}</div>
                             </div>
                             <span class="event-pill">${label}</span>
@@ -1323,7 +1225,6 @@
                 if (data.images.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
-                            <div class="empty-state-icon">📊</div>
                             <div class="empty-state-title">Collecting engagement data</div>
                             <div class="empty-state-description">
                                 As visitors view your gallery, impression and engagement metrics will appear here.
@@ -1338,9 +1239,9 @@
                 container.innerHTML = data.images.map((img, index) => `
                     <div class="top-image-card">
                         <div class="top-image-rank">#${index + 1}</div>
-                        <img src="${img.thumbnail_url}" alt="${img.title}" class="top-image-thumb">
+                        <img src="${escapeHtml(img.thumbnail_url)}" alt="${escapeHtml(img.title)}" class="top-image-thumb">
                         <div class="top-image-info">
-                            <div class="top-image-title">${img.title || 'Untitled'}</div>
+                            <div class="top-image-title">${escapeHtml(img.title || 'Untitled')}</div>
                             <div class="top-image-stats">
                                 <span>${img.analytics.impressions} impressions</span>
                                 <span>•</span>
@@ -1352,7 +1253,7 @@
                                 <span>•</span>
                                 <span>${Math.round(img.analytics.view_rate * 100)}% view-through</span>
                                 ${img.analytics.avg_duration > 0 ? `<span>•</span><span>${img.analytics.avg_duration}s avg</span>` : ''}
-                                ${img.category ? `<span>•</span><span>${img.category}</span>` : ''}
+                                ${img.category ? `<span>•</span><span>${escapeHtml(img.category)}</span>` : ''}
                             </div>
                         </div>
                     </div>
@@ -1473,7 +1374,6 @@
                 if (data.total_sessions === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
-                            <div class="empty-state-icon">📊</div>
                             <div class="empty-state-title">No scroll data yet</div>
                             <div class="empty-state-description">
                                 Scroll depth tracking shows how far visitors scroll down your gallery.
@@ -1531,7 +1431,7 @@
             const button = document.getElementById('loadMoreEngagement');
             if (!button) return;
 
-            button.style.display = recentEngagementHasMore ? 'inline-flex' : 'none';
+            button.hidden = !recentEngagementHasMore;
         }
 
         function updateTrend(elementId, trend) {
@@ -1551,10 +1451,9 @@
         }
 
         function showEmptyState() {
-            document.querySelector('.container').innerHTML = `
+            document.getElementById('analyticsBody').innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">📊</div>
-                    <div class="empty-state-title">No Analytics Data Yet</div>
+                    <div class="empty-state-title">Nothing to show yet</div>
                     <div class="empty-state-description">
                         Your portfolio needs published images with views to show analytics.
                         Once visitors start engaging with your images, you'll see metrics here.
@@ -1564,27 +1463,27 @@
             `;
         }
 
-        async function changeDateRange(days) {
-            currentDays = days;
-
-            // Update active tab
-            document.querySelectorAll('.date-tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Reload data
-            await loadAnalytics();
+        function pressOnly(group, button) {
+            group.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
         }
 
-        async function changeActivityFilter(filter) {
-            currentActivityFilter = filter;
-
-            // Update active tab
-            document.querySelectorAll('.activity-tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Reload data
+        document.querySelector('[aria-label="Date range"]').addEventListener('click', async (e) => {
+            const button = e.target.closest('button[data-days]');
+            if (!button) return;
+            pressOnly(e.currentTarget, button);
+            currentDays = parseInt(button.dataset.days, 10);
             await loadAnalytics();
-        }
+        });
+
+        document.querySelector('[aria-label="Show activity from"]').addEventListener('click', async (e) => {
+            const button = e.target.closest('button[data-filter]');
+            if (!button) return;
+            pressOnly(e.currentTarget, button);
+            currentActivityFilter = button.dataset.filter;
+            await loadAnalytics();
+        });
+
+        document.getElementById('loadMoreEngagement').addEventListener('click', loadMoreEngagement);
 
         // Helper function to build photographer filter query params
         function getPhotographerFilterParams() {
