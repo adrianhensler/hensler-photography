@@ -12,7 +12,7 @@ Last reviewed: 2026-09-28.
 
 | Piece | State |
 |---|---|
-| Print inquiries | A mailto link on the About page (`sites/adrian/about.html`, `#print-inquiry`). No inquiry form, no tracking. |
+| Print inquiries | A mailto link on the About page (`sites/adrian/about.html`, `#print-inquiry`). Clicks are already tracked as `inquiry_click` events (`surface: about_prints`) through `/api/track`; 2 recorded so far. No inquiry form, and nothing ties an inquiry to a specific photo. |
 | Per-image pages | Not built. `GET /api/gallery/published/{slug}` already returns one published image by slug, and every image has a unique slug per photographer. |
 | Sale flag | `images.available_for_sale` exists, defaults to 0, and nothing sets or reads it yet. |
 | Products and orders | `products` (image, type, size, `price_cents`) and `orders` (Stripe payment id, email, shipping address, status) tables exist in `api/database.py` with no routes using them. |
@@ -28,8 +28,9 @@ Goal: find out whether anyone wants a print, at near-zero build cost.
 2. **Inquiry that names the photo.** The action pre-fills the photo's
    title and permalink (mailto first, a small form later if volume
    warrants), so every inquiry says which image it's about.
-3. **Count it.** Track inquiry clicks per image in the existing analytics
-   events, so demand is visible per photo and per photographer.
+3. **Count it per photo.** Reuse the existing `inquiry_click` event with an
+   `image_id` and a `surface: permalink`, so demand is visible per photo and
+   per photographer rather than only as About-page clicks.
 4. **Review before it sells.** A photo offered for sale should have no
    unreviewed text (the gallery manager's "Needs review" filter).
 
@@ -65,9 +66,11 @@ with an accountant before the first sale, and again before stage 3.
   GST/HST. If you pass $30,000 **within a single calendar quarter**, you
   become a registrant on the sale that pushes you over. Registering
   voluntarily before the threshold is allowed; it lets you claim input
-  tax credits on business costs, but you then charge HST on every sale.
-- **Nova Scotia HST** applies to sales delivered to Nova Scotia buyers once
-  registered. It was lowered to 14% on 2025-04-01; confirm the current
+  tax credits on business costs, but you then collect the applicable
+  GST/HST on every taxable sale that isn't zero-rated (see exports below).
+- **Which rate applies** follows the place-of-supply rules, generally where
+  the print is delivered. Nova Scotia HST applies to prints delivered in
+  Nova Scotia once registered. It was lowered to 14% on 2025-04-01; confirm the current
   rate at the time. Other provinces use their own GST or HST rate based
   on where the buyer is.
 - **Income tax applies from the first dollar**, whatever the GST/HST
