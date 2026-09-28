@@ -372,33 +372,32 @@
             font-weight: 500;
         }
 
-        .meta-actions {
+        .suggested-legend {
             display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.45rem;
+            margin: 0 0 0.75rem;
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        .suggested-legend[hidden] {
+            display: none;
+        }
+
+        .suggested-legend .suggested-dot {
+            margin-left: 0;
         }
 
         .actions {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
+            justify-content: flex-end;
             gap: 0.5rem;
             margin-top: 0.25rem;
             padding-top: 0.75rem;
             border-top: 1px solid var(--border-light);
-        }
-
-        .actions .actions-left {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .actions .actions-right {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-left: auto;
         }
 
         .batch-controls {
@@ -641,9 +640,11 @@
             <button type="button" id="batchPublish" class="btn btn-primary">Publish selected</button>
         </div>
 
+        <p id="suggestedLegend" class="suggested-legend" hidden><span class="suggested-dot" aria-hidden="true"></span> Suggested: edit anything</p>
         <div id="previews" class="previews"></div>
     </div>
 
+    <div id="rowMenu" class="row-menu" role="menu" hidden></div>
     <datalist id="categoryOptions"></datalist>
 {% endblock %}
 
@@ -815,9 +816,109 @@
             if (!btn) return;
             const fileId = parseInt(btn.dataset.fileId);
             const imageId = parseInt(btn.dataset.imageId);
-            const handlers = { save: saveMetadata, publish: publishImage, delete: deleteImage, reextract: reextractEXIF, regenerate: regenerateAI };
+            if (btn.dataset.action === 'menu') {
+                openRowMenu(btn, fileId, imageId);
+                return;
+            }
+            const handlers = { save: saveMetadata, publish: publishImage };
             handlers[btn.dataset.action]?.(fileId, imageId);
         });
+
+        // Editing a suggested field makes it the photographer's own: drop its dot.
+        previewsContainer.addEventListener('input', (e) => {
+            if (!e.target.id) return;
+            previewsContainer.querySelector(`[data-suggested-for="${CSS.escape(e.target.id)}"]`)?.remove();
+        });
+
+        function markSuggested(fieldId) {
+            const label = previewsContainer.querySelector(`label[for="${CSS.escape(fieldId)}"]`);
+            if (!label || label.querySelector('.suggested-dot')) return;
+            const dot = document.createElement('span');
+            dot.className = 'suggested-dot';
+            dot.dataset.suggestedFor = fieldId;
+            dot.title = 'Suggested; edit anything';
+            label.appendChild(dot);
+        }
+
+        // ===== Row overflow menu (singleton; mirrors the gallery manager's) =====
+        const rowMenu = document.getElementById('rowMenu');
+        let activeMenuTrigger = null;
+
+        function closeRowMenu() {
+            rowMenu.hidden = true;
+            rowMenu.innerHTML = '';
+            activeMenuTrigger?.setAttribute('aria-expanded', 'false');
+            activeMenuTrigger = null;
+        }
+
+        function openRowMenu(trigger, fileId, imageId) {
+            const wasOpen = !rowMenu.hidden && activeMenuTrigger === trigger;
+            closeRowMenu();
+            if (wasOpen) { trigger.focus(); return; }
+
+            rowMenu.innerHTML = `
+                <button type="button" class="menu-item" role="menuitem" data-menu-action="regenerate">Regenerate metadata</button>
+                <button type="button" class="menu-item" role="menuitem" data-menu-action="reextract">Re-extract EXIF</button>
+                <div class="menu-divider"></div>
+                <button type="button" class="menu-item menu-item-danger" role="menuitem" data-menu-action="delete">Delete</button>
+            `;
+            rowMenu.dataset.fileId = fileId;
+            rowMenu.dataset.imageId = imageId;
+
+            const rect = trigger.getBoundingClientRect();
+            rowMenu.hidden = false;
+            const menuRect = rowMenu.getBoundingClientRect();
+            const left = Math.max(8, Math.min(rect.right - menuRect.width, window.innerWidth - menuRect.width - 8));
+            const top = Math.min(rect.bottom + 4, window.innerHeight - menuRect.height - 8);
+            rowMenu.style.left = `${left}px`;
+            rowMenu.style.top = `${top}px`;
+
+            trigger.setAttribute('aria-expanded', 'true');
+            activeMenuTrigger = trigger;
+            rowMenu.querySelector('.menu-item')?.focus();
+        }
+
+        rowMenu.addEventListener('click', (e) => {
+            const item = e.target.closest('[data-menu-action]');
+            if (!item) return;
+            const fileId = parseInt(rowMenu.dataset.fileId, 10);
+            const imageId = parseInt(rowMenu.dataset.imageId, 10);
+            const trigger = activeMenuTrigger;
+            closeRowMenu();
+            trigger?.focus();
+            const handlers = { regenerate: regenerateAI, reextract: reextractEXIF, delete: deleteImage };
+            handlers[item.dataset.menuAction]?.(fileId, imageId);
+        });
+
+        rowMenu.addEventListener('keydown', (e) => {
+            const items = Array.from(rowMenu.querySelectorAll('.menu-item'));
+            const index = items.indexOf(document.activeElement);
+            const moves = {
+                ArrowDown: (index + 1) % items.length,
+                ArrowUp: (index - 1 + items.length) % items.length,
+                Home: 0,
+                End: items.length - 1
+            };
+            if (e.key in moves) {
+                e.preventDefault();
+                items[moves[e.key]]?.focus();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                const trigger = activeMenuTrigger;
+                closeRowMenu();
+                trigger?.focus();
+            } else if (e.key === 'Tab') {
+                closeRowMenu();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (rowMenu.hidden) return;
+            if (rowMenu.contains(e.target) || e.target.closest('[data-action="menu"]')) return;
+            closeRowMenu();
+        });
+        window.addEventListener('scroll', () => { if (!rowMenu.hidden) closeRowMenu(); }, true);
+        window.addEventListener('resize', () => { if (!rowMenu.hidden) closeRowMenu(); });
 
         function handleFiles(files) {
             files.forEach(file => {
@@ -871,6 +972,7 @@
         function onPreviewsChanged() {
             const hasPreviews = previewsContainer.children.length > 0;
             uploadArea.classList.toggle('is-compact', hasPreviews);
+            document.getElementById('suggestedLegend').hidden = !hasPreviews;
             document.getElementById('uploadAreaTitle').textContent = hasPreviews ? 'Add more photos' : 'Drag & Drop Photos';
             document.getElementById('uploadAreaHint').textContent = hasPreviews
                 ? 'or drag and drop'
@@ -1223,26 +1325,30 @@
             }
 
             const summaryText = buildExifSummary(exif);
+            // Sand dot marks a suggested value until the photographer edits it.
+            const dot = (field) => (metadata[field]
+                ? ` <span class="suggested-dot" data-suggested-for="${field}-${fileId}" title="Suggested; edit anything"></span>`
+                : '');
 
             const html = `
                 <div class="ai-metadata">
                     <div>
-                        <span class="field-label">Title</span>
+                        <label class="field-label" for="title-${fileId}">Title${dot('title')}</label>
                         <input type="text" id="title-${fileId}" value="${escapeHtml(metadata.title || '')}" />
                     </div>
 
                     <div>
-                        <span class="field-label">Caption</span>
+                        <label class="field-label" for="caption-${fileId}">Caption${dot('caption')}</label>
                         <textarea id="caption-${fileId}">${escapeHtml(metadata.caption || '')}</textarea>
                     </div>
 
                     <div class="field-row">
                         <div>
-                            <span class="field-label">Tags</span>
+                            <label class="field-label" for="tags-${fileId}">Tags${dot('tags')}</label>
                             <input type="text" id="tags-${fileId}" value="${escapeHtml(metadata.tags || '')}" placeholder="landscape, nature, sunset" />
                         </div>
                         <div>
-                            <span class="field-label">Category</span>
+                            <label class="field-label" for="category-${fileId}">Category${dot('category')}</label>
                             <input type="text" id="category-${fileId}" value="${escapeHtml(metadata.category || '')}" list="categoryOptions" />
                         </div>
                     </div>
@@ -1253,9 +1359,6 @@
                             ${exifFieldsHtml}
                             <div class="specs-line">${specsLine}</div>
                             ${printSizesHtml}
-                            <div class="meta-actions">
-                                <button type="button" class="btn btn-secondary btn-small" data-action="reextract" data-file-id="${fileId}" data-image-id="${metadata.image_id}">Re-extract EXIF</button>
-                            </div>
                         </div>
                     </details>
                 </div>
@@ -1318,14 +1421,10 @@
 
             container.innerHTML = `
                 <div class="actions">
-                    <div class="actions-left">
-                        <button type="button" class="btn btn-secondary btn-small" data-action="regenerate" data-file-id="${fileId}" data-image-id="${imageId}">Regenerate metadata</button>
-                        <button type="button" class="btn btn-danger btn-small" data-action="delete" data-file-id="${fileId}" data-image-id="${imageId}">Delete</button>
-                    </div>
-                    <div class="actions-right">
-                        <button type="button" class="btn btn-secondary btn-small" data-action="save" data-file-id="${fileId}" data-image-id="${imageId}">Save draft</button>
-                        <button type="button" class="btn btn-primary btn-small" data-action="publish" data-file-id="${fileId}" data-image-id="${imageId}">Publish</button>
-                    </div>
+                    <button type="button" class="btn btn-secondary btn-small" data-action="save" data-file-id="${fileId}" data-image-id="${imageId}">Save draft</button>
+                    <button type="button" class="btn btn-primary btn-small" data-action="publish" data-file-id="${fileId}" data-image-id="${imageId}">Publish</button>
+                    <button type="button" class="menu-trigger" data-action="menu" data-file-id="${fileId}" data-image-id="${imageId}"
+                            aria-haspopup="menu" aria-expanded="false" aria-label="More actions">&#8942;</button>
                 </div>
             `;
         }
@@ -1400,6 +1499,8 @@
                 if (response.ok) {
                     showToast('success', 'Published', 'Image published successfully');
                     updateStatus(fileId, 'success', 'Published ✓');
+                    // Published suggestions are the photographer's now: drop the dots.
+                    document.querySelectorAll(`#preview-${fileId} .suggested-dot`).forEach((dot) => dot.remove());
                     return true;
                 }
                 showToast('error', 'Publish Failed', 'Failed to publish image');
@@ -1630,10 +1731,13 @@
                     showToast('success', 'Metadata Regenerated', 'Title, caption, tags, and category were updated.');
 
                     // Update UI fields with new metadata
-                    if (result.title) document.getElementById(`title-${fileId}`).value = result.title;
-                    if (result.caption) document.getElementById(`caption-${fileId}`).value = result.caption;
-                    if (result.tags) document.getElementById(`tags-${fileId}`).value = result.tags;
-                    if (result.category) document.getElementById(`category-${fileId}`).value = result.category;
+                    // Fresh suggestions get their sand dot back.
+                    ['title', 'caption', 'tags', 'category'].forEach((field) => {
+                        if (!result[field]) return;
+                        const id = `${field}-${fileId}`;
+                        document.getElementById(id).value = result[field];
+                        markSuggested(id);
+                    });
                 } else {
                     showToast('error', 'Regeneration Failed', result.error?.user_message || 'Failed to regenerate metadata');
                 }

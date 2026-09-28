@@ -24,17 +24,44 @@
     }
 
 
+    // Theme: an explicit choice (saved by the toggle) wins; otherwise the
+    // console follows the OS setting, live, as sites/main/design.html specifies.
+    const osDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const osTheme = () => (osDark.matches ? 'dark' : 'light');
+
+    function savedTheme() {
+        try {
+            const theme = localStorage.getItem('theme');
+            return theme === 'dark' || theme === 'light' ? theme : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Pages that paint with resolved token values (e.g. the analytics
+    // chart) listen for 'themechange' to repaint.
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
+    }
+
     function initTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme() || osTheme());
+        osDark.addEventListener('change', () => {
+            if (!savedTheme()) applyTheme(osTheme());
+        });
     }
 
     function toggleTheme() {
         const html = document.documentElement;
-        const currentTheme = html.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
+        const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+        try {
+            // Toggling back to the OS theme clears the override, so the
+            // console resumes following the OS.
+            if (newTheme === osTheme()) localStorage.removeItem('theme');
+            else localStorage.setItem('theme', newTheme);
+        } catch (e) { /* storage blocked: choice lasts for this page only */ }
     }
 
     function setupThemeToggle() {

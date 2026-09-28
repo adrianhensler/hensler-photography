@@ -67,3 +67,28 @@ here.
   `design.html` treats `--sand` as constant across both themes while
   `--accent` shifts. A dedicated `--sand` token can be introduced later
   if more surfaces need the same fixed value.
+
+## Addendum 2026-09-28: the spec is binding, and reconciled
+
+Between July and September the console drifted from `design.html`
+without the page being updated: PR #79 rebuilt the upload page as
+full-width rows with Regenerate and Delete as visible buttons, the
+console defaulted to dark, and the dashboard and analytics pages kept
+the old blue. The reasoning lived only in individual PR bodies.
+
+Adrian's ruling: the page is to be reviewed, followed, and kept living.
+Resolved in one reconcile PR:
+
+- Upload keeps the full-width review rows (better for reading captions
+  and EXIF than cards; the spec now shows rows), but Regenerate,
+  Re-extract EXIF, and Delete return to the ⋮ menu and suggested fields
+  carry the sand dot, as the brief always said.
+- The console follows the OS light/dark setting; the header toggle
+  overrides it, and toggling back to the OS value clears the override.
+- Vocabulary: **Draft** is the state, **Unpublish** the verb (the common
+  convention in publishing tools). CLAUDE.md updated to match.
+- Dashboard and analytics use theme tokens only; ~400 lines of dead
+  pre-shared-header CSS removed (including a bare `nav a` rule on
+  analytics that restyled the shared header).
+- `design.html` gained a dated change log. CLAUDE.md now requires any
+  console PR that departs from the page to update it in the same PR.

@@ -60,6 +60,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Every behavior change lands via PR. CI must be green, or the failure explained in the PR body.
 - Decisions that won't be obvious from the diff in six months get a short record in `docs/decisions/` (see its README for format and when to write one).
 - Design/brand guardrails live in `docs/reviews/photography-site-2026-03-02/final_synthesis_sonnet46.md`. Deviating from them requires Adrian's explicit sign-off, recorded in a decision record.
+- **Management console spec: `sites/main/design.html`** (public at hensler.photography/design.html; ADR 0003). Read it before any `/manage` UI change and follow it. A change that departs from it updates the page in the same PR, including a dated line in its change log. Never let the console drift from the spec silently.
 - Use the **Domain Vocabulary** (below) in code, commits, docs, and discussion so it is always unambiguous which surface or user is meant.
 
 ## Code Quality Standards
@@ -126,7 +127,7 @@ Canonical names — use these instead of ad-hoc alternatives:
 - **Gallery manager** — `/manage/gallery`, where photographers curate metadata, publish state, and featured flags. (Not "upload gallery" — upload is its own page, `/manage/upload`.)
 
 **Content states**
-- **Published** — visible to visitors. **Unpublished** — exists only in the management console.
+- **Published** — visible to visitors. **Draft** — not visible to visitors (`published = 0`), whether never published or taken down. **Unpublish** is the action that returns a published image to draft. (Not "unpublished" as a state name.)
 - **Featured** — a curation flag set in the gallery manager; seeds the hero slideshow and, when any featured images exist, the default public gallery scope.
 
 ## Backend API System

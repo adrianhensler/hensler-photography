@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,11 +12,14 @@
     <link rel="stylesheet" href="/static/css/admin-common.css">
     <link rel="stylesheet" href="/static/css/manage-shell.css">
     <script>
+        // Before first paint: saved choice, else follow the OS (design.html spec).
         (function() {
-            const saved = localStorage.getItem('theme');
-            if (saved) {
-                document.documentElement.setAttribute('data-theme', saved);
+            let theme = null;
+            try { theme = localStorage.getItem('theme'); } catch (e) { /* storage blocked */ }
+            if (theme !== 'dark' && theme !== 'light') {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
+            document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
     {% block head_scripts %}{% endblock %}
