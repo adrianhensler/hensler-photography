@@ -230,6 +230,9 @@
 {% block scripts %}
     <script>
         const RECENT_COUNT = 8;
+        // Scope to this photographer explicitly: the list endpoint returns
+        // every portfolio to admins when user_id is omitted.
+        const LIBRARY_URL = `/api/images/list?user_id={{ current_user.id }}`;
 
         function escapeHtml(value) {
             return String(value ?? '')
@@ -274,13 +277,20 @@
 
         async function loadLibrary() {
             try {
-                const res = await fetch('/api/images/list?limit=1000', { credentials: 'include' });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const { images = [] } = await res.json();
-                const published = images.filter((img) => img.published).length;
-                setStat('statPublished', published.toLocaleString());
-                setStat('statDrafts', (images.length - published).toLocaleString());
-                renderRecent(images.slice(0, RECENT_COUNT));
+                // Counts come from the endpoint's totals, not a truncated page.
+                const get = async (query) => {
+                    const res = await fetch(`${LIBRARY_URL}&${query}`, { credentials: 'include' });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.json();
+                };
+                const [recent, published, drafts] = await Promise.all([
+                    get(`limit=${RECENT_COUNT}`),
+                    get('published=true&limit=1'),
+                    get('published=false&limit=1')
+                ]);
+                setStat('statPublished', (published.total ?? 0).toLocaleString());
+                setStat('statDrafts', (drafts.total ?? 0).toLocaleString());
+                renderRecent(recent.images || []);
             } catch (error) {
                 console.error('Library load error:', error);
                 setStat('statPublished', 'n/a');

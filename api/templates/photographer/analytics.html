@@ -423,6 +423,11 @@
             .loading { animation: none; }
         }
 
+        .empty-state[hidden],
+        #analyticsBody[hidden] {
+            display: none;
+        }
+
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -659,6 +664,15 @@
             </div>
         </div>
 
+        <div id="analyticsEmpty" class="empty-state" hidden>
+            <div class="empty-state-title">Nothing to show yet</div>
+            <div class="empty-state-description">
+                Your portfolio needs published images with views to show analytics.
+                Once visitors start engaging with your images, you'll see metrics here.
+            </div>
+            <a href="/manage/gallery" class="btn">Open gallery manager</a>
+        </div>
+
         <div id="analyticsBody">
         <p class="overview-rates" id="overviewRates"></p>
 
@@ -869,6 +883,7 @@
                         showEmptyState();
                         return;
                     }
+                    showEmptyState(false);
                     const who = currentActivityFilter === 'mine'
                         ? 'No activity of your own'
                         : 'No visitor activity';
@@ -883,6 +898,8 @@
                         `${who} in the last ${currentDays} days.${hint}`;
                     return;
                 }
+
+                showEmptyState(false);
 
                 // Update numbers
                 document.getElementById('overviewImpressions').textContent = data.impressions.toLocaleString();
@@ -1450,17 +1467,11 @@
             }
         }
 
-        function showEmptyState() {
-            document.getElementById('analyticsBody').innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-title">Nothing to show yet</div>
-                    <div class="empty-state-description">
-                        Your portfolio needs published images with views to show analytics.
-                        Once visitors start engaging with your images, you'll see metrics here.
-                    </div>
-                    <a href="/manage/gallery" class="btn">Open gallery manager</a>
-                </div>
-            `;
+        // Hide rather than replace the sections, so switching to a range
+        // that has data can fill them again without a reload.
+        function showEmptyState(isEmpty = true) {
+            document.getElementById('analyticsEmpty').hidden = !isEmpty;
+            document.getElementById('analyticsBody').hidden = isEmpty;
         }
 
         function pressOnly(group, button) {
