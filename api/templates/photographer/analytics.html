@@ -1067,6 +1067,35 @@
             }
         }
 
+        // Chart.js holds resolved color strings, not CSS variables: repaint
+        // from the current theme tokens whenever the theme changes.
+        function applyChartTheme() {
+            if (!analyticsChart) return;
+            const theme = getComputedStyle(document.documentElement);
+            const token = (name) => theme.getPropertyValue(name).trim();
+            const [combined, visitors, mine] = analyticsChart.data.datasets;
+            if (combined) {
+                combined.borderColor = token('--accent');
+                combined.backgroundColor = token('--focus-ring');
+            }
+            if (visitors) visitors.borderColor = token('--text-secondary');
+            if (mine) mine.borderColor = token('--text-tertiary');
+            const { plugins, scales } = analyticsChart.options;
+            plugins.legend.labels.color = token('--text-secondary');
+            Object.assign(plugins.tooltip, {
+                backgroundColor: token('--bg-secondary'),
+                titleColor: token('--text-primary'),
+                bodyColor: token('--text-secondary'),
+                borderColor: token('--border-medium')
+            });
+            scales.y.ticks.color = token('--text-tertiary');
+            scales.y.grid.color = token('--border-light');
+            scales.x.ticks.color = token('--text-tertiary');
+            analyticsChart.update('none');
+        }
+
+        document.addEventListener('themechange', applyChartTheme);
+
         async function loadTimeline() {
             try {
                 // Fetch all three datasets in parallel
@@ -1193,6 +1222,8 @@
                 } else {
                     analyticsChart = new Chart(ctx, chartConfig);
                 }
+                // Options are reused across reloads, so re-resolve their colors too.
+                applyChartTheme();
 
             } catch (error) {
                 console.error('Timeline load error:', error);

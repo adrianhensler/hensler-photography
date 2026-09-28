@@ -1499,6 +1499,8 @@
                 if (response.ok) {
                     showToast('success', 'Published', 'Image published successfully');
                     updateStatus(fileId, 'success', 'Published ✓');
+                    // Published suggestions are the photographer's now: drop the dots.
+                    document.querySelectorAll(`#preview-${fileId} .suggested-dot`).forEach((dot) => dot.remove());
                     return true;
                 }
                 showToast('error', 'Publish Failed', 'Failed to publish image');

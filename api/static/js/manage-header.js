@@ -38,17 +38,24 @@
         }
     }
 
+    // Pages that paint with resolved token values (e.g. the analytics
+    // chart) listen for 'themechange' to repaint.
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
+    }
+
     function initTheme() {
         document.documentElement.setAttribute('data-theme', savedTheme() || osTheme());
         osDark.addEventListener('change', () => {
-            if (!savedTheme()) document.documentElement.setAttribute('data-theme', osTheme());
+            if (!savedTheme()) applyTheme(osTheme());
         });
     }
 
     function toggleTheme() {
         const html = document.documentElement;
         const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        html.setAttribute('data-theme', newTheme);
+        applyTheme(newTheme);
         try {
             // Toggling back to the OS theme clears the override, so the
             // console resumes following the OS.
