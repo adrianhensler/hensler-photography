@@ -68,8 +68,10 @@
 
     if (imageData.caption) {
       description += `<p style="margin: 0 0 0.75rem 0; color: #1a1a1a; font-size: 0.95rem; line-height: 1.5;">${escapeHtml(imageData.caption)}</p>`;
+      // Honest, quiet provenance (ADR 0004): shown until a person edits or
+      // approves the caption in the management console.
       if (imageData.ai_disclosure && imageData.ai_disclosure.caption) {
-        description += `<p style="margin: 0 0 0.75rem 0; font-size: 0.7rem; color: #999; font-style: italic; opacity: 0.7;">AI-generated description</p>`;
+        description += `<p style="margin: 0 0 0.75rem 0; font-size: 0.75rem; color: #767676; font-style: italic;">Description drafted by AI, not yet reviewed.</p>`;
       }
     }
 

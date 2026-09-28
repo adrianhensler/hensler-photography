@@ -182,6 +182,11 @@
     text-decoration: none; /* .btn is also used on links */
 }
 
+/* .btn sets display, which would otherwise defeat the hidden attribute. */
+.btn[hidden] {
+    display: none;
+}
+
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -519,4 +524,17 @@
 /* The explicit display above would otherwise defeat the hidden attribute. */
 .suggested-dot[hidden] {
     display: none;
+}
+
+/* Screen-reader-only text */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
