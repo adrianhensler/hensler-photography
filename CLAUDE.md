@@ -112,7 +112,7 @@ Multi-site photography portfolio using a **single Caddy container** serving thre
 - **Humans review AI output.** AI-drafted metadata stays marked (the sand dot in the console, a quiet note for visitors) until a person edits it or explicitly approves it. Publishing does not count as approval.
 - **Decisions are recorded.** Work done from the "AI tools" frame and from the "photography" frame must not quietly contradict each other: goal-affecting changes get an ADR; console changes update design.html's change log.
 
-Sequence for the photography goal (each stage must earn the next):
+Sequence for the photography goal (each stage must earn the next; details and tax notes in `docs/roadmap-sales.md`):
 1. **Visitor-first galleries** — polished public UX; no admin/CMS concepts leaking into visitor-facing surfaces
 2. **Per-image permalink pages** (`/photo/{slug}`) + **inquiry-based print sales** — validate demand at near-zero build cost
 3. **Storefront** under the Hensler Photography umbrella — only after inquiries prove demand
