@@ -1,329 +1,322 @@
 {% extends 'photographer/base.html' %}
 {% block styles %}
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .dash {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: var(--space-xl) var(--space-lg) var(--space-2xl);
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        .welcome {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 30px;
-        }
-
-        .welcome h2 {
-            font-size: 28px;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-        }
-
-        .welcome p {
-            font-size: 16px;
+        .page-hint a {
             color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-            margin-top: 30px;
-        }
-
-        .card {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--card-shadow-hover);
-        }
-
-        .card.clickable {
-            cursor: pointer;
-        }
-
-        .card a {
             text-decoration: none;
+            border-bottom: 1px solid var(--border-medium);
+        }
+
+        .page-hint a:hover {
+            color: var(--text-primary);
+        }
+
+        /* Stats strip: plain numbers, state first */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1px;
+            background: var(--border-light);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: var(--space-xl);
+        }
+
+        .stat {
+            display: block;
+            background: var(--card-bg);
+            padding: var(--space-md) var(--space-lg);
             color: inherit;
-        }
-
-        .card h3 {
-            font-size: 20px;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-        }
-
-        .card p {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-
-        .card .status {
-            display: inline-block;
-            padding: 6px 12px;
-            background: var(--success);
-            color: var(--bg-primary);
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .card .status.is-empty {
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-        }
-
-        .card .status.is-error {
-            background: var(--error-bg);
-            color: var(--error-text);
-        }
-
-        .card .icon {
-            font-size: 36px;
-            margin-bottom: 16px;
-        }
-
-        .footer {
-            text-align: center;
-            margin: 60px 0 40px;
-            color: var(--text-tertiary);
-            font-size: 14px;
-        }
-
-        .api-link {
-            color: var(--accent);
             text-decoration: none;
-            font-weight: 500;
         }
 
-        .api-link:hover {
-            text-decoration: underline;
+        a.stat:hover {
+            background: var(--hover-bg);
         }
 
-        /* Analytics card styles */
-        .analytics-preview {
-            margin: 20px 0;
-        }
-
-        .analytics-stat-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .analytics-stat {
-            text-align: center;
-            padding: 16px 12px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-        }
-
-        .analytics-number {
-            font-size: 28px;
+        .stat-number {
+            font-size: 1.75rem;
             font-weight: 600;
-            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-            color: var(--text-primary);
-            margin-bottom: 4px;
+            font-variant-numeric: tabular-nums;
             line-height: 1.2;
         }
 
-        .analytics-label {
-            font-size: 11px;
-            color: var(--text-tertiary);
+        .stat-label {
+            font-size: var(--font-size-xs);
+            letter-spacing: 0.08em;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 500;
-        }
-
-        .analytics-trend {
-            font-size: 12px;
-            margin-top: 4px;
-            font-weight: 500;
-        }
-
-        .analytics-trend.up {
-            color: var(--success-text);
-        }
-
-        .analytics-trend.down {
-            color: var(--error-text);
-        }
-
-        .analytics-trend.neutral {
             color: var(--text-tertiary);
+            font-weight: 600;
         }
 
-        @media (max-width: 768px) {
-            .analytics-stat-row {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-
-            .analytics-stat {
-                padding: 12px;
-            }
-
-            .analytics-number {
-                font-size: 24px;
-            }
+        .stat-line {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
         }
 
+        .stat-line .stat-number {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .stat-trend {
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .stat-trend.up { color: var(--success-text); }
+        .stat-trend.down { color: var(--error-text); }
+
+        .stat .skeleton {
+            height: 2.1rem;
+            width: 60%;
+        }
+
+        /* Recent uploads: a contact sheet, the photographs carry the color */
+        .section-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+        .section-head h2 {
+            font-size: var(--font-size-base);
+            font-weight: 600;
+        }
+
+        .section-head a {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .section-head a:hover {
+            color: var(--text-primary);
+        }
+
+        .sheet {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .frame {
+            display: block;
+            min-width: 0; /* let nowrap titles ellipsize instead of widening the grid */
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .frame-img {
+            position: relative;
+            aspect-ratio: 3 / 2;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: var(--bg-tertiary);
+        }
+
+        .frame-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform var(--transition-base);
+        }
+
+        .frame:hover .frame-img img {
+            transform: scale(1.03);
+        }
+
+        .frame-title {
+            margin-top: 0.4rem;
+            font-size: var(--font-size-sm);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .frame-draft {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: var(--radius-full);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+        }
+
+        .sheet-empty {
+            color: var(--text-secondary);
+            padding: var(--space-xl) 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .frame-img img { transition: none; }
+            .frame:hover .frame-img img { transform: none; }
+        }
+
+        @media (max-width: 640px) {
+            .dash { padding: var(--space-lg) var(--space-md); }
+            .sheet { grid-template-columns: repeat(2, 1fr); gap: var(--space-sm); }
+        }
     </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-        <div class="welcome">
-            <h2>Welcome, {{ current_user.display_name }}!</h2>
-            <p>Manage your photography portfolio. Upload new images and organize your gallery.</p>
-        </div>
-
-        <div class="cards">
-            <div class="card clickable" onclick="window.location.href='/manage/upload'">
-                <div class="icon">📤</div>
-                <h3>Upload Photos</h3>
-                <p>Upload new photos; titles, captions, and camera details are ready when you look.</p>
-                <span class="status">Ready</span>
-            </div>
-
-            <div class="card clickable" onclick="window.location.href='/manage/gallery'">
-                <div class="icon">🖼️</div>
-                <h3>My Gallery</h3>
-                <p>View, edit, publish, and manage your uploaded images.</p>
-                <span class="status">Ready</span>
-            </div>
-
-            <div class="card clickable" onclick="window.location.href='/manage/analytics'">
-                <div class="icon">📊</div>
-                <h3>Portfolio Analytics</h3>
-                <p>Track engagement and reach across your published images.</p>
-
-                <div class="analytics-preview">
-                    <div class="analytics-stat-row">
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="totalViews">--</div>
-                            <div class="analytics-label">Views</div>
-                            <div class="analytics-trend" id="viewsTrend"></div>
-                        </div>
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="uniqueVisitors">--</div>
-                            <div class="analytics-label">Visitors</div>
-                            <div class="analytics-trend" id="visitorsTrend"></div>
-                        </div>
-                    </div>
-                    <div class="analytics-stat-row">
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="totalClicks">--</div>
-                            <div class="analytics-label">Clicks</div>
-                            <div class="analytics-trend" id="clicksTrend"></div>
-                        </div>
-                        <div class="analytics-stat">
-                            <div class="analytics-number" id="clickRate">--%</div>
-                            <div class="analytics-label">Click Rate</div>
-                        </div>
-                    </div>
-                </div>
-
-                <span class="status" id="analyticsStatus">Loading...</span>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>
-                Your Portfolio: <a href="https://{{ current_user.username }}.hensler.photography" class="api-link" target="_blank">{{ current_user.username }}.hensler.photography</a>
+<div class="dash">
+    <div class="page-head">
+        <div>
+            <h1 class="page-title">dashboard</h1>
+            <p class="page-hint">
+                <a href="https://{{ current_user.username }}.hensler.photography" target="_blank" rel="noopener">{{ current_user.username }}.hensler.photography</a>
             </p>
         </div>
+        <a href="/manage/upload" class="btn btn-primary">Upload photos</a>
     </div>
+
+    <div class="stats" aria-live="polite">
+        <a class="stat" href="/manage/gallery">
+            <div class="stat-number" id="statPublished"><div class="skeleton"></div></div>
+            <div class="stat-label">Published</div>
+        </a>
+        <a class="stat" href="/manage/gallery">
+            <div class="stat-number" id="statDrafts"><div class="skeleton"></div></div>
+            <div class="stat-label">Drafts</div>
+        </a>
+        <a class="stat" href="/manage/analytics">
+            <div class="stat-line">
+                <div class="stat-number" id="statViews"><div class="skeleton"></div></div>
+                <span class="stat-trend" id="statViewsTrend"></span>
+            </div>
+            <div class="stat-label">Views · 30 days</div>
+        </a>
+        <a class="stat" href="/manage/analytics">
+            <div class="stat-line">
+                <div class="stat-number" id="statVisitors"><div class="skeleton"></div></div>
+                <span class="stat-trend" id="statVisitorsTrend"></span>
+            </div>
+            <div class="stat-label">Visitors · 30 days</div>
+        </a>
+    </div>
+
+    <section aria-labelledby="recentHeading">
+        <div class="section-head">
+            <h2 id="recentHeading">Recent</h2>
+            <a href="/manage/gallery">Open gallery manager</a>
+        </div>
+        <div class="sheet" id="recentSheet">
+            <div class="frame"><div class="frame-img skeleton"></div></div>
+            <div class="frame"><div class="frame-img skeleton"></div></div>
+            <div class="frame"><div class="frame-img skeleton"></div></div>
+            <div class="frame"><div class="frame-img skeleton"></div></div>
+        </div>
+    </section>
+</div>
 {% endblock %}
 
 {% block scripts %}
     <script>
-        // Load analytics on page load
-        async function loadAnalytics() {
+        const RECENT_COUNT = 8;
+        // Scope to this photographer explicitly: the list endpoint returns
+        // every portfolio to admins when user_id is omitted.
+        const LIBRARY_URL = `/api/images/list?user_id={{ current_user.id }}`;
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function setStat(id, value) {
+            document.getElementById(id).textContent = value;
+        }
+
+        function setTrend(id, trend) {
+            const el = document.getElementById(id);
+            if (!trend || Math.abs(trend) < 1) {
+                el.textContent = '';
+                el.className = 'stat-trend';
+                return;
+            }
+            el.textContent = `${trend > 0 ? '↑' : '↓'} ${Math.abs(Math.round(trend))}%`;
+            el.className = `stat-trend ${trend > 0 ? 'up' : 'down'}`;
+        }
+
+        function renderRecent(images) {
+            const sheet = document.getElementById('recentSheet');
+            if (images.length === 0) {
+                sheet.innerHTML = '<p class="sheet-empty">Nothing here yet. Upload a few photos to get started.</p>';
+                return;
+            }
+            sheet.innerHTML = images.map((img) => `
+                <a class="frame" href="/manage/gallery">
+                    <div class="frame-img">
+                        <img src="${escapeHtml(img.thumbnail_url)}" alt="${escapeHtml(img.title || 'Untitled photo')}" loading="lazy">
+                        ${img.published ? '' : '<span class="frame-draft">Draft</span>'}
+                    </div>
+                    <div class="frame-title">${escapeHtml(img.title || 'Untitled')}</div>
+                </a>
+            `).join('');
+        }
+
+        async function loadLibrary() {
             try {
-                const res = await fetch('/api/analytics/overview?days=30', {
-                    credentials: 'include'
-                });
+                // Counts come from the endpoint's totals, not a truncated page.
+                const get = async (query) => {
+                    const res = await fetch(`${LIBRARY_URL}&${query}`, { credentials: 'include' });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.json();
+                };
+                const [recent, published, drafts] = await Promise.all([
+                    get(`limit=${RECENT_COUNT}`),
+                    get('published=true&limit=1'),
+                    get('published=false&limit=1')
+                ]);
+                setStat('statPublished', (published.total ?? 0).toLocaleString());
+                setStat('statDrafts', (drafts.total ?? 0).toLocaleString());
+                renderRecent(recent.images || []);
+            } catch (error) {
+                console.error('Library load error:', error);
+                setStat('statPublished', 'n/a');
+                setStat('statDrafts', 'n/a');
+                document.getElementById('recentSheet').innerHTML =
+                    '<p class="sheet-empty">Could not load your photos. Try refreshing.</p>';
+            }
+        }
 
-                if (!res.ok) {
-                    throw new Error('Failed to load analytics');
-                }
-
+        async function loadEngagement() {
+            try {
+                const res = await fetch('/api/analytics/overview?days=30', { credentials: 'include' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-
-                // Update numbers
-                document.getElementById('totalViews').textContent = data.views.toLocaleString();
-                document.getElementById('uniqueVisitors').textContent = data.visitors.toLocaleString();
-                document.getElementById('totalClicks').textContent = data.clicks.toLocaleString();
-                document.getElementById('clickRate').textContent = Math.round(data.click_rate * 100) + '%';
-
-                // Update trends
-                updateTrend('viewsTrend', data.views_trend);
-                updateTrend('visitorsTrend', data.visitors_trend);
-                updateTrend('clicksTrend', data.clicks_trend);
-
-                // Update status
-                const status = document.getElementById('analyticsStatus');
-                if (data.views > 0) {
-                    status.textContent = 'View Details →';
-                    status.className = 'status';
-                } else {
-                    status.textContent = 'No data yet';
-                    status.className = 'status is-empty';
-                }
-
+                setStat('statViews', (data.views ?? 0).toLocaleString());
+                setStat('statVisitors', (data.visitors ?? 0).toLocaleString());
+                setTrend('statViewsTrend', data.views_trend);
+                setTrend('statVisitorsTrend', data.visitors_trend);
             } catch (error) {
                 console.error('Analytics load error:', error);
-                const status = document.getElementById('analyticsStatus');
-                status.textContent = 'Error loading';
-                status.className = 'status is-error';
+                setStat('statViews', 'n/a');
+                setStat('statVisitors', 'n/a');
             }
         }
 
-        function updateTrend(elementId, trend) {
-            const element = document.getElementById(elementId);
-            if (!element) return;
-
-            if (Math.abs(trend) < 1) {
-                // No significant change
-                element.textContent = '';
-                element.className = 'analytics-trend neutral';
-            } else if (trend > 0) {
-                element.textContent = '↑ ' + Math.abs(trend) + '%';
-                element.className = 'analytics-trend up';
-            } else {
-                element.textContent = '↓ ' + Math.abs(trend) + '%';
-                element.className = 'analytics-trend down';
-            }
-        }
-
-        // Load analytics when page loads
-        loadAnalytics();
-
+        loadLibrary();
+        loadEngagement();
     </script>
 {% endblock %}
