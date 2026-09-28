@@ -14,153 +14,6 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .header {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            padding: 20px 40px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        /* User Dropdown Component */
-        .user-dropdown {
-            position: relative;
-        }
-
-        .user-dropdown-trigger {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .user-dropdown-trigger:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.2);
-        }
-
-        .user-dropdown-trigger .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .user-dropdown-trigger .user-name {
-            font-size: 14px;
-            font-weight: 500;
-            color: rgba(255,255,255,0.95);
-        }
-
-        .user-dropdown-trigger .dropdown-arrow {
-            font-size: 10px;
-            color: rgba(255,255,255,0.6);
-            transition: transform 0.2s ease;
-        }
-
-        .user-dropdown.active .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-
-        .user-dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            min-width: 200px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-            z-index: 1000;
-        }
-
-        .user-dropdown.active .user-dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .user-dropdown-header {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .user-dropdown-header .name {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 2px;
-        }
-
-        .user-dropdown-header .role {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-transform: capitalize;
-        }
-
-        .user-dropdown-menu a,
-        .user-dropdown-menu button {
-            display: block;
-            width: 100%;
-            padding: 10px 16px;
-            font-size: 14px;
-            font-weight: 400;
-            color: var(--text-primary);
-            text-decoration: none;
-            background: none;
-            border: none;
-            text-align: left;
-            cursor: pointer;
-            transition: background 0.15s ease;
-        }
-
-        .user-dropdown-menu a:hover,
-        .user-dropdown-menu button:hover {
-            background: var(--bg-secondary);
-        }
-
-        .user-dropdown-divider {
-            height: 1px;
-            background: var(--border-light);
-            margin: 4px 0;
-        }
-
-        .user-dropdown-menu button.danger {
-            color: #dc3545;
-        }
-
-        .user-dropdown-menu button.danger:hover {
-            background: rgba(220, 53, 69, 0.1);
-        }
-
         .container {
             max-width: 1200px;
             margin: 40px auto;
@@ -171,7 +24,7 @@
             background: var(--bg-primary);
             border-radius: 12px;
             padding: 40px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            box-shadow: var(--card-shadow);
             margin-bottom: 30px;
         }
 
@@ -198,13 +51,13 @@
             background: var(--bg-primary);
             border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            box-shadow: var(--card-shadow);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            box-shadow: var(--card-shadow-hover);
         }
 
         .card.clickable {
@@ -237,6 +90,16 @@
             border-radius: 6px;
             font-size: 13px;
             font-weight: 500;
+        }
+
+        .card .status.is-empty {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .card .status.is-error {
+            background: var(--error-bg);
+            color: var(--error-text);
         }
 
         .card .icon {
@@ -304,65 +167,15 @@
         }
 
         .analytics-trend.up {
-            color: #34c759;
+            color: var(--success-text);
         }
 
         .analytics-trend.down {
-            color: #ff3b30;
+            color: var(--error-text);
         }
 
         .analytics-trend.neutral {
             color: var(--text-tertiary);
-        }
-
-        /* Theme Toggle */
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 8px;
-            transition: background-color 0.2s;
-            margin-right: 20px;
-        }
-
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .theme-toggle-switch {
-            width: 48px;
-            height: 28px;
-            background: var(--bg-tertiary);
-            border-radius: 14px;
-            position: relative;
-            transition: background-color 0.3s;
-        }
-
-        .theme-toggle-switch::after {
-            content: '';
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: white;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        [data-theme="dark"] .theme-toggle-switch {
-            background: var(--accent);
-        }
-
-        [data-theme="dark"] .theme-toggle-switch::after {
-            transform: translateX(20px);
-        }
-
-        .theme-icon {
-            font-size: 1.2rem;
         }
 
         @media (max-width: 768px) {
@@ -394,7 +207,7 @@
             <div class="card clickable" onclick="window.location.href='/manage/upload'">
                 <div class="icon">📤</div>
                 <h3>Upload Photos</h3>
-                <p>Upload new photos with AI-powered analysis and automatic EXIF extraction.</p>
+                <p>Upload new photos; titles, captions, and camera details are ready when you look.</p>
                 <span class="status">Ready</span>
             </div>
 
@@ -481,15 +294,14 @@
                     status.className = 'status';
                 } else {
                     status.textContent = 'No data yet';
-                    status.style.background = '#f5f5f5';
-                    status.style.color = '#999';
+                    status.className = 'status is-empty';
                 }
 
             } catch (error) {
                 console.error('Analytics load error:', error);
-                document.getElementById('analyticsStatus').textContent = 'Error loading';
-                document.getElementById('analyticsStatus').style.background = '#ffe8e8';
-                document.getElementById('analyticsStatus').style.color = '#cc0000';
+                const status = document.getElementById('analyticsStatus');
+                status.textContent = 'Error loading';
+                status.className = 'status is-error';
             }
         }
 

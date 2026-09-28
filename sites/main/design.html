@@ -24,8 +24,8 @@
       --ink:     #262119;  /* warm near-black */
       --ink-2:   #71685a;
       --ink-3:   #a2977f;
-      --accent:  #8a6f47;  /* bronze: interactive on light */
-      --accent-strong: #6f5835;
+      --accent:  #7d6540;  /* bronze: interactive on light (darkened from #8a6f47 for WCAG AA) */
+      --accent-strong: #5d4a2c;
       --sand:    #e8d5b5;  /* brand sand from the public site */
       --sand-soft: rgba(200, 168, 116, 0.28);
       --ok:      #4a7c59;
@@ -86,8 +86,8 @@
       --ink:     #262119;
       --ink-2:   #71685a;
       --ink-3:   #a2977f;
-      --accent:  #8a6f47;
-      --accent-strong: #6f5835;
+      --accent:  #7d6540;
+      --accent-strong: #5d4a2c;
       --sand:    #e8d5b5;
       --sand-soft: rgba(200, 168, 116, 0.28);
       --ok:      #4a7c59;
@@ -231,7 +231,13 @@
     .m-page-title .hint { font-size: 0.85rem; }
 
     /* upload cards */
-    .m-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1.25rem; }
+    .m-cards { display: grid; gap: 1rem; }
+    .m-card.m-upload-row { display: grid; grid-template-columns: 200px 1fr; }
+    .m-upload-row .m-photo { height: auto; min-height: 150px; }
+    .m-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    .m-actions.is-row { justify-content: flex-end; border-top: 1px solid var(--crease); padding-top: 0.7rem; }
+    .m-actions.is-row .btn-more { margin-left: 0; }
+    @media (max-width: 640px) { .m-card.m-upload-row { grid-template-columns: 1fr; } .m-pair { grid-template-columns: 1fr; } }
     .m-card {
       background: var(--cotton);
       border: 1px solid var(--crease);
@@ -270,7 +276,7 @@
     }
     .dot {
       width: 6px; height: 6px; border-radius: 50%;
-      background: var(--sand);
+      background: var(--accent);
       box-shadow: 0 0 0 2px var(--sand-soft);
       display: inline-block;
     }
@@ -335,7 +341,7 @@
     }
     .pill-ok { background: var(--ok-bg); color: var(--ok); }
     .pill-draft { background: var(--sand-soft); color: var(--accent-strong); }
-    .star { color: var(--sand); font-size: 1.05rem; }
+    .star { color: var(--accent); font-size: 1.05rem; }
     .star.off { color: var(--crease); }
 
     /* button spec strip */
@@ -383,7 +389,7 @@
       <figure class="swatch"><div class="chip" style="background:#f6f3ec"></div><figcaption><span class="name">paper #f6f3ec</span><span class="role">light ground</span></figcaption></figure>
       <figure class="swatch"><div class="chip" style="background:#efeade"></div><figcaption><span class="name">cotton #efeade</span><span class="role">light surface</span></figcaption></figure>
       <figure class="swatch"><div class="chip" style="background:#e8d5b5"></div><figcaption><span class="name">sand #e8d5b5</span><span class="role">brand accent</span></figcaption></figure>
-      <figure class="swatch"><div class="chip" style="background:#8a6f47"></div><figcaption><span class="name">bronze #8a6f47</span><span class="role">accent on light</span></figcaption></figure>
+      <figure class="swatch"><div class="chip" style="background:#7d6540"></div><figcaption><span class="name">bronze #7d6540</span><span class="role">accent on light</span></figcaption></figure>
       <figure class="swatch"><div class="chip" style="background:#211d17"></div><figcaption><span class="name">darkroom #211d17</span><span class="role">dark surface</span></figcaption></figure>
       <figure class="swatch"><div class="chip" style="background:#171512"></div><figcaption><span class="name">deep #171512</span><span class="role">dark ground</span></figcaption></figure>
     </div>
@@ -392,7 +398,7 @@
   <section>
     <p class="eyebrow">the upload flow</p>
     <h2 class="serif">things are simply ready</h2>
-    <p>Drop the files and walk away from the machinery. While a photo is analyzing, its fields shimmer like the public site's hero skeleton. When it's done, the title, caption, and EXIF are just <em>there</em>: marked only by a small sand dot meaning "suggested; edit anything." No robot badges, no cost talk, no purple. One primary action per card.</p>
+    <p>Drop the files and walk away from the machinery. While a photo is analyzing, its fields shimmer like the public site's hero skeleton. When it's done, the title, caption, and EXIF are just <em>there</em>: marked only by a small sand dot meaning "suggested; edit anything." No robot badges, no cost talk, no purple. Each photo gets a full-width review row, image beside its words, because upload is a reading job: checking captions and EXIF wants width, not a grid of small cards. One primary action per row.</p>
     <div class="mock" inert aria-hidden="true">
       <div class="m-header">
         <div class="m-brand"><span class="serif">hensler photography</span><small>management console</small></div>
@@ -410,7 +416,7 @@
           <span class="dot-legend"><span class="dot"></span> suggested: edit anything</span>
         </div>
         <div class="m-cards">
-          <article class="m-card">
+          <article class="m-card m-upload-row">
             <div class="m-photo" style="background:var(--photo-a)"></div>
             <div class="m-card-body">
               <div class="m-field">
@@ -421,17 +427,21 @@
                 <label>Caption <span class="dot"></span></label>
                 <textarea rows="2">A heron stands motionless in still water as first light breaks.</textarea>
               </div>
-              <div class="m-exif">
-                <span><b>f/5.6</b></span><span><b>1/1000</b></span><span><b>ISO 800</b></span><span>R5 &middot; 500mm</span>
+              <div class="m-pair">
+                <div class="m-field"><label>Tags <span class="dot"></span></label><input type="text" value="heron, marsh, dawn"></div>
+                <div class="m-field"><label>Category</label><input type="text" value="wildlife"></div>
               </div>
-              <div class="m-actions">
-                <button class="btn btn-primary" type="button">Publish</button>
+              <div class="m-exif">
+                <span>R5 &middot; 500mm</span><span><b>f/5.6</b></span><span><b>1/1000</b></span><span><b>ISO 800</b></span><span>12 Jul 2026</span>
+              </div>
+              <div class="m-actions is-row">
                 <button class="btn btn-quiet" type="button">Save draft</button>
+                <button class="btn btn-primary" type="button">Publish</button>
                 <button class="btn-more" type="button" aria-label="More actions">&#8942;</button>
               </div>
             </div>
           </article>
-          <article class="m-card" aria-label="Photo still analyzing">
+          <article class="m-card m-upload-row" aria-label="Photo still analyzing">
             <div class="m-photo" style="background:var(--photo-b)"></div>
             <div class="m-card-body">
               <div class="m-field">
@@ -451,13 +461,13 @@
         </div>
       </div>
     </div>
-    <p class="hint mock-note">Re-extract EXIF, regenerate suggestions, and delete all live behind the &#8942; menu: present, never prominent.</p>
+    <p class="hint mock-note">Regenerate suggestions, re-extract EXIF, and delete all live behind the &#8942; menu: present, never prominent. The camera line is a one-line summary; the full EXIF fields open from it on request. Editing a field clears its dot: it is yours now.</p>
   </section>
 
   <section>
     <p class="eyebrow">the gallery manager</p>
     <h2 class="serif">curation, at a glance</h2>
-    <p>Rows read like a contact sheet: image first, state second, everything else on request. Published is a quiet green; a draft is sand. Featured is a star you tap, not a form you fill.</p>
+    <p>Rows read like a contact sheet: image first, state second, everything else on request. Published is a quiet green; a draft is sand. Featured is a star you tap, not a form you fill. (The star takes the accent color, bronze on light, so it keeps 3:1 contrast on the cotton ground.)</p>
     <div class="mock" inert aria-hidden="true">
       <div class="m-body">
         <div class="m-rows">
@@ -497,11 +507,26 @@
       <li><b>The intelligence is invisible.</b><span>No "AI" in visitor or photographer copy. Suggestions appear as finished work, marked by the sand dot until you touch or publish them.</span></li>
       <li><b>One primary action per view.</b><span>Publish. Everything else steps back into quiet or &#8942;.</span></li>
       <li><b>Skeletons, never spinners.</b><span>Same shimmer the public hero uses: the console and the site are one family.</span></li>
+      <li><b>Draft and Published; the verb is Unpublish.</b><span>A photo visitors cannot see is a draft, whether it was never published or taken down. Unpublish is the action that returns it to draft.</span></li>
+      <li><b>The console follows your system.</b><span>Cotton rag or darkroom comes from the operating system's light or dark setting. The header toggle overrides it; toggling back to match the system resumes following it.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <p class="eyebrow">change log</p>
+    <h2 class="serif">what changed, and why</h2>
+    <ul class="rules">
+      <li><b>2026-09-28: upload cards became review rows.</b><span>Small cards read badly after an upload on desktop; full-width rows give captions and camera data room. The &#8942; menu and sand dot from the original brief were restored at the same time, after a redesign had briefly put Regenerate and Delete in plain view.</span></li>
+      <li><b>2026-09-28: the console follows the operating system theme.</b><span>It had defaulted to darkroom, which this page never specified.</span></li>
+      <li><b>2026-09-28: Draft and Unpublish settled as the vocabulary.</b><span>Matches the common convention across publishing tools; one name for the state, one verb for the action.</span></li>
+      <li><b>2026-09-28: dashboard and analytics brought into the palette.</b><span>The last of the original blue accent and off-palette greens and reds retired; the chart draws from the theme.</span></li>
+      <li><b>2026-08-01: featured star and suggested dot use the accent color.</b><span>Sand on cotton fails the 3:1 contrast rule for non-text marks; the accent is bronze on light and sand on dark.</span></li>
+      <li><b>2026-07-10: light accent darkened from #8a6f47 to #7d6540.</b><span>For 4.5:1 text contrast on the light grounds.</span></li>
     </ul>
   </section>
 
   <footer>
-    <p>These are living notes, not a frozen spec: the console is being brought in line with them page by page, and this document updates as decisions change. Semantic colors (published-green, warning, error) sit outside the two-accent brand rule as state, not decoration.</p>
+    <p>These are living notes, not a frozen spec. Console changes are checked against this page, and any change that departs from it updates it in the same pull request, with a line in the change log above. Semantic colors (published-green, warning, error) sit outside the two-accent brand rule as state, not decoration.</p>
   </footer>
 </div>
 
