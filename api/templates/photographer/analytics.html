@@ -1169,9 +1169,26 @@
 
                 const data = await res.json();
 
-                // Check if there's any data
+                // Check if there's any data. Only the unfiltered view means
+                // "no analytics at all"; an empty filtered view keeps the page
+                // (and its filter/date controls) and says why it's empty.
                 if (data.impressions === 0 && data.clicks === 0 && data.views === 0) {
-                    showEmptyState();
+                    if (currentActivityFilter === 'combined') {
+                        showEmptyState();
+                        return;
+                    }
+                    const who = currentActivityFilter === 'mine'
+                        ? 'No activity of your own'
+                        : 'No visitor activity';
+                    const hint = currentActivityFilter === 'mine'
+                        ? ' Your visits are counted when you browse your public site while signed in.'
+                        : '';
+                    ['Impressions', 'Viewers', 'Clicks', 'Views'].forEach((k) => {
+                        document.getElementById(`overview${k}`).textContent = '0';
+                        updateTrend(`overview${k}Trend`, 0);
+                    });
+                    document.getElementById('overviewRates').textContent =
+                        `${who} in the last ${currentDays} days.${hint}`;
                     return;
                 }
 
@@ -1712,7 +1729,7 @@
                         Your portfolio needs published images with views to show analytics.
                         Once visitors start engaging with your images, you'll see metrics here.
                     </div>
-                    <a href="/manage/gallery" class="btn">Publish Your First Image</a>
+                    <a href="/manage/gallery" class="btn">Open gallery manager</a>
                 </div>
             `;
         }
