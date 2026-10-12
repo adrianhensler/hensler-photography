@@ -1,0 +1,785 @@
+{
+ "run_date": "2026-10-12",
+ "prompt": "balanced (api/services/claude_vision.py at b457eca)",
+ "effort": "medium",
+ "image_variant": "large (1200px webp), sent by URL",
+ "photos": [
+  {
+   "id": 48,
+   "slug": "misty-morning-solitude-2",
+   "stored": {
+    "title": "Dingle Tower and Stone Wall in Fog",
+    "caption": "A stone retaining wall curves along the shoreline of the fog-covered Northwest Arm, with the Dingle Tower visible above the tree line on a wooded peninsula in Sir Sandford Fleming Park. The fog compresses the tonal range significantly, pushing the background trees and tower toward mid-gray and eliminating any sky detail.",
+    "alt_text": "Black and white photo of a curved stone wall along a foggy shoreline in Sir Sandford Fleming Park, with the Dingle Tower rising above trees on a wooded point.",
+    "tags": "fog, black and white, dingle tower, sir sandford fleming park, halifax, northwest arm, stone wall, winter, overcast, peninsula, bare trees",
+    "category": "landscape",
+    "unreviewed": {
+     "title": false,
+     "caption": false,
+     "description": true,
+     "alt_text": false,
+     "tags": false,
+     "category": false
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 1973,
+     "output_tokens": 434,
+     "cost_usd": 0.00041,
+     "stop_reason": "end_turn",
+     "alt_text": "A black and white foggy scene of a curving granite seawall along calm water, with a tall stone tower and bare birch trees on a grassy hill behind it.",
+     "title": "Stone Tower and Seawall in Fog",
+     "caption": "A tall stone tower and a curved granite seawall fade into heavy morning fog along a still waterfront. The mist flattens the background, so the tower and trees read as soft silhouettes.",
+     "description": "Diffuse, overcast light dissolves the far shoreline and sky into a uniform gray, leaving only the nearest stonework and the tower with clear edges. The seawall curves from the lower right toward the left, and its leading line carries the eye toward the tower. Converting to monochrome suits the low contrast, and the bright sky was exposed to keep the fog tones light without clipping.",
+     "tags": [
+      "black and white",
+      "fog",
+      "waterfront",
+      "stone wall",
+      "winter"
+     ],
+     "category": "landscape"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 1973,
+     "output_tokens": 361,
+     "cost_usd": 0.00756,
+     "stop_reason": "end_turn",
+     "alt_text": "A black and white photo of a tall stone tower rising out of fog behind bare trees and evergreens, with a curved granite seawall, a small cove and a paved path in the foreground.",
+     "title": "Stone Tower in Fog Above Cove",
+     "caption": "A stone tower stands above a tree line, partly lost in fog, beyond a curving granite seawall and a small tidal cove. The fog flattens the background and leaves the tower as a soft, low-contrast shape.",
+     "description": "The scene shows a granite-block seawall following the edge of a calm cove, with a paved path curving along it in the foreground and a grassy slope behind. Heavy fog gives flat, diffused light and low contrast, and the tower and the far shoreline fade into pale gray. I used a wide angle and let the curves of the wall and path lead back toward the tower, and the highlights stay open in the sky without clipping.",
+     "tags": [
+      "fog",
+      "black and white",
+      "stone tower",
+      "seawall",
+      "cove",
+      "wide angle",
+      "park"
+     ],
+     "category": "landscape"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 1973,
+     "output_tokens": 538,
+     "cost_usd": 0.01865,
+     "stop_reason": "end_turn",
+     "alt_text": "Black-and-white photo of a tall stone tower rising above trees on a foggy shoreline, with a curved granite seawall, a small sandy cove, and a paved path along a grassy bank in the foreground.",
+     "title": "Stone Tower and Seawall in Fog",
+     "caption": "A granite seawall curves around a small cove below a stone tower half-hidden in fog. The haze strips the tower down to a flat gray silhouette while the wall in the foreground stays sharp and textured.",
+     "description": "A stone observation tower stands behind a line of pines and bare birches, with a curved granite seawall and a narrow sand beach wrapping around the shoreline below. Heavy fog flattens the light and erases the far shore, so the water fades straight into the sky with no visible horizon. I shot wide and low from the grassy bank so the paved path and the wall's capstones form an S-curve leading back toward the tower, and I exposed to keep the bright fog from blowing out while holding detail in the dark conifers.",
+     "tags": [
+      "stone tower",
+      "seawall",
+      "fog",
+      "black and white",
+      "shoreline",
+      "wide angle",
+      "park",
+      "overcast"
+     ],
+     "category": "landscape"
+    }
+   }
+  },
+  {
+   "id": 43,
+   "slug": "pride-of-the-forest",
+   "stored": {
+    "title": "Stone Lion Sculpture Against Bare Trees",
+    "caption": "A carved stone lion head and mane photographed from below and to the side, with a second partially visible sculpture in the upper right foreground. The low shooting angle isolates the lion against a tree canopy background.",
+    "alt_text": "A carved stone lion head and mane photographed from below and to the side, with a second partially visible sculpture in the upper right foreground. The low shooting angle isolates the lion against a tree canopy background.",
+    "tags": "sculpture,stone lion,black and white,low angle,overcast light,monument,outdoor sculpture,shallow depth of field",
+    "category": "architecture",
+    "unreviewed": {
+     "title": true,
+     "caption": true,
+     "description": true,
+     "alt_text": true,
+     "tags": true,
+     "category": true
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 2575,
+     "output_tokens": 434,
+     "cost_usd": 0.00047,
+     "stop_reason": "end_turn",
+     "alt_text": "A black-and-white photo of a bronze lion head in profile with an open mouth, with a blurred figure in the right foreground and bare trees behind it.",
+     "title": "Bronze Lion Head Against Bare Trees",
+     "caption": "A bronze lion sculpture in profile, with its detailed mane and open jaw sharp against a blurred background of leafless trees. The shallow depth of field isolates the lion from the foreground figure.",
+     "description": "The lion's head and upper mane are in sharp focus, with the carved fur and facial details clearly rendered. Soft, overcast light flattens the background, and the leafless branches dissolve into gray tones. The blurred foreground figure at the right edge frames the lion and adds depth without competing with it.",
+     "tags": [
+      "bronze sculpture",
+      "lion",
+      "black and white",
+      "overcast",
+      "shallow depth of field"
+     ],
+     "category": "other"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 2575,
+     "output_tokens": 374,
+     "cost_usd": 0.00889,
+     "stop_reason": "end_turn",
+     "alt_text": "A black and white photograph of a stone lion statue in profile with its mouth open, framed by the blurred shoulder and head of a second statue in the foreground, with evergreen and bare trees behind.",
+     "title": "Stone Lion Profile Behind Foreground Statue",
+     "caption": "A sculpted lion in left-facing profile, seen past the out-of-focus form of a second statue. The shallow depth of field keeps attention on the carved mane and face.",
+     "description": "A weathered stone lion with an open mouth and a detailed, flowing mane sits against a backdrop of evergreens and bare branches. The overcast, diffuse light gives soft, even tonality with no hard shadows, which suits the monochrome treatment and keeps the texture of the stone readable. The second statue is deliberately blurred in the foreground and acts as a frame, with focus placed on the lion's eye and muzzle and the trees thrown out of focus behind.",
+     "tags": [
+      "lion statue",
+      "stone sculpture",
+      "black and white",
+      "shallow depth of field",
+      "overcast light"
+     ],
+     "category": "other"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 2575,
+     "output_tokens": 421,
+     "cost_usd": 0.01872,
+     "stop_reason": "end_turn",
+     "alt_text": "Black and white photo of a stone lion statue's head in profile with its mouth slightly open, framed by the out-of-focus shoulder and head of a second lion statue in the foreground, with dark evergreen trees and bare branches behind.",
+     "title": "Stone Lion Statue Framed by Its Twin",
+     "caption": "A carved lion's head in sharp profile, seen past the blurred mane and back of a second lion statue. Shooting through the foreground statue gives the frame depth and a layered feel.",
+     "description": "A weathered stone lion faces left with its mouth partly open, its mane carved in long, detailed strands, while a second lion fills the right and bottom edges as a soft, out-of-focus shape. The overcast sky gave flat, even light that keeps the texture of the stone readable without harsh shadows, and the black and white conversion separates the grey statue from the darker conifers behind it. A shallow depth of field holds focus on the middle lion's eye and muzzle, letting both the foreground statue and the background trees fall off into blur.",
+     "tags": [
+      "lion statue",
+      "sculpture",
+      "black and white",
+      "overcast",
+      "shallow depth of field",
+      "foreground framing",
+      "park"
+     ],
+     "category": "other"
+    }
+   }
+  },
+  {
+   "id": 75,
+   "slug": "cruise-ship-passing-georges-island-halifax-harbour",
+   "stored": {
+    "title": "Cruise Ship Passing Georges Island Halifax Harbour",
+    "caption": "A Holland America cruise ship passes Georges Island in Halifax Harbour, with the island's lighthouse and historic fort visible on the right. The flat, overcast light and calm water produce an even exposure across the full width of the frame.  Panorama from Pixel 10 XL",
+    "alt_text": "A Holland America cruise ship passes Georges Island in Halifax Harbour, with the island's lighthouse and historic fort visible on the right. The flat, overcast light and calm water produce an even exposure across the full width of the frame.",
+    "tags": "cruise ship, Halifax Harbour, Georges Island, lighthouse, overcast, panoramic, maritime, Nova Scotia, seascape, wide angle",
+    "category": "landscape",
+    "unreviewed": {
+     "title": false,
+     "caption": false,
+     "description": true,
+     "alt_text": true,
+     "tags": false,
+     "category": false
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 1543,
+     "output_tokens": 616,
+     "cost_usd": 0.00046,
+     "stop_reason": "end_turn",
+     "alt_text": "A white and dark blue cruise ship sails past a green, tree-covered island with a white lighthouse under an overcast grey sky.",
+     "title": "Cruise Ship Passing Island Lighthouse in Harbour",
+     "caption": "A cruise ship moves past a grassy island topped with a white lighthouse and a tall mast. The flat overcast light keeps the sky and water tones even across the frame.",
+     "description": "Overcast daylight produces soft, low-contrast light with no visible shadows, and the grey sky fills roughly half the frame. The cruise ship sits on the left third while the island and lighthouse sit on the right, balancing the scene across a wide horizontal panorama. Exposure holds detail in the white superstructure without clipping, and the thin exhaust haze behind the funnel is visible against the sky.",
+     "tags": [
+      "cruise ship",
+      "harbour",
+      "lighthouse",
+      "overcast",
+      "waterfront"
+     ],
+     "category": "landscape"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 1543,
+     "output_tokens": 388,
+     "cost_usd": 0.00697,
+     "stop_reason": "end_turn",
+     "alt_text": "A dark-hulled cruise ship with a white superstructure sails on calm gray water to the left of a low, grassy island with a small white lighthouse under an overcast sky.",
+     "title": "Cruise Ship Passing Harbor Island Lighthouse",
+     "caption": "A cruise ship moves through a calm harbor beside a grassy island with a lighthouse and a few small buildings. The flat, overcast light keeps the scene muted and evenly exposed.",
+     "description": "A wide panoramic crop shows a cruise ship on the left and a low green island on the right, with a lighthouse at its far end and a mast near the center. The sky is uniformly overcast and hazy, which softens the distant shoreline and leaves very little contrast. The horizon sits just above the middle of the frame, and the empty water in the foreground separates the two subjects. The ship's dark hull and the white lighthouse are the highest-contrast elements in an otherwise low-contrast scene.",
+     "tags": [
+      "cruise ship",
+      "harbor",
+      "island",
+      "lighthouse",
+      "overcast",
+      "panorama",
+      "seascape"
+     ],
+     "category": "landscape"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 1543,
+     "output_tokens": 651,
+     "cost_usd": 0.01919,
+     "stop_reason": "end_turn",
+     "alt_text": "A large cruise ship with a dark blue hull and white superstructure sails across calm grey water toward a small grassy island with a white lighthouse under an overcast sky.",
+     "title": "Cruise Ship Passing Georges Island, Halifax Harbour",
+     "caption": "A cruise ship moves through Halifax Harbour past Georges Island and its lighthouse on a grey, overcast morning. The flat light keeps the whole scene in a narrow tonal range, with the dark hull as the only strong contrast.",
+     "description": "A cruise ship heads through the harbour on the left while Georges Island, with its old fortifications, brick buildings and white lighthouse, sits on the right. Heavy overcast and light haze soften the far shoreline and wash out the sky, leaving the water and clouds in similar muted greys. I cropped it as a wide panorama with the ship and island at opposite ends and the horizon held low, so the empty water between them separates the two subjects and gives a sense of the distance across the harbour.",
+     "tags": [
+      "cruise ship",
+      "lighthouse",
+      "Halifax Harbour",
+      "overcast",
+      "panorama"
+     ],
+     "category": "landscape"
+    }
+   }
+  },
+  {
+   "id": 54,
+   "slug": "tall-ship-and-pier-in-harbor-fog",
+   "stored": {
+    "title": "Tall Ship and Pier in Harbor Fog",
+    "caption": "A fishing pier sits in front of a multi-masted tall ship docked in a harbor blanketed by dense fog. The low visibility compresses the tonal range across the entire frame, flattening the scene into a narrow band of cool grays.",
+    "alt_text": "A fishing pier sits in front of a multi-masted tall ship docked in a harbor blanketed by dense fog. The low visibility compresses the tonal range across the entire frame, flattening the scene into a narrow band of cool grays.",
+    "tags": "fog, harbor, tall ship, pier, waterfront, overcast, maritime, fishing pier, masts, calm water",
+    "category": "urban",
+    "unreviewed": {
+     "title": false,
+     "caption": false,
+     "description": true,
+     "alt_text": true,
+     "tags": false,
+     "category": false
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 1801,
+     "output_tokens": 329,
+     "cost_usd": 0.00034,
+     "stop_reason": "end_turn",
+     "alt_text": "A tall-masted sailing ship moored beside a white motor yacht at a wooden pier, with figures standing on the dock in heavy fog.",
+     "title": "Tall Ship Moored at Foggy Pier",
+     "caption": "A three-masted sailing ship and a white motor yacht are tied up at a wooden pier with a few people on the dock. The fog flattens the background so the rigging and hulls stand out in soft grey tones.",
+     "description": "Dense fog fills the upper and left portions of the frame, leaving only the pier, its small sheds, and the ship's rigging visible. The light is diffuse and even, with no shadows, which keeps the tonal range low and the scene muted. The pier runs diagonally across the lower third, and the mast of the tall ship is placed near the right edge, balancing the open fog on the left.",
+     "tags": [
+      "tall ship",
+      "fog",
+      "pier",
+      "harbor",
+      "overcast"
+     ],
+     "category": "urban"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 1801,
+     "output_tokens": 401,
+     "cost_usd": 0.00761,
+     "stop_reason": "end_turn",
+     "alt_text": "A wooden pier in thick fog with a few silhouetted people near a red-roofed pavilion, small huts, and a white yacht in front of a tall ship's masts and rigging.",
+     "title": "Foggy Waterfront Pier with Tall Ship",
+     "caption": "A tall ship and a white motor yacht sit behind a boardwalk pier on a foggy morning. The fog removes almost all background detail and leaves the masts and rigging as the main shapes.",
+     "description": "The pier runs across the lower third of the frame with a few people standing at its far end, wooden huts and lamp posts along its length, and a tall ship's masts rising behind. Flat, diffused light and heavy fog hold the palette to grays, with only small spots of red and blue from chairs and the pavilion canopy. The large empty area of sky and water on the left gives the composition a lot of negative space, and the fog thins the rigging toward the top of the masts. The exposure stays high-key without clipping the sky, and the dark pier gives the image its only strong contrast.",
+     "tags": [
+      "fog",
+      "pier",
+      "tall ship",
+      "waterfront",
+      "minimalist"
+     ],
+     "category": "landscape"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 1801,
+     "output_tokens": 454,
+     "cost_usd": 0.01628,
+     "stop_reason": "end_turn",
+     "alt_text": "A wooden pier in thick fog with a few people standing at its far end, wooden sheds, colorful chairs, a white motor yacht, and the masts and yards of a tall ship rising behind it over calm gray water.",
+     "title": "Tall Ship and Pier in Harbor Fog",
+     "caption": "A waterfront pier with small wooden sheds and a docked yacht, backed by the rigging of a square-rigged tall ship, all sitting in dense fog. The fog erases the horizon completely, so water and sky read as one continuous gray.",
+     "description": "A harbor pier with a pergola, storage sheds, and scattered Adirondack chairs runs across the lower third of the frame, with a white motor yacht and a three-masted tall ship moored behind it. Heavy fog flattens the light to an even, low-contrast gray and mutes everything except the small blue and red chairs and the flag on the yacht. I placed the pier low and pushed the ship to the right edge, leaving most of the frame as open fog, and exposed slightly bright to keep the haze from turning muddy while still holding detail in the dark pilings.",
+     "tags": [
+      "tall ship",
+      "harbor",
+      "pier",
+      "fog",
+      "waterfront",
+      "overcast",
+      "negative space",
+      "low contrast",
+      "sailing ship",
+      "reflections"
+     ],
+     "category": "urban"
+    }
+   }
+  },
+  {
+   "id": 52,
+   "slug": "figure-on-granite-ledge-rocky-coastline",
+   "stored": {
+    "title": "Figure on Granite Ledge, Rocky Coastline",
+    "caption": "A lone person stands atop a granite boulder field along a rugged Atlantic coast, with open ocean and low offshore rocks visible in the distance. The wide frame emphasizes the scale of the rock formation relative to the figure.",
+    "alt_text": "A lone person stands atop a granite boulder field along a rugged Atlantic coast, with open ocean and low offshore rocks visible in the distance. The wide frame emphasizes the scale of the rock formation relative to the figure.",
+    "tags": "coastal, granite, rocky shoreline, Atlantic coast, wide angle, midday light, seascape, New England",
+    "category": "landscape",
+    "unreviewed": {
+     "title": false,
+     "caption": false,
+     "description": true,
+     "alt_text": true,
+     "tags": false,
+     "category": false
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 1543,
+     "output_tokens": 630,
+     "cost_usd": 0.00047,
+     "stop_reason": "end_turn",
+     "alt_text": "A person in a white hat stands on a high granite boulder overlooking a rocky coastline and deep blue ocean under a clear sky.",
+     "title": "Granite Boulders and Surf at Coastline",
+     "caption": "A standing figure on a granite ledge gives scale to the rounded boulders stepping down toward the surf. The small figure at the upper right shows how large the rock formations are relative to a person.",
+     "description": "Midday sun lights the pale granite boulders evenly and sharply, with strong highlights on their upper surfaces and little visible shadow detail. Waves break white against darker wet rock on the left, while the open ocean and a hazy horizon fill the background. The frame is shot wide with the boulders forming a diagonal from lower left to upper right, and the tiny figure on the highest rock anchors the far corner and sets the scale.",
+     "tags": [
+      "coastline",
+      "granite",
+      "ocean",
+      "bright sunlight",
+      "scale reference"
+     ],
+     "category": "landscape"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 1543,
+     "output_tokens": 369,
+     "cost_usd": 0.00678,
+     "stop_reason": "end_turn",
+     "alt_text": "A small figure in a white hat stands on top of a large granite outcrop overlooking a deep blue ocean under a clear sky.",
+     "title": "Granite Boulders Above Atlantic Coastline",
+     "caption": "Pale granite blocks slope down to dark shoreline rock and open water, with a lone person standing on the ridge at upper right. The figure is small in the frame and gives a clear sense of how large the boulders are.",
+     "description": "A wide panoramic crop shows fractured granite boulders in the foreground, a darker rocky shoreline in the middle, and calm blue ocean reaching a hazy horizon. The light is hard midday sun under a nearly cloudless sky, which flattens some texture on the rock faces but keeps the highlights on the granite from clipping. The person at the top right is placed against the sky at the far end of the diagonal formed by the rock ridge, so they act as a scale reference without competing with the boulders.",
+     "tags": [
+      "granite",
+      "rocky coast",
+      "ocean",
+      "clear sky",
+      "panorama"
+     ],
+     "category": "landscape"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 1543,
+     "output_tokens": 476,
+     "cost_usd": 0.01569,
+     "stop_reason": "end_turn",
+     "alt_text": "A person in a white hat stands on top of large pale granite boulders at the right edge of the frame, overlooking dark shoreline rocks and a deep blue ocean under a clear sky.",
+     "title": "Lone Figure on Coastal Granite Boulders",
+     "caption": "A single person stands at the top of a pile of weathered granite blocks above the open ocean. Their small size against the boulders gives the scene its scale.",
+     "description": "Large, fractured granite boulders fill the right two-thirds of this panoramic frame, sloping down to darker, wave-washed ledges and open blue water on the left. It was shot in hard midday sun with a cloudless sky, so the pale rock is close to clipping while the horizon softens into haze. I placed the figure high in the top-right corner so the eye climbs the boulder pile before finding them, and the wide crop keeps the ocean and rock mass in balance.",
+     "tags": [
+      "granite boulders",
+      "rocky coastline",
+      "ocean",
+      "human figure for scale",
+      "clear sky",
+      "midday light",
+      "panorama"
+     ],
+     "category": "landscape"
+    }
+   }
+  },
+  {
+   "id": 72,
+   "slug": "first-instar-monarch-caterpillar-on-milkweed-leaf",
+   "stored": {
+    "title": "First Instar Monarch Caterpillar on Milkweed Leaf",
+    "caption": "A very young monarch caterpillar, likely first or second instar, feeds on the edge of a milkweed leaf. The small notch chewed into the leaf edge gives a sense of scale for how recently this caterpillar hatched.",
+    "alt_text": "A very young monarch caterpillar, likely first or second instar, feeds on the edge of a milkweed leaf. The small notch chewed into the leaf edge gives a sense of scale for how recently this caterpillar hatched.",
+    "tags": "monarch caterpillar, macro photography, milkweed, insect, shallow depth of field, nature, larva, close-up",
+    "category": "wildlife",
+    "unreviewed": {
+     "title": false,
+     "caption": false,
+     "description": true,
+     "alt_text": true,
+     "tags": false,
+     "category": false
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 3048,
+     "output_tokens": 472,
+     "cost_usd": 0.00054,
+     "stop_reason": "end_turn",
+     "alt_text": "A striped monarch caterpillar feeding on a torn milkweed leaf held by silk threads against a blurred green and blue background.",
+     "title": "Monarch Caterpillar on Silk-Bound Milkweed Leaf",
+     "caption": "A monarch caterpillar rests on a partly eaten milkweed leaf that is bound at its edges with silk threads. The soft, out-of-focus green background keeps the attention on the caterpillar.",
+     "description": "The caterpillar sits on a diagonal milkweed leaf, with its black, yellow, and white bands in sharp focus. The light is diffuse and even, and the background dissolves into pale green and blue bokeh, likely from a wide aperture and a long lens. The leaf runs from the lower left to the upper right, and the caterpillar is placed near the lower third, which creates a strong diagonal line.",
+     "tags": [
+      "monarch caterpillar",
+      "milkweed",
+      "macro",
+      "shallow depth of field",
+      "natural light"
+     ],
+     "category": "wildlife"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 3048,
+     "output_tokens": 367,
+     "cost_usd": 0.00977,
+     "stop_reason": "end_turn",
+     "alt_text": "A small striped monarch caterpillar clings to the underside of a narrow green leaf with a chewed notch, against a soft green and blue blurred background.",
+     "title": "Monarch Caterpillar on Chewed Milkweed Leaf",
+     "caption": "A young monarch caterpillar rests on the underside of a leaf tip it has been feeding on. The strongly blurred background keeps attention on the small subject.",
+     "description": "A small monarch caterpillar with yellow, black, and white banding hangs from the edge of a bitten leaf, and a thin strand of silk runs diagonally through the frame. The light is soft and diffuse, probably open shade or overcast, with no harsh highlights on the leaf. A wide aperture and a long working distance turn the background into large pale bokeh shapes. The diagonal leaf places the caterpillar low in the frame and leaves plenty of empty space around it.",
+     "tags": [
+      "monarch caterpillar",
+      "milkweed",
+      "macro",
+      "shallow depth of field",
+      "bokeh"
+     ],
+     "category": "wildlife"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 3048,
+     "output_tokens": 616,
+     "cost_usd": 0.02451,
+     "stop_reason": "end_turn",
+     "alt_text": "A small black, yellow, and white striped monarch caterpillar clinging to the underside of a narrow, partly eaten green leaf against a blurred green and pale blue background.",
+     "title": "Young Monarch Caterpillar on Milkweed Leaf",
+     "caption": "An early-instar monarch caterpillar feeds on the underside of a narrow milkweed leaf, next to the notch it has already chewed out. The caterpillar takes up only a small part of the frame, which leaves plenty of soft negative space around it.",
+     "description": "A young monarch caterpillar hangs beneath a slender milkweed leaf, with a fresh feeding notch just above it and a fine strand of silk running up from the leaf tip. The light is soft and diffuse, which keeps the caterpillar's stripes clean without harsh highlights, and the out-of-focus foliage behind it turns into broad pale green and blue shapes. I shot wide open to isolate the subject, and the leaf runs on a strong diagonal from upper right to lower left, placing the caterpillar slightly below center.",
+     "tags": [
+      "monarch caterpillar",
+      "milkweed",
+      "macro",
+      "shallow depth of field",
+      "soft light",
+      "insect",
+      "bokeh",
+      "garden"
+     ],
+     "category": "nature"
+    }
+   }
+  },
+  {
+   "id": 16,
+   "slug": "monarch-s-nectar-3",
+   "stored": {
+    "title": "Monarch Butterfly on Swamp Milkweed",
+    "caption": "A monarch butterfly feeds on swamp milkweed (Asclepias incarnata), its proboscis curled toward the florets. The shallow depth of field keeps the background completely soft while holding sharp detail across both wing surfaces.",
+    "alt_text": "A monarch butterfly feeds on swamp milkweed (Asclepias incarnata), its proboscis curled toward the florets. The shallow depth of field keeps the background completely soft while holding sharp detail across both wing surfaces.",
+    "tags": "monarch butterfly,milkweed,macro,pollinator,shallow depth of field,insect,wildlife,garden,natural light",
+    "category": "wildlife",
+    "unreviewed": {
+     "title": true,
+     "caption": true,
+     "description": true,
+     "alt_text": true,
+     "tags": true,
+     "category": true
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 1973,
+     "output_tokens": 313,
+     "cost_usd": 0.00035,
+     "stop_reason": "end_turn",
+     "alt_text": "A monarch butterfly with orange and black wings feeding on pink swamp milkweed blossoms against a soft green background.",
+     "title": "Monarch Butterfly Feeding on Pink Milkweed",
+     "caption": "A monarch butterfly rests on a cluster of pink swamp milkweed buds, its wings partly open. The background falls away into soft green and pink blur.",
+     "description": "The monarch sits on a head of pink milkweed in bright, even daylight, with its wings angled up and slightly open toward the camera. The background is a shallow-focus wash of green and pink blossoms, which isolates the butterfly and its proboscis-level detail. The focus is placed on the butterfly's head and forewing, leaving the far wing and lower blossoms softer.",
+     "tags": [
+      "monarch butterfly",
+      "swamp milkweed",
+      "pollinator",
+      "shallow depth of field",
+      "daylight"
+     ],
+     "category": "wildlife"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 1973,
+     "output_tokens": 363,
+     "cost_usd": 0.00758,
+     "stop_reason": "end_turn",
+     "alt_text": "A monarch butterfly with orange, black, and white-spotted wings perched on a cluster of pink milkweed buds against a blurred green background.",
+     "title": "Monarch Butterfly on Pink Milkweed Buds",
+     "caption": "A monarch feeding on swamp milkweed, shot at close range with the wings angled so both the upper and lower wing patterns are visible. The shallow depth of field keeps focus on the head and thorax.",
+     "description": "A monarch butterfly rests on a cluster of pink milkweed buds in bright, direct daylight, with its wings partly open and its proboscis curled near the flowers. The sun brings out the saturated orange and the white spots along the wing margins without clipping the highlights. A wide aperture throws the background into soft green and pink blur, separating the subject cleanly, though the depth of field is thin enough that the far wingtip falls slightly soft.",
+     "tags": [
+      "monarch butterfly",
+      "milkweed",
+      "macro",
+      "shallow depth of field",
+      "summer"
+     ],
+     "category": "wildlife"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 1973,
+     "output_tokens": 453,
+     "cost_usd": 0.01695,
+     "stop_reason": "end_turn",
+     "alt_text": "A monarch butterfly with orange and black wings perched on a cluster of pink swamp milkweed buds against a blurred green background.",
+     "title": "Monarch Butterfly on Swamp Milkweed",
+     "caption": "A monarch butterfly feeds on pink swamp milkweed with its proboscis curled beside its head. The plane of focus holds the head, legs, and forewing sharp while the background falls off to soft green.",
+     "description": "A monarch rests on a swamp milkweed cluster, wings angled open enough to show both the upperside of one forewing and the underside of the hindwing. The light is bright, direct summer sun, which saturates the orange but brings the white wing spots close to clipping. I shot at a wide aperture from slightly below the flower head, so the out-of-focus milkweed in the background repeats the pink of the foreground buds without competing with the subject.",
+     "tags": [
+      "monarch butterfly",
+      "swamp milkweed",
+      "pollinator",
+      "shallow depth of field",
+      "summer sunlight"
+     ],
+     "category": "wildlife"
+    }
+   }
+  },
+  {
+   "id": 19,
+   "slug": "nectar-dance",
+   "stored": {
+    "title": "Hummingbird Feeding on Bee Balm",
+    "caption": "A hummingbird works a bee balm flower while hovering, shot from below at near eye-level with the bloom. The wing blur is significant, indicating a shutter speed that froze the body but not the wingbeats.",
+    "alt_text": "A hummingbird works a bee balm flower while hovering, shot from below at near eye-level with the bloom. The wing blur is significant, indicating a shutter speed that froze the body but not the wingbeats.",
+    "tags": "hummingbird,bee balm,monarda,wildlife,garden,flight,hummingbird photography,pollinator,nature,high speed photography",
+    "category": "wildlife",
+    "unreviewed": {
+     "title": true,
+     "caption": true,
+     "description": true,
+     "alt_text": true,
+     "tags": true,
+     "category": true
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 2575,
+     "output_tokens": 353,
+     "cost_usd": 0.00043,
+     "stop_reason": "end_turn",
+     "alt_text": "A ruby-throated hummingbird hovers with its beak inserted into a pink bee balm flower, while a second, faded bloom sits below it on the same stem against a pale gray background.",
+     "title": "Hummingbird Feeding on Pink Bee Balm",
+     "caption": "A hummingbird hovers at a pink bee balm bloom with its bill buried in the flower, wings blurred in motion. The pale gray backdrop keeps attention on the bird and the spiky pink petals.",
+     "description": "A hummingbird hovers in front of a pink bee balm flower, its wings caught as a motion blur against soft overcast light that gives the background an even gray tone. The bird is sharp at the head and bill while the wings smear, which communicates the speed of the wingbeat. The frame is tightly cropped with the upper flower and the spent bloom below on a diagonal, leaving open negative space on both sides.",
+     "tags": [
+      "hummingbird",
+      "bee balm",
+      "wildlife photography",
+      "motion blur",
+      "overcast light"
+     ],
+     "category": "wildlife"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 2575,
+     "output_tokens": 376,
+     "cost_usd": 0.00891,
+     "stop_reason": "end_turn",
+     "alt_text": "A hummingbird with green plumage hovers with wings spread above a bright pink bee balm flower, its bill pointed down into the blossom, with a second faded flower below against a soft gray background.",
+     "title": "Hummingbird Hovering Over Bee Balm",
+     "caption": "A hummingbird, likely a female ruby-throated, hovers over a pink bee balm bloom with its bill angled toward the flower. The wings are slightly soft from motion while the head and bill stay sharp.",
+     "description": "A hummingbird seen from the front hovers over a bee balm flower head, with a spent bloom and a green leaf lower in the frame. The light is soft and diffuse, probably from an overcast or hazy sky, so the greens and magentas keep their saturation without harsh highlights. The plain, out-of-focus background isolates the subject, and the shutter speed was fast enough to freeze the head and bill while leaving a little blur in the wingtips.",
+     "tags": [
+      "hummingbird",
+      "bee balm",
+      "hovering",
+      "garden",
+      "diffused light"
+     ],
+     "category": "wildlife"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 2575,
+     "output_tokens": 652,
+     "cost_usd": 0.02334,
+     "stop_reason": "end_turn",
+     "alt_text": "A hummingbird with a green back hovers with its wings spread and its bill inserted into a bright pink bee balm flower, with a second wilting bloom below it against a pale gray background.",
+     "title": "Hummingbird Feeding on Pink Bee Balm",
+     "caption": "A hummingbird, likely a female or juvenile ruby-throated, hovers over a bee balm bloom with its bill in the flower head. The body and head feathers are sharp, while the wingtips show slight motion blur.",
+     "description": "A green-backed hummingbird feeds from the top of a magenta bee balm flower, with a second, mostly spent bloom hanging lower on the same stem. The light is soft and even, likely from an overcast sky, which keeps the iridescent back feathers from blowing out and renders the background as a near-uniform pale gray. I placed the bird at the top of the square frame, and the stem runs diagonally down to the lower right. This leaves room around the wings and lets the fresh flower and the faded one sit one above the other.",
+     "tags": [
+      "hummingbird",
+      "bee balm",
+      "monarda",
+      "hovering",
+      "pollinator",
+      "overcast light",
+      "shallow depth of field",
+      "garden"
+     ],
+     "category": "wildlife"
+    }
+   }
+  },
+  {
+   "id": 7,
+   "slug": "20251111-183319-6bea2b124f28bb75",
+   "stored": {
+    "title": "Bald Eagle Perched at Coastal Estuary",
+    "caption": "A bald eagle holds position at the top of a dead tree overlooking a tidal estuary. The bird is small in the frame relative to the landscape, which gives a clear sense of the habitat scale.",
+    "alt_text": "A bald eagle holds position at the top of a dead tree overlooking a tidal estuary. The bird is small in the frame relative to the landscape, which gives a clear sense of the habitat scale.",
+    "tags": "bald eagle,estuary,coastal wildlife,boreal forest,perched bird,wildlife photography,tidal shoreline,overcast light",
+    "category": "wildlife",
+    "unreviewed": {
+     "title": true,
+     "caption": true,
+     "description": true,
+     "alt_text": true,
+     "tags": true,
+     "category": true
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 1801,
+     "output_tokens": 338,
+     "cost_usd": 0.00035,
+     "stop_reason": "end_turn",
+     "alt_text": "A bald eagle perches on the bare top of a dead tree above a rocky shoreline, with calm water and a dense evergreen forest across the bay.",
+     "title": "Bald Eagle Perched Above Coastal Inlet",
+     "caption": "A bald eagle sits on the snag of a dead tree on the rocky shore of a coastal inlet, with the bird small in the upper third of the frame. The eagle's white head stands out clearly against the dark conifers behind it.",
+     "description": "A bald eagle perches on a weathered dead snag at the edge of a tidal inlet, with granite boulders and dry marsh grass in the foreground. The light is soft and hazy, flattening the sky and keeping the forest across the water evenly toned. The eagle is placed in the upper third of the frame against the darker treeline, which gives it enough contrast to read clearly at this distance.",
+     "tags": [
+      "bald eagle",
+      "coastal inlet",
+      "raptor",
+      "overcast haze",
+      "telephoto"
+     ],
+     "category": "wildlife"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 1801,
+     "output_tokens": 388,
+     "cost_usd": 0.00748,
+     "stop_reason": "end_turn",
+     "alt_text": "A bald eagle perched at the top of a bare dead tree beside a tidal inlet, with a forested hillside and a grassy salt marsh in the background.",
+     "title": "Bald Eagle on Dead Tree, Tidal Inlet",
+     "caption": "A bald eagle perches on a snag above a coastal inlet, small in a wide frame of water and spruce forest. I kept the framing loose so the habitat is as much the subject as the bird.",
+     "description": "A bald eagle sits at the top of a weathered, bare tree on the shore of a tidal inlet. Behind it, a band of marsh grass crosses the water and a dense mixed spruce and hardwood forest fills the far bank. The light is flat and overcast with a hazy sky, which keeps contrast low and the greens even. The eagle's white head stands out against the dark trees, though it occupies only a small part of the frame, so this is a long-lens environmental shot rather than a tight portrait.",
+     "tags": [
+      "bald eagle",
+      "tidal inlet",
+      "overcast light",
+      "salt marsh",
+      "environmental wildlife"
+     ],
+     "category": "wildlife"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 1801,
+     "output_tokens": 417,
+     "cost_usd": 0.01554,
+     "stop_reason": "end_turn",
+     "alt_text": "A bald eagle perched at the top of a bare dead spruce beside a tidal river, with grassy bars in the water, granite boulders in the foreground, and a dense mixed forest on the far shore.",
+     "title": "Bald Eagle on Dead Spruce by Tidal River",
+     "caption": "An adult bald eagle sits at the top of a dead spruce overlooking a tidal inlet with marsh grass bars exposed in the channel. The bird is small in the frame, placed so the habitat carries as much weight as the subject.",
+     "description": "An adult bald eagle perches on the highest point of a weathered dead spruce along a tidal river, with granite boulders and coastal shrubs below and a hillside of spruce and hardwoods across the water. The overcast sky gives soft, even light that holds detail in the white head without blowing it out, though it also leaves the scene fairly flat in contrast. I kept the eagle near the upper-center third against the dark treeline, where its white head separates cleanly from the background instead of getting lost against the pale sky.",
+     "tags": [
+      "bald eagle",
+      "tidal river",
+      "coastal forest",
+      "overcast light",
+      "environmental wildlife portrait"
+     ],
+     "category": "wildlife"
+    }
+   }
+  },
+  {
+   "id": 50,
+   "slug": "blurred-silhouette",
+   "stored": {
+    "title": "Self-Portrait",
+    "caption": "A shadowy human figure stands blurred on the side of a boat. (Self-portrait, against the Acadia)",
+    "alt_text": "A silhouette of a person against a light colored wall with their shadow being cast on the wall.",
+    "tags": "silhouette, mystery, shallow depth of field, selective focus, leading lines, self-portrait",
+    "category": "abstract",
+    "unreviewed": {
+     "title": false,
+     "caption": false,
+     "description": true,
+     "alt_text": true,
+     "tags": false,
+     "category": false
+    }
+   },
+   "models": {
+    "claude-haiku-5-5": {
+     "input_tokens": 4037,
+     "output_tokens": 506,
+     "cost_usd": 0.00066,
+     "stop_reason": "end_turn",
+     "alt_text": "The shadow of a standing person falls across the white riveted hull of a ship, with a rust streak running down from a round port above the head and a white circle symbol painted on the dark green lower hull.",
+     "title": "Figure Shadow on White Ship Hull",
+     "caption": "A standing figure's shadow is cast across a white riveted steel hull, with a rust streak from a round port running through the silhouette. The hard-edged shadow contrasts sharply with the painted surface.",
+     "description": "Hard, direct sunlight casts a sharp shadow of a standing person, coat and hat visible, across the white upper hull and the pale blue boot stripe of a ship. The lower hull is dark green with a white circle and an 'F' marking. The shadow sits near the frame's centre and is placed so the rust streak from the port runs through its middle, which gives the otherwise flat surface a vertical reference line.",
+     "tags": [
+      "shadow",
+      "ship hull",
+      "riveted steel",
+      "harsh sunlight",
+      "maritime"
+     ],
+     "category": "urban"
+    },
+    "claude-sonnet-5-5": {
+     "input_tokens": 4037,
+     "output_tokens": 403,
+     "cost_usd": 0.0121,
+     "stop_reason": "end_turn",
+     "alt_text": "The blurred shadow of a standing person in a coat falls across a riveted white ship hull above a black waterline section, with a rust streak running down from a small porthole and a white load line marking at the bottom.",
+     "title": "Shadow on Riveted Ship Hull",
+     "caption": "A soft-edged human shadow is cast on the white plating of a ship's hull, with a rust streak from a porthole running through the middle of the figure. The blur of the shadow contrasts with the sharply rendered rivets and paint texture.",
+     "description": "The photo shows a person's shadow projected onto a white riveted hull, with the lower part falling on a blue-tinted step and a black-painted section below carrying a load line mark and the letter F. Low, direct sunlight gives the shadow its soft edges and a cool blue cast against the warm white paint. The porthole sits right at the head of the shadow and the rust streak splits the figure vertically, so I framed it tight and vertical to keep the hull lines and the load line marker in the same composition.",
+     "tags": [
+      "ship hull",
+      "shadow",
+      "rivets",
+      "load line",
+      "maritime",
+      "rust",
+      "vertical composition"
+     ],
+     "category": "abstract"
+    },
+    "claude-opus-5-5": {
+     "input_tokens": 4037,
+     "output_tokens": 644,
+     "cost_usd": 0.02903,
+     "stop_reason": "end_turn",
+     "alt_text": "The blurred shadow of a person in a long coat falls on a white riveted ship hull, with a rust streak running down from a drain hole through the center of the figure and a white load line mark painted on the dark lower hull below.",
+     "title": "Shadow and Rust Streak on Ship Hull",
+     "caption": "My shadow, cast from the quayside onto the white riveted plating of a moored ship, with a rust trail from a drain hole running straight down its middle. The Plimsoll mark and freshwater load line on the dark hull below anchor the bottom of the frame.",
+     "description": "Low, direct sun threw my shadow and the shadow of the quay edge onto the side of a docked vessel, where a rust stain from a small outlet happens to bisect the figure almost exactly. The shadow edges are soft because of the distance between me and the hull, which contrasts with the sharp rivet heads and paint texture that stay crisp throughout. I framed it vertically so the white plating, the blue band of shadow, and the dark hull with its load line markings stack as three horizontal bands, and exposed for the white paint to keep detail in the highlights.",
+     "tags": [
+      "shadow",
+      "ship hull",
+      "rust",
+      "rivets",
+      "plimsoll line",
+      "harbor",
+      "self-portrait",
+      "low sun"
+     ],
+     "category": "abstract"
+    }
+   }
+  }
+ ]
+}

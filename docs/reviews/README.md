@@ -2,6 +2,12 @@
 
 This directory contains one-time code reviews, design critiques, and audits conducted during development. These documents provide historical context but are not actively maintained.
 
+## Ongoing records
+
+- [Tagging model comparisons](tagging-model-comparisons/README.md): one
+  record per test run comparing vision models on photo metadata, added
+  to over time.
+
 ## Review Timeline
 
 ### November 2025
