@@ -1,110 +1,119 @@
-# Isolated print shop demonstration
+# TEST print studies — paper, printed surrounds, physical mats
 
-Prepared 2026-10-13 from `main` at `0995d8cd510b1705de04f63b5565ea21de961246`.
+Updated 2026-10-13 from clean main / production revision
+`70e966493980ea337b997c5846cdf082a82d8f49` after Adrian's review of PR #89.
+Public, unlinked URL: https://adrian.hensler.photography/shop-preview/
 
-Proposed URL: `https://adrian.hensler.photography/shop-preview/`.
+## Scope and truthful states
 
-This is a public, unlinked design study, not a shop. It has no checkout, payment,
-onboarding, customer-data fields, account changes, storage, tracking or financial
-API calls. Its conspicuous banner links back to the existing real gallery. It
-sets `noindex, nofollow, noarchive`; this is indexing guidance, not privacy or an
-access restriction. No private material belongs here.
+This is enquiry-only, not for sale. Every variant is TEST, unapproved and
+unproofed. It has no checkout, financial APIs, AI APIs, customer-data fields,
+storage, account changes, authenticated testing or production seller rollout.
+No Jev service is connected. Printed patterns are optional CSS illustrations
+outside the photo, not ready-to-print art files or actual material samples.
+Plain white paper is the default design baseline, not an approved product.
 
-## Scope and design
+Only the four files in `sites/adrian/shop-preview/`, its focused test, and this
+document change. Existing gallery pages, photos, shared assets, navigation,
+sitemap, management console, API, database, authentication, Caddy and Compose
+remain untouched. No service restart is needed. Noindex is indexing guidance;
+this unlinked page is public and is not access-controlled.
 
-Only `sites/adrian/shop-preview/{index.html,preview.css,preview.js,geometry.js}`
-adds visitor-facing behavior. No existing site, stylesheet, script, navigation,
-sitemap, API route, authentication, database, Caddy or Compose file is changed.
-The study uses the existing gallery's dark ground, sand accent, Inter and
-Playfair typography. Images remain the strongest visual element.
+Adrian is the only active record in the current design study. The registry still
+contains independent future photographer records, but does not enable their
+testing or sales. The seller selector explains this scope, not an access policy.
+Adrian-only authenticated testing and production activation are later work,
+requiring a separate review. Proposed seller-owned payments remain conceptual.
 
-Photographer records form a registry; the interaction is not conditional on
-exactly two people. Adding an independently hosted seller concept requires
-adding their public-gallery identity and samples to that registry. Products,
-gallery source and proposed payment ownership stay scoped to the selected
-photographer. This small mock starts with Adrian and Liam, without inventing a
-third person's identity or photographs. A production platform would need a
-persistent seller/product model; this registry is not that backend.
+## Geometry model — millimetres internally
 
-Published photographs and their current URLs are read at runtime from the
-existing public gallery GET endpoint (`credentials: omit`). No photo files or
-metadata snapshots are added to this patch. Curated public IDs are preferred;
-if none remain published, up to four current published images are used. Image
-paths are restricted to the existing same-origin gallery asset path. Metadata
-is inserted as text. Changing photographers aborts any previous gallery request
-and clears the previous photograph, collection and demonstration messages.
+Targets: stock 8 × 10, 11 × 14, nominal 13 × 19, true A3+ 483 × 329 mm,
+16 × 20 (other printer / lab), and custom 30 × 13 in (geometry only).
+Orientation follows the photograph without rotating or altering its pixels.
+The image ratio comes from source integer pixel width/height, not the API's
+rounded aspect_ratio and never a universal 21:9 assumption.
 
-The full selected photograph and thumbnails keep their intrinsic proportions.
-No extra crop, stretch, alteration or generated photographic assets are used.
-The frame study uses `object-fit: contain`, preserving even the slight
-integer-rounding differences in resized WebP variants.
+The sheet is centred on the image. The default image fits within an illustrative
+12.7 mm unprinted edge. Optional printed artwork occupies the field inside
+that white edge, behind and outside the photograph. Total image-to-paper
+surrounds, the unprinted edge and decorative remainder are separately reported
+for top/bottom/left/right. Sizes display both mm and inches to three decimals;
+calculations retain full precision. A requested 12/18/28 in long edge is not
+silently reduced, cropped or stretched when it fails the clearances: the warning
+and dimensions remain visible, and package diagrams are withheld.
 
-Physical dimensions derive from integer source `width`/`height`, not the API's
-rounded `aspect_ratio`. A selected image long edge of 20/30/40 cm scales the
-other image dimension proportionately. The paper adds a 2 cm border on all
-sides; a mat adds 5 cm outside the paper; a frame face adds another 2 cm outside
-the mat. The diagram and dimension table share this calculation. All physical
-sizes, materials and CAD prices are illustrative, not approved products or
-offers. Pixel dimensions, image area, paper, mat and frame outer sizes are
-labelled separately. Supplier tolerances, mat openings/overlap, print quality,
-availability, tax, shipping and fulfilment remain unresolved.
+If a physical mat is selected, image fitting reserves at least 25.4 mm of mat
+outside a window that reveals 6.35 mm beyond each image edge. The proposed mat
+outer size equals the paper / nominal frame fit. The window is a centred opening,
+not printed texture, and its four surround widths are listed. No overlap is
+assumed in this geometric plan: real bevel, overlap, cut/depth tolerances and
+paper support require a measured proof. Matboard covers any paper / printed
+surround outside the window. It is explicitly included only in the mat/frame
+package options.
 
-The payment section is a proposed seller-owned state, separate from the actual
-management console. It describes Stripe-hosted onboarding, a full seller Stripe
-dashboard and direct charges. Both action buttons only reveal explanatory text.
-They never open Stripe, request keys or change any state outside this page.
-One photographer per conceptual order keeps ownership clear. A cross-seller
-cart is unresolved. Financial independence cannot ensure hosting or succession
-continuity. Actual implementation should assess current Accounts v2 full
-dashboard configurations rather than blindly using legacy `type=standard`.
+Frame nominal fit means the sheet / mat outer target, not the frame's outside
+size or visible glazing aperture. External frame dimensions stay **unsettled**
+until a measured frame model is chosen. The outline is schematic. No frame,
+glazing or hardware is implied by the paper-only option. Printed leather/stone/
+feather illustrations are not those materials, not matboard and not spacers or
+bevels; buyer summaries say this explicitly.
 
-Stripe references for later design work (no integration in this change):
-- https://docs.stripe.com/connect/hosted-onboarding
-- https://docs.stripe.com/connect/stripe-dashboard
-- https://docs.stripe.com/connect/charges
+## Printer constraints — not proven recipes
 
-## Verification
+The original Canon PRO-200 envelope supplied for this task is manual custom up
+to 13 × 39 in; top-feed custom nominally 12.95 × 39 in. The checker treats the
+top-feed figure as nominal: near-boundary exact paper/driver sizes must be checked.
+Paper/driver settings may prevent using the full nominal envelope. A stock-frame
+target outside the manual envelope is marked outsourced / other-printer required.
+Lab and local self-print routes are possibilities, never approved fulfilment.
 
-`tests/shop-preview.spec.js` uses only intercepted, synthetic gallery responses
-and test image shapes. It checks physical geometry, 10:1 and 1:10 extremes,
-square, portrait and landscape; widths 320/390/768/1440; keyboard operation;
-selection updates; seller isolation; no write requests or data fields;
-unavailable galleries; noindex; text escaping and unsafe asset rejection.
+The 25 mm fine-art feed-end check covers both the image and decorative ink.
+An 18 × 7.714 in hypothetical 21:9 image on nominal 19 × 13 in paper is geometry,
+not a fine-art print recipe. Exact 19 in minus two 25 mm margins leaves
+17.031496 in; a true 483 mm A3+ long edge leaves 17.047244 in (about 17.05 in).
+These are kept distinct rather than treating nominal 19 in as 483 mm. Likewise,
+28 × 12 in on custom 30 × 13 in is only a geometric example, not proof of a
+supported driver/paper combination. Printer, paper/finish and physical proof
+remain unsettled even when the geometric tests pass.
 
-Run in the established dev/CI stack with:
+## Seller review / buyer preview
 
-```sh
-npx playwright test tests/shop-preview.spec.js
-```
+The buyer view shows proposed contents, exclusions, dimensions and unsettled
+paper/finish, signing, price and fulfilment choices. Packaging, destination,
+lead time and damage/return terms still require discussion. No mock selection
+creates a purchasable product or changes real accounts.
 
-For an isolated local static server that serves the directory as `/shop-preview/`,
-set `SHOP_PREVIEW_BASE_URL` to its origin. API and image requests in this test
-are intercepted. Actual public photographs were independently rendered and
-inspected at desktop 1440 px and mobile 390 px, including portrait, square and
-both photographer collections. Screenshot evidence is kept outside this patch.
+The separate seller-review panel has eleven per-variant checklist points:
+photo/crop; geometry; paper/profile; physical mat/frame or exclusion; proof;
+signing; price; packaging; destination/fulfilment; lead time; damage/returns.
+All marks are simulated and reset on every variant selection change. Even
+eleven checked boxes remain NOT seller-approved, with no physical proof recorded.
+Nothing is persisted or published. The panel is not the management console.
 
-## Proposed additive publication route — review before execution
+The contact link uses `adrianhensler@gmail.com`, already publicly displayed in
+`sites/adrian/index.html` and `sites/adrian/about.html`, and independently verified
+on the live About page. A title-escaped TEST subject opens the visitor's email
+app. The page sends no message, collects no personal data and accepts no order.
 
-Read-only VPS inspection confirmed both `/opt/prod/hensler_photography` and
-`/opt/dev/hensler_photography` clean on `main` at the base commit above.
-Origin is `https://github.com/adrianhensler/hensler-photography.git`.
-`AGENTS.md` resolves to `CLAUDE.md`; no `.agents/skills` exists in this checkout.
+## Verification and additive deployment
 
-Production Caddy serves Adrian's site from `/srv/sites/adrian` using
-`try_files {path} {path}.html {path}/index.html`. Compose bind-mounts `./sites`
-read-only into the web container. Thus the new directory is served by the
-existing static handler: **no Caddy changes, API rebuild or service restart**.
+Focused tests cover exact geometry, square/portrait/landscape/10:1/1:10 extremes,
+all sheet/package targets and four surrounds; margin/envelope warnings; true A3+
+versus nominal dimensions; invalid-fit diagrams; truthful package wording;
+simulated approvals/reset; no personal fields, writes or storage; keyboard and
+320/390/768/1440 px layouts; safe text/image URLs and failed galleries.
 
-1. Review the additive file list and screenshots with the parent coordinator.
-2. Push the isolated feature branch and open a PR. Do not push directly to main.
-3. Require passing CI and review the exact merged diff. Recheck production is
-   clean and confirm no unrelated merged changes would hitchhike in a pull.
-4. After approval/merge, fast-forward the production checkout only when the
-   pending diff contains this reviewed additive patch. No container action.
-5. Verify `/shop-preview/`, its three scripts/styles, real image loads, CSP,
-   banner, noindex, both photographer switches and demo controls. Check existing
-   hub/portfolio pages and health endpoints still behave as before.
+Run `npx playwright test tests/shop-preview.spec.js` in the established dev/CI
+stack. For isolated static verification, set SHOP_PREVIEW_BASE_URL; gallery/image
+requests are intercepted by the test. Actual published WebP images are separately
+rendered and inspected. Synthetic SVG ratio checks use their declared viewport,
+not WebKit's rounded raster-cache dimensions.
 
-Do not edit live bind-mounted files to prepare or stage the change. No remote
-push, PR, merge or deployment occurred during local preparation. Removing only
-this preview directory through the same PR workflow can retire the study.
+Publish only this preview-scoped PR after exact-head CI and review. Recheck main
+and production are clean at the base, and that no unrelated commits would ship.
+After merge, compare the merged tree to the reviewed head, assert the exact six
+preview/test/document paths, then fast-forward production to that exact revision.
+Existing bind-mounted static routing serves the updated directory automatically;
+do not edit live files while preparing, change configuration, or restart services.
+Verify live desktop/mobile, enquiries, notices, proportions, current gallery
+behavior, unchanged public-page bodies and unchanged container start timestamps.

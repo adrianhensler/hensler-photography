@@ -4,72 +4,59 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive">
-  <meta name="description" content="A non-functional print shop design demonstration. No orders or payments.">
-  <title>Print studies · Hensler Photography · demonstration</title>
+  <meta name="description" content="TEST print studies: enquiry only, not for sale. Printed surrounds and physical mats are different things.">
+  <title>Print studies · TEST / enquiry only · Hensler Photography</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./preview.css">
-  <script type="module" src="./preview.js"></script>
+  <link rel="stylesheet" href="./preview.css?v=surrounds1">
+  <script type="module" src="./preview.js?v=surrounds1"></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to print studies</a>
   <aside class="notice" aria-label="Demonstration notice">
-    <strong>Work in progress · non-functional demonstration</strong>
-    <span>Thanks for looking. No orders, payments or customer information are accepted.</span>
+    <strong>TEST / work in progress · non-functional demonstration</strong>
+    <span>Thanks for looking. Enquiry only, not for sale. No orders or payments.</span>
     <a href="https://adrian.hensler.photography/">The real gallery is here ↗</a>
   </aside>
   <header class="masthead"><a href="https://hensler.photography/">hensler photography</a><span>print studies / demonstration</span></header>
   <main id="main">
     <section class="intro" aria-labelledby="title">
-      <p class="eyebrow">From the gallery, into a room</p>
-      <h1 id="title">a photograph, on paper.</h1>
-      <p>A quiet place to imagine a print. Explore the photograph, its proportions, and a few possible ways to present it.</p>
-      <p class="fine">Every size, material and price below is illustrative. These photographs are not offered for sale through this page.</p>
+      <p class="eyebrow">A photograph, its paper, its presentation</p>
+      <h1 id="title">room around the image.</h1>
+      <p>A complete photograph can live within a familiar frame size. Explore a plain paper border, an optional printed surround, or a separate physical window mat.</p>
+      <p class="fine">Adrian-focused public design study. No seller rollout or authenticated testing is active. Every variant remains TEST, unapproved and not for sale.</p>
     </section>
     <section aria-labelledby="collection-title">
-      <div class="collection-head"><div><h2 id="collection-title">the photographs</h2><p id="seller-caption">A selection from the public gallery.</p></div>
-        <label>Photographer <select id="seller" aria-describedby="seller-help"></select></label>
-      </div>
-      <p id="seller-help" class="fine">Each photographer has a separate collection and proposed payment account. More photographers can be added to this model.</p>
+      <div class="collection-head"><div><h2 id="collection-title">the photographs</h2><p id="seller-caption">Adrian’s public gallery, unchanged.</p></div><label>Photographer <select id="seller" aria-describedby="seller-help"></select></label></div>
+      <p id="seller-help" class="fine">Current editing is for Adrian. The separate-photographer model remains available for future design; this does not restrict who can view this public page.</p>
       <p id="load-status" role="status">Loading public photographs…</p>
       <div id="collection" class="collection"></div>
     </section>
     <section id="study" class="study" aria-labelledby="photo-title" hidden>
-      <div class="photograph">
-        <div class="photo-stage"><img id="selected-photo" alt=""></div>
-        <p class="fine">The complete published photograph. No extra crop, stretch or alteration.</p>
-        <p id="pixel-size" class="fine"></p>
-        <p id="provenance" class="fine"></p>
-      </div>
+      <div class="photograph"><div class="photo-stage"><img id="selected-photo" alt=""></div><p id="pixel-size" class="fine"></p><p class="fine">The complete published photograph. No added crop, stretch, retouching or pattern inside its pixels.</p><p id="provenance" class="fine"></p></div>
       <div class="configuration">
-        <p class="eyebrow">Print study · demonstration only</p>
-        <h2 id="photo-title" tabindex="-1"></h2>
-        <p id="photo-seller"></p>
-        <label class="control">Image long edge <select id="size"><option value="20">20 cm · small study</option><option value="30" selected>30 cm · medium study</option><option value="40">40 cm · large study</option></select></label>
-        <label class="control">Presentation <select id="finish"><option value="paper">Paper only · 2 cm white border</option><option value="mat">Matted · 5 cm surround beyond paper</option><option value="frame" selected>Framed · mat + 2 cm frame face</option></select></label>
-        <p class="fine">Illustrative matte paper and black frame. No production material, availability or print quality is promised.</p>
-        <p id="example-price" class="price"></p>
-        <p class="fine">Example price in CAD, for layout only. Tax, shipping and fulfilment are undecided.</p>
-        <dl id="dimensions" class="dimensions" aria-live="polite"></dl>
-        <p class="fine">Dimensions are width × height, in centimetres, rounded to two decimals. The image area follows the source pixel dimensions, not a preset paper ratio. Mat openings, overlap and fabrication tolerances still need a print supplier.</p>
-        <button id="checkout-demo" class="primary" type="button">See order concept · demo only</button>
-        <p id="order-status" class="feedback" role="status"></p>
+        <p class="eyebrow">TEST · enquiry only · not for sale</p><h2 id="photo-title" tabindex="-1"></h2><p id="photo-seller"></p>
+        <div class="choice-pair"><label class="control">Sheet / nominal frame-fit target <select id="sheet"></select></label><label class="control">Image long edge <select id="edge"><option value="auto">Fit with stated clearances</option><option value="304.8">12 in · geometry study</option><option value="457.2">18 in · geometry study</option><option value="711.2">28 in · geometry study</option></select></label></div>
+        <label class="control">Surround on the paper <select id="pattern"></select></label>
+        <label class="control">Proposed package <select id="package"></select></label>
+        <p class="fine">Plain is the starting point, not a final product decision. Decorative options are ink illustrations printed outside the photograph, not leather, stone, feather material or matboard.</p>
       </div>
       <div class="presentation">
-        <h3>proportions, made visible</h3>
-        <div class="frame-stage"><div id="frame"><div id="mat"><div id="paper"><img id="print-photo" alt=""></div></div></div></div>
-        <p class="fine">Scaled diagram of image, paper, mat and frame. No room scale or frame texture is implied.</p>
+        <h3>plain paper / selected study</h3>
+        <div id="comparison" class="comparison"><figure><div class="diagram-stage"><div id="plain-paper" class="diagram-paper"><img id="plain-photo" class="diagram-photo" alt=""></div></div><figcaption>Plain photograph and unprinted white paper</figcaption></figure><figure><div class="diagram-stage"><div id="study-paper" class="diagram-paper"><div id="printed-field" class="printed-field"></div><img id="print-photo" class="diagram-photo" alt=""><div id="physical-mat" class="physical-mat" hidden><i></i><i></i><i></i><i></i></div></div></div><figcaption id="presentation-caption">Selected study · no physical mat or frame</figcaption></figure></div>
+        <p id="diagram-status" class="feedback" role="status"></p>
+        <div class="legend"><span>Photo pixels</span><span>White paper edge</span><span>Optional printed artwork</span><span>Separate physical mat only if selected</span></div>
+        <p class="fine">Proportional plan view; frame outline is schematic, not its external dimensions. A printed faux mat has no physical spacer or bevel. Real mat opening, overlap, thickness and frame tolerances require a measured sample.</p>
+        <details class="measurement-panel" open><summary>Dimensions and all four surrounds</summary><p class="fine">Width × height in mm and inches, rounded for display. Geometry uses source pixel dimensions at full precision.</p><dl id="dimensions" class="dimensions"></dl><div class="table-scroll"><table><caption>Centred surrounds · millimetres</caption><thead><tr><th>Layer</th><th>Top</th><th>Bottom</th><th>Left</th><th>Right</th></tr></thead><tbody id="surrounds"></tbody></table></div><p id="sheet-note" class="fine"></p></details>
       </div>
+      <div class="review-area">
+        <div class="view-switch" role="group" aria-label="Preview perspective"><button id="buyer-tab" type="button" aria-pressed="true" aria-controls="buyer-panel">Buyer preview</button><button id="seller-tab" type="button" aria-pressed="false" aria-controls="seller-panel">Seller review · simulated</button></div>
+        <section id="buyer-panel" aria-labelledby="buyer-title"><p class="eyebrow">TEST / unapproved variant</p><h3 id="buyer-title">what would arrive?</h3><p id="buyer-size"></p><div class="package-columns"><div><h4>Proposed contents</h4><ul id="included"></ul></div><div><h4>Not included / material distinction</h4><ul id="excluded"></ul></div></div><p id="buyer-unsettled" class="unsettled"></p><p class="fine">No seller approval or physical proof is recorded. Packaging, destination, fulfilment, lead time and damage/return terms require agreement with Adrian.</p><a id="contact-print" class="primary contact" href="mailto:adrianhensler@gmail.com?subject=TEST%20print%20enquiry">Contact Adrian about this print</a><p class="fine">Opens your email app using Adrian’s existing public address. This page sends no message and accepts no customer data. An enquiry is not an order.</p></section>
+        <section id="seller-panel" aria-labelledby="seller-title" hidden><p class="eyebrow">Local simulation · not the management console</p><h3 id="seller-title">review this exact variant</h3><p class="fine">Marks apply only to this temporary selection and reset whenever any variant choice changes. They never publish, save, confirm a physical proof or grant real seller approval.</p><div class="review-controls"><label class="control">Paper / finish <select id="material"><option value="unsettled">Unsettled</option><option value="matte">Illustrative matte paper · brand unapproved</option><option value="fineart">Illustrative fine-art paper · profile unapproved</option></select></label><label class="control">Signing <select id="signing"><option value="unsettled">Unsettled</option><option value="signed">Possible hand-signing after proof</option><option value="unsigned">Possible unsigned print</option></select></label><label class="control">Fulfilment / destination concept <select id="fulfilment"><option value="unsettled">Unsettled</option><option value="local">Possible self-print + local delivery</option><option value="canada">Possible Canada lab + self-mail</option></select></label><label class="control">Price <select id="price"><option value="unsettled">Unsettled · no offer</option><option value="example">Illustrative CAD $120 · not an offer</option></select></label></div><fieldset id="review-checklist"><legend>Per-variant review points · simulation only</legend></fieldset><p id="approval-status" class="unsettled" role="status"></p></section>
+      </div>
+      <aside class="guidance" aria-labelledby="guidance-title"><p class="eyebrow">Simulated AI guidance · deterministic checks</p><h3 id="guidance-title">fit is a question, not a promise.</h3><label class="control">Printer constraint study <select id="printer"><option value="unsettled">Unsettled · no print recipe</option><option value="manual">Original Canon PRO-200 · manual-feed size check</option><option value="top">Original Canon PRO-200 · top-feed size check</option><option value="fineart">Original Canon PRO-200 · 25 mm fine-art end-margin check</option><option value="lab">Other printer / lab · quote and proof pending</option></select></label><ul id="fit-warnings" class="warnings" aria-live="polite"></ul><p id="guidance-text"></p><p class="fine">No Jev or other AI service is connected. Original PRO-200 reference envelope: manual custom up to 13 × 39 in; top-feed custom nominally 12.95 × 39 in. Sheet size alone does not establish paper, driver, margin or full-area support. Larger stock sheets require another printer / lab. Every route needs a proof.</p><details><summary>A panoramic example, not a recipe</summary><p class="fine">For a hypothetical 21:9 image, 18 × 7.714 in on a nominal 19 × 13 in sheet is geometrically possible, but 25 mm end margins reduce the available long edge to 17.031 in (about 17.05 in on true 483 mm A3+). A 28 × 12 in image on custom 30 × 13 in is geometry only. The selected photograph keeps its own ratio; it is not forced to 21:9.</p></details></aside>
     </section>
-    <section class="seller-concept" aria-labelledby="payment-title">
-      <div><p class="eyebrow">Separate seller concept · no live account</p><h2 id="payment-title">the photographer owns the sale.</h2>
-        <p>A proposed payment setup for <strong id="payment-seller">the selected photographer</strong>. Every photographer would connect their own seller account, with their own products and payment dashboard.</p></div>
-      <div class="payment-state"><p><span class="state-dot"></span>Illustrative state: not connected</p>
-        <p>Proposed flow: Stripe-hosted onboarding → photographer’s full Stripe dashboard → direct charges for that photographer.</p>
-        <button id="onboarding-demo" type="button">Preview connection concept · demo only</button>
-        <p id="payment-status" class="feedback" role="status"></p>
-        <p class="fine">No account is created or connected. No API keys or personal details are requested. One photographer per proposed order; purchases spanning photographers remain undecided. Payment independence does not guarantee hosting or succession continuity.</p></div>
-    </section>
+    <section class="seller-concept"><div><p class="eyebrow">Future seller-owned payments · no live account</p><h2>one photographer, one proposed sale.</h2><p>The extensible seller model remains a concept. Future Stripe-hosted onboarding, a full seller dashboard and direct charges need a separate implementation review.</p></div><div class="payment-state"><p>Not connected. No checkout, keys, onboarding, account changes or cross-seller cart.</p><p class="fine">Adrian-only authenticated testing and production activation are future steps, after review. This public study does not enable either. Financial independence does not guarantee hosting or succession continuity.</p></div></section>
   </main>
-  <footer>Work in progress. Thanks for looking.<br><a id="gallery-link" href="https://adrian.hensler.photography/">Return to Adrian’s real gallery ↗</a></footer>
+  <footer>TEST / work in progress · enquiry only, not for sale.<br>Thanks for looking.<br><a id="gallery-link" href="https://adrian.hensler.photography/">Return to Adrian’s real gallery ↗</a></footer>
 </body>
 </html>
