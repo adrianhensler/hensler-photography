@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const base = process.env.SHOP_PREVIEW_BASE_URL || 'https://adrian.hensler.photography:8080';
 const fixture = (id,width,height) => ({id,title:`Study ${id}`,alt_text:`Test photograph ${id}`,width,height,aspect_ratio:1,medium_url:`/assets/gallery/study-${id}.png`,large_url:`/assets/gallery/study-${id}.png`});
-const photos=[fixture(52,6146,2633),fixture(45,3323,4985),fixture(47,3579,3579),fixture(54,10000,1000)];
+const photos=[fixture(52,6146,2633),fixture(45,3323,4985),fixture(47,3579,3579),{...fixture(54,4032,2268),title:'Tall Ship and Pier in Harbor Fog'}];
 const options=(extra={})=>({sheet:'13x19',edge:'auto',pattern:'plain',package:'print',printer:'unsettled',...extra});
 async function geometryModule(){const source=fs.readFileSync(path.join(__dirname,'../sites/adrian/shop-preview/geometry.js'),'utf8');return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);}
 test.beforeEach(async({page})=>{
@@ -13,13 +13,18 @@ test.beforeEach(async({page})=>{
 
 test('stock fit geometry preserves source ratios and all four surrounds',async()=>{
  const {layoutVariant,sheets}=await geometryModule();
- for(const [width,height] of [[6146,2633],[3323,4985],[3579,3579],[10000,1000],[1000,10000],[3666,4583]]){
-  for(const sheet of sheets)for(const pack of ['print','mat','frame']){
-   const g=layoutVariant(width,height,options({sheet:sheet.id,package:pack}));
+ for(const [width,height] of [[6146,2633],[4032,2268],[3323,4985],[3579,3579],[10000,1000],[1000,10000],[3666,4583]]){
+  for(const sheet of sheets)for(const pack of ['print','mat','frame'])for(const pattern of ['plain','feather','leather','stone']){
+   const g=layoutVariant(width,height,options({sheet:sheet.id,package:pack,pattern}));
    expect(g.image.width/g.image.height).toBeCloseTo(width/height,12);
    expect(g.surround.left+g.image.width+g.surround.right).toBeCloseTo(g.paper.width,12);
    expect(g.surround.top+g.image.height+g.surround.bottom).toBeCloseTo(g.paper.height,12);
-   expect(g.surround.left).toBeGreaterThanOrEqual(12.7-1e-8);
+   expect(g.fits).toBe(true);
+   for(const side of ['top','bottom','left','right']){
+    expect(g.surround[side]).toBeGreaterThanOrEqual(25.4-1e-8);
+    expect(g.innerSurround[side]).toBeGreaterThanOrEqual(12.7-1e-8);
+    expect(g.innerSurround[side]+g.border).toBeCloseTo(g.surround[side],12);
+   }
    expect(g.frameFit).toEqual(g.paper);expect(g.frameExternal).toBeNull();
    if(g.matWindow){expect(g.matWindow.width-g.image.width).toBeCloseTo(12.7,12);expect(g.matOuter).toEqual(g.paper);expect(g.matSurround.left).toBeGreaterThanOrEqual(25.4-1e-8);}
   }
@@ -27,6 +32,61 @@ test('stock fit geometry preserves source ratios and all four surrounds',async()
  const nominal=layoutVariant(2100,900,options()),a3=layoutVariant(2100,900,options({sheet:'a3plus'}));
  expect(nominal.paper).toEqual({width:482.6,height:330.2});expect(a3.paper).toEqual({width:483,height:329});
  expect(()=>layoutVariant(0,100,options())).toThrow();expect(()=>layoutVariant(100,100,options({sheet:'invented'}))).toThrow();
+});
+
+test('Tall Ship 13x19 feather retains a real half-inch printed surround on every side',async({page})=>{
+ const {layoutVariant}=await geometryModule(),g=layoutVariant(4032,2268,options({pattern:'feather'}));
+ expect(g.image.width/25.4).toBeCloseTo(17,12);expect(g.image.height/25.4).toBeCloseTo(9.5625,12);
+ expect(g.innerSurround.left).toBeCloseTo(12.7,12);expect(g.innerSurround.right).toBeCloseTo(12.7,12);
+ expect(g.innerSurround.top).toBeCloseTo(30.95625,10);expect(g.innerSurround.bottom).toBeCloseTo(30.95625,10);
+ await page.goto(`${base}/shop-preview/`);await page.locator('[data-photo-id="54"]').click();await page.locator('#pattern').selectOption('feather');
+ await expect(page.locator('#buyer-clearance')).toContainText('left 12.700 mm');await expect(page.locator('#buyer-clearance')).toContainText('right 12.700 mm');
+ const values=await page.locator('#surrounds tr').filter({hasText:'Printed surround beyond white edge'}).locator('td').allTextContents();
+ expect(values).toEqual(['30.956','30.956','12.700','12.700']);
+ // A requested 18-inch edge is not silently mistaken for clearance: it leaves
+ // only the white edge on two sides, so show an invalid-fit warning instead.
+ await page.locator('#edge').selectOption('457.2');await expect(page.locator('#comparison')).toBeHidden();await expect(page.locator('#fit-warnings')).toContainText('all-side clearances');await expect(page.locator('#buyer-clearance')).toContainText('INVALID');
+});
+
+test('all sheet sizes, orientations and patterns have measurable rendered coverage around the whole photo',async({page})=>{
+ test.slow();
+ for(const viewport of [1440,320]){
+  await page.setViewportSize({width:viewport,height:900});await page.goto(`${base}/shop-preview/`);await expect(page.locator('.photo-choice')).toHaveCount(4);
+  for(const photo of photos){await page.locator(`[data-photo-id="${photo.id}"]`).click();
+   for(const sheet of ['8x10','11x14','13x19','a3plus','16x20','30x13','square10','square12','square16']){await page.locator('#sheet').selectOption(sheet);
+    for(const pattern of ['plain','feather','leather','stone']){await page.locator('#pattern').selectOption(pattern);await expect(page.locator('#comparison')).toBeVisible();
+     const coverage=await page.evaluate(()=>{const field=document.getElementById('printed-field').getBoundingClientRect(),image=document.getElementById('print-photo').getBoundingClientRect();return {top:image.top-field.top,bottom:field.bottom-image.bottom,left:image.left-field.left,right:field.right-image.right,width:image.width,height:image.height};});
+     for(const side of ['top','bottom','left','right'])expect(coverage[side],JSON.stringify({viewport,sheet,pattern,id:photo.id,coverage})).toBeGreaterThan(3);
+     expect(Math.abs(coverage.width-coverage.height*photo.width/photo.height)).toBeLessThan(.5);
+     const row=page.locator('#surrounds tr').filter({hasText:pattern==='plain'?'Unprinted inner surround beyond white edge':'Printed surround beyond white edge'});
+     for(const value of await row.locator('td').allTextContents())expect(Number(value)).toBeGreaterThanOrEqual(12.7);
+    }
+   }
+  }
+ }
+});
+
+test('square image choices lead and square-to-panorama-to-square changes restore compatible target shapes',async({page})=>{
+ for(const width of [1440,390]){
+  await page.setViewportSize({width,height:900});await page.goto(`${base}/shop-preview/`);await expect(page.locator('.photo-choice')).toHaveCount(4);
+  await page.locator('[data-photo-id="47"]').click();
+  await expect(page.locator('#sheet')).toHaveValue('square12');await expect(page.locator('#edge')).toHaveValue('auto');
+  await expect(page.locator('#selection-dimensions')).toContainText('IMAGE: 10.000 × 10.000 in (square)');
+  await expect(page.locator('#selection-dimensions')).toContainText('PAPER / nominal frame-fit target: 12.000 × 12.000 in');
+  await expect(page.locator('#shape-note')).toContainText('Square photograph (1:1)');
+  for(const label of await page.locator('#edge option').allTextContents()){
+   expect(label).toContain('square IMAGE');const pair=label.match(/([\d.]+) × ([\d.]+) in/);expect(pair[1]).toBe(pair[2]);
+  }
+  await expect(page.locator('#fit-warnings')).toContainText('trimming');
+  await expect(page.locator('#sheet option[value="11x14"]')).toContainText('rectangular sheet/frame alternative; square IMAGE retained');
+  await page.locator('#sheet').selectOption('11x14');
+  await expect(page.locator('#selection-dimensions')).toContainText('IMAGE: 9.000 × 9.000 in (square)');await expect(page.locator('#selection-dimensions')).toContainText('14.000 × 11.000 in');
+  await page.locator('[data-photo-id="47"]').click();await expect(page.locator('#sheet')).toHaveValue('11x14');
+  await page.locator('[data-photo-id="54"]').click();await expect(page.locator('#sheet')).toHaveValue('13x19');await expect(page.locator('#edge')).toHaveValue('auto');await expect(page.locator('#selection-dimensions')).toContainText(/IMAGE: 17\.000 × 9\.56[23] in/);
+  await page.locator('[data-photo-id="47"]').click();await expect(page.locator('#sheet')).toHaveValue('square12');await expect(page.locator('#selection-dimensions')).toContainText('10.000 × 10.000 in (square)');
+  await page.locator('#selected-photo').evaluate(img=>img.decode());const ratio=await page.locator('#selected-photo').evaluate(img=>{const rect=img.getBoundingClientRect();return rect.width/rect.height;});expect(ratio).toBeCloseTo(1,3);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+ }
 });
 
 test('printer envelopes, fine-art exclusions and invalid sizes stay warnings, not recipes',async()=>{

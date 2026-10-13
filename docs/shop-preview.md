@@ -28,19 +28,52 @@ requiring a separate review. Proposed seller-owned payments remain conceptual.
 ## Geometry model — millimetres internally
 
 Targets: stock 8 × 10, 11 × 14, nominal 13 × 19, true A3+ 483 × 329 mm,
-16 × 20 (other printer / lab), and custom 30 × 13 in (geometry only).
+16 × 20 (other printer / lab), custom 30 × 13 in (geometry only), and illustrative
+square 10 × 10 / 12 × 12 / 16 × 16 targets. Square sheet trimming and print recipes
+are explicitly unproved; the 16-inch square target needs another printer/lab.
 Orientation follows the photograph without rotating or altering its pixels.
 The image ratio comes from source integer pixel width/height, not the API's
 rounded aspect_ratio and never a universal 21:9 assumption.
 
-The sheet is centred on the image. The default image fits within an illustrative
-12.7 mm unprinted edge. Optional printed artwork occupies the field inside
-that white edge, behind and outside the photograph. Total image-to-paper
+The sheet is centred on the image. Fit-with-clearance reserves an illustrative
+12.7 mm unprinted paper edge **plus at least 12.7 mm of inner presentation
+surround on every side** (25.4 mm total minimum inset). Plain uses white paper;
+decorative choices use printed artwork in that inner surround, never matboard.
+Optional printed artwork occupies the field inside the white edge, behind and
+outside the photograph. Total image-to-paper
 surrounds, the unprinted edge and decorative remainder are separately reported
 for top/bottom/left/right. Sizes display both mm and inches to three decimals;
 calculations retain full precision. A requested 12/18/28 in long edge is not
 silently reduced, cropped or stretched when it fails the clearances: the warning
 and dimensions remain visible, and package diagrams are withheld.
+
+The Tall Ship / nominal 13x19 / auto-fit / feather regression originally reserved
+only the white edge. The image then consumed the entire decorative field width,
+leaving printed top/bottom bands and zero left/right ink. The corrected fitter
+reserves the additional half-inch inner band for all ratios and sheet targets,
+not only that photo. Tall Ship (4032x2268 pixels) now fits at 17x9.5625 in;
+printed surrounds beyond the white edge are 12.7 mm left/right and 30.95625 mm
+top/bottom. Ratios may naturally produce unequal surrounds, but default sides
+never disappear. Buyer text, all-side table and diagrams share the same geometry.
+There is no borderless or intentional opposite-sides-only mode in this mock.
+Explicit edges that consume the inner band are invalid clearance studies, not
+silently treated as such a mode. Old 18-in-on-19-in and 28x12-on-30x13 geometric
+examples do not satisfy this default all-side presentation requirement.
+
+Solitary Sentinel's source is 3579 × 3579 pixels, genuinely 1:1. The previous
+chooser led with rectangular paper/frame targets, obscuring the separate square
+image dimensions. IMAGE sizes now lead and show both dimensions at selection
+time; square photos list compatible square image sizes and default to a square
+12 × 12 target (a 10 × 10 image in the paper-only package). PAPER / nominal frame
+fit is a separate control and visible selection summary. Rectangular targets
+are explicitly labelled alternatives that retain the square image with extra
+surround. They never mean a rectangular/cropped photograph. Switching from a
+square photo to a rectangular/panoramic photo and back restores the corresponding
+default target shape and auto image fit. Re-selecting the same photo preserves
+an intentionally chosen target. Incompatible fixed square IMAGE sizes are not
+listed for the current target/package; if a change invalidates one, selection
+returns to the visibly labelled fit-with-clearance option. All choices remain
+illustrative geometry, not square paper fabrication or printer promises.
 
 If a physical mat is selected, image fitting reserves at least 25.4 mm of mat
 outside a window that reveals 6.35 mm beyond each image edge. The proposed mat

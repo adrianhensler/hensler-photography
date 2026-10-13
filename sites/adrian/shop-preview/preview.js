@@ -1,4 +1,4 @@
-import { layoutVariant, packageSummary, sheets, packages, patterns } from './geometry.js?v=surrounds1';
+import { layoutVariant, packageSummary, sheets, packages, patterns } from './geometry.js?v=clearance1';
 
 // Independent seller records remain extensible. Only Adrian is active in this
 // public design study; this is not authentication or a rollout to other users.
@@ -31,6 +31,7 @@ function usablePhoto(photo) {
 }
 const selectedOptions = () => Object.fromEntries(controls.map(id => [id,$(id).value]));
 const sizeText = box => `${box.width.toFixed(3)} × ${box.height.toFixed(3)} mm (${(box.width/25.4).toFixed(3)} × ${(box.height/25.4).toFixed(3)} in)`;
+const imageInches = box => `${(box.width/25.4).toFixed(3)} × ${(box.height/25.4).toFixed(3)} in`;
 const surroundText = value => (Math.abs(value)<0.0005 ? 0 : value).toFixed(3);
 function fillSelect(id, entries, value) {
   $(id).replaceChildren(...entries.map(([key,label]) => { const option=document.createElement('option'); option.value=key; option.textContent=label; return option; }));
@@ -48,7 +49,9 @@ function makePhotoChoice(photo) {
   return button;
 }
 function selectPhoto(photo) {
+  const changed=currentPhoto?.id !== photo.id;
   currentPhoto=photo; $('study').hidden=false;
+  if(changed) configureSizeTargets();
   document.querySelectorAll('.photo-choice').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.photoId===String(photo.id))));
   ['selected-photo','plain-photo','print-photo'].forEach(id=>{const image=$(id);image.src=safeImagePath(photo.large_url);image.alt=photo.alt_text || photo.title || 'Public photograph';image.width=photo.width;image.height=photo.height;});
   $('photo-title').textContent=photo.title || 'Untitled photograph'; $('photo-seller').textContent=`Photograph by ${seller.name}`;
@@ -56,13 +59,34 @@ function selectPhoto(photo) {
   $('provenance').textContent=Object.values(photo.ai_disclosure || {}).some(Boolean) ? 'Some source gallery metadata is AI-drafted. The photograph is unchanged.' : '';
   renderStudy();
 }
+function configureSizeTargets() {
+  const square=currentPhoto.width===currentPhoto.height;
+  const matching=sheets.filter(sheet=>(sheet.width===sheet.height)===square);
+  const alternatives=sheets.filter(sheet=>(sheet.width===sheet.height)!==square);
+  const label=sheet=>sheet.width===sheet.height ? sheet.label : `${sheet.label}${square ? ' · rectangular sheet/frame alternative; square IMAGE retained' : ''}`;
+  fillSelect('sheet',[...matching,...alternatives].map(sheet=>[sheet.id,label(sheet)]),square ? 'square12' : '13x19');
+  fillSelect('edge',[['auto','Fit with all-side clearance']],'auto');
+  $('shape-note').textContent=square ? 'Square photograph (1:1): square IMAGE sizes lead. Square targets need an unproved trim/print recipe. Rectangular sheet/frame choices are explicit alternatives with a square image and extra surround, not rectangular photographs.' : 'Image choices preserve this photograph’s original ratio. Sheet/frame sizes describe the surrounding paper and nominal fit, not a crop or a rectangular replacement for another image shape.';
+}
+function refreshImageChoices() {
+  const options=selectedOptions(),square=currentPhoto.width===currentPhoto.height;
+  const fit=layoutVariant(currentPhoto.width,currentPhoto.height,{...options,edge:'auto'});
+  const entries=[['auto',`${imageInches(fit.image)} ${square ? 'square ' : ''}IMAGE · fit with all-side clearance`]];
+  const edges=square ? [152.4,203.2,254,304.8,355.6,457.2,711.2] : [304.8,457.2,711.2];
+  for(const edge of edges){
+    const study=layoutVariant(currentPhoto.width,currentPhoto.height,{...options,edge:String(edge)});
+    if(square && !study.fits) continue;
+    entries.push([String(edge),`${imageInches(study.image)} ${square ? 'square ' : ''}IMAGE · geometry study${study.fits ? '' : ' · does not fit this target’s clearance'}`]);
+  }
+  fillSelect('edge',entries,entries.some(([value])=>value===options.edge) ? options.edge : 'auto');
+}
 function setInset(node,outer,inner) {
   Object.assign(node.style,{left:`${(outer.width-inner.width)/2/outer.width*100}%`,top:`${(outer.height-inner.height)/2/outer.height*100}%`,width:`${inner.width/outer.width*100}%`,height:`${inner.height/outer.height*100}%`});
 }
 function drawComparison(geometry,options) {
-  const fits=geometry.surround.left >= (geometry.pack.mat ? 31.75 : 12.7)-1e-8 && geometry.surround.top >= (geometry.pack.mat ? 31.75 : 12.7)-1e-8;
+  const fits=geometry.fits;
   $('comparison').hidden=!fits;
-  $('diagram-status').textContent=fits ? '' : 'This image does not fit the proposed sheet / mat clearances. The package diagrams are withheld rather than cropping the photograph.';
+  $('diagram-status').textContent=fits ? '' : 'This image does not fit the proposed all-side surround / mat clearances. The package diagrams are withheld rather than cropping the photograph or silently removing two sides of the surround.';
   if (!fits) return;
   ['plain-paper','study-paper'].forEach(id=>$(id).style.aspectRatio=`${geometry.paper.width} / ${geometry.paper.height}`);
   ['plain-photo','print-photo'].forEach(id=>setInset($(id),geometry.paper,geometry.image));
@@ -82,11 +106,11 @@ function dimensionRow(label,value) {
   term.textContent=label;definition.textContent=value;row.append(term,definition);return row;
 }
 function renderMeasurements(geometry,options) {
-  const rows=[['Image area',sizeText(geometry.image)],['Paper sheet outer',sizeText(geometry.paper)],['Unprinted paper edge',`${geometry.border.toFixed(3)} mm on each side`],['Printed artwork field',options.pattern==='plain' ? 'None · plain white paper' : sizeText(geometry.inkField)]];
+  const rows=[['Image area',sizeText(geometry.image)],['Paper sheet outer',sizeText(geometry.paper)],['Unprinted paper edge',`${geometry.border.toFixed(3)} mm on each side`],['Minimum inner presentation surround',`${geometry.presentationClearance.toFixed(3)} mm beyond the white edge on ALL sides`],['Printed artwork field',options.pattern==='plain' ? 'None · plain white paper' : sizeText(geometry.inkField)]];
   rows.push(['Physical mat window',geometry.matWindow ? `${sizeText(geometry.matWindow)} · no overlap assumed` : 'Not included'],['Physical mat outer',geometry.matOuter ? sizeText(geometry.matOuter) : 'Not included'],['Nominal frame / rabbet fit target',`${sizeText(geometry.frameFit)}${geometry.pack.frame ? ' · frame model unapproved' : ' · frame not included'}`],['Frame external size',geometry.pack.frame ? 'Unsettled · requires measured frame model' : 'Not included']);
   $('dimensions').replaceChildren(...rows.map(([label,value])=>dimensionRow(label,value)));
   const surrounds=[['Paper edge',Object.fromEntries(['top','bottom','left','right'].map(side=>[side,geometry.border]))],['Total image-to-paper surround',geometry.surround]];
-  if(options.pattern!=='plain') surrounds.push(['Printed surround beyond white edge',Object.fromEntries(Object.entries(geometry.surround).map(([key,value])=>[key,value-geometry.border]))]);
+  surrounds.push([options.pattern==='plain' ? 'Unprinted inner surround beyond white edge' : 'Printed surround beyond white edge',geometry.innerSurround]);
   if(geometry.matSurround) surrounds.push(['Physical mat around window',geometry.matSurround]);
   $('surrounds').replaceChildren(...surrounds.map(([label,values])=>{const row=document.createElement('tr');const term=document.createElement('th');term.scope='row';term.textContent=label;row.append(term);['top','bottom','left','right'].forEach(side=>{const cell=document.createElement('td');cell.textContent=surroundText(values[side]);row.append(cell);});return row;}));
   $('sheet-note').textContent=`${geometry.annotated} The image is centred; negative surrounds indicate an invalid fit, not a crop. Physical window reveals 6.35 mm beyond each image edge in this study; cut tolerances, overlap and depth remain unapproved.`;
@@ -97,6 +121,8 @@ function listItems(items) {
 function renderBuyer(geometry,options) {
   const summary=packageSummary(options);
   $('buyer-size').textContent=`Image ${sizeText(geometry.image)} on paper ${sizeText(geometry.paper)}. ${geometry.warnings.length ? 'Fit constraints below need resolution.' : 'Geometric fit only; no proven print recipe.'}`;
+  const sideText=['top','bottom','left','right'].map(side=>`${side} ${surroundText(geometry.innerSurround[side])} mm`).join(' · ');
+  $('buyer-clearance').textContent=`${options.pattern==='plain' ? 'Inner white-paper surround' : 'Printed artwork surround'} beyond the ${geometry.border.toFixed(3)} mm white paper edge: ${sideText}. ${geometry.fits ? 'All four sides retain the minimum clearance.' : 'INVALID clearance study; the image must be reduced or the sheet enlarged.'}${geometry.pack.mat ? ' The separate physical mat covers paper outside its window; its visible reveal is 6.350 mm around the image.' : ''}`;
   $('included').replaceChildren(...listItems(summary.included)); $('excluded').replaceChildren(...listItems(summary.excluded));
   const status=['material','signing','price','fulfilment'].map(id=>`${({material:'Paper / finish',signing:'Signing',price:'Price',fulfilment:'Fulfilment / destination'})[id]}: ${$(id).selectedOptions[0].textContent}`);
   $('buyer-unsettled').textContent=`${status.join(' · ')}. All choices are illustrative and unapproved.`;
@@ -113,7 +139,9 @@ function updateApproval() {
 }
 function renderStudy() {
   if(!currentPhoto) return;
+  refreshImageChoices();
   const options=selectedOptions(),geometry=layoutVariant(currentPhoto.width,currentPhoto.height,options);
+  $('selection-dimensions').textContent=`IMAGE: ${imageInches(geometry.image)}${currentPhoto.width===currentPhoto.height ? ' (square)' : ''}. PAPER / nominal frame-fit target: ${imageInches(geometry.paper)}. ${geometry.fits ? 'All-side clearance retained; recipe unapproved.' : 'Requested image does not fit the required surround.'}`;
   document.querySelectorAll('#review-checklist input').forEach(input=>input.checked=false);
   drawComparison(geometry,options);renderMeasurements(geometry,options);renderBuyer(geometry,options);renderGuidance(geometry,options);updateApproval();
 }
