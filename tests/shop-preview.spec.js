@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/assets/gallery/*', route => {
     const id = Number(route.request().url().match(/study-(\d+)/)?.[1]);
     const photo = Object.values(collections).flat().find(p => p.id === id);
-    return route.fulfill({ contentType: 'image/svg+xml', body: `<svg xmlns="http://www.w3.org/2000/svg" width="${photo.width}" height="${photo.height}"><rect width="100%" height="100%" fill="#65736b"/></svg>` });
+    return route.fulfill({ contentType: 'image/svg+xml', body: `<svg xmlns="http://www.w3.org/2000/svg" width="${photo.width}" height="${photo.height}" viewBox="0 0 ${photo.width} ${photo.height}"><rect width="100%" height="100%" fill="#65736b"/></svg>` });
   });
 });
 
@@ -39,6 +39,8 @@ test('responsive display, selection, keyboard and ratios', async ({ page }) => {
     await page.goto(`${base}/shop-preview/`);
     await expect(page.locator('.photo-choice')).toHaveCount(4);
     for (const id of [52,45,47,54]) {
+      const photo = collections[1].find(p => p.id === id);
+      const sourceRatio = photo.width / photo.height;
       const choice = page.locator(`[data-photo-id="${id}"]`);
       await choice.focus();
       await page.keyboard.press('Enter');
@@ -47,19 +49,23 @@ test('responsive display, selection, keyboard and ratios', async ({ page }) => {
       for (const finish of ['paper','mat','frame']) {
         await page.locator('#finish').selectOption(finish);
         await page.locator('#size').selectOption('40');
+        await page.locator('#selected-photo').evaluate(img => img.decode());
         const ratio = await page.locator('#selected-photo').evaluate(img => {
           const r = img.getBoundingClientRect();
           return { rendered: r.width/r.height, intrinsic: img.naturalWidth/img.naturalHeight, loaded: img.complete };
         });
         expect(ratio.loaded).toBeTruthy();
-        expect(Math.abs(ratio.rendered / ratio.intrinsic - 1)).toBeLessThan(.001);
+        // WebKit reports integer raster-cache sizes for large SVGs through
+        // naturalWidth/naturalHeight. Their declared viewport is the source
+        // ratio; compare to it rather than that browser-specific bookkeeping.
+        expect(Math.abs(ratio.rendered / sourceRatio - 1),JSON.stringify({width,id,finish,ratio,sourceRatio})).toBeLessThan(.001);
         const framed = await page.locator('#print-photo').evaluate(img => {
           const r = img.getBoundingClientRect();
           return { width:r.width, height:r.height, fit:getComputedStyle(img).objectFit };
         });
         // Browser boxes are quantized to subpixels; contain preserves the actual
         // pixels even when the source WebP rounds its resized dimensions.
-        expect(Math.abs(framed.width - framed.height * ratio.intrinsic)).toBeLessThan(.5);
+        expect(Math.abs(framed.width - framed.height * sourceRatio)).toBeLessThan(.5);
         expect(framed.fit).toBe('contain');
       }
     }
