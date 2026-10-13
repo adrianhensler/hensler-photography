@@ -462,7 +462,11 @@ select {
 [hidden] { display:none !important; }
 .intro { padding-top:52px; padding-bottom:42px; }
 .choice-pair,.review-controls,.package-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 20px; }
-.control { margin:15px 0; }
+.control { margin:15px 0; min-width:0; grid-template-columns:minmax(0,1fr); overflow:clip; overflow-clip-margin:8px; }
+.control select { max-width:100%; }
+/* WebKit can paint a long native option beyond a correctly sized select.
+   Contain that paint here, preserving the 8px keyboard-focus outline space.
+   The full image/paper dimensions also remain visible in the adjacent summary. */
 .comparison { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:26px; }
 .comparison figure { margin:0; min-width:0; }
 .comparison figcaption { font-size:12px; color:var(--muted); margin-top:13px; }
