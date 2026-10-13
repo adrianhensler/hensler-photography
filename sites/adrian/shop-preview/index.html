@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="description" content="A non-functional print shop design demonstration. No orders or payments.">
+  <title>Print studies · Hensler Photography · demonstration</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./preview.css">
+  <script type="module" src="./preview.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to print studies</a>
+  <aside class="notice" aria-label="Demonstration notice">
+    <strong>Work in progress · non-functional demonstration</strong>
+    <span>Thanks for looking. No orders, payments or customer information are accepted.</span>
+    <a href="https://adrian.hensler.photography/">The real gallery is here ↗</a>
+  </aside>
+  <header class="masthead"><a href="https://hensler.photography/">hensler photography</a><span>print studies / demonstration</span></header>
+  <main id="main">
+    <section class="intro" aria-labelledby="title">
+      <p class="eyebrow">From the gallery, into a room</p>
+      <h1 id="title">a photograph, on paper.</h1>
+      <p>A quiet place to imagine a print. Explore the photograph, its proportions, and a few possible ways to present it.</p>
+      <p class="fine">Every size, material and price below is illustrative. These photographs are not offered for sale through this page.</p>
+    </section>
+    <section aria-labelledby="collection-title">
+      <div class="collection-head"><div><h2 id="collection-title">the photographs</h2><p id="seller-caption">A selection from the public gallery.</p></div>
+        <label>Photographer <select id="seller" aria-describedby="seller-help"></select></label>
+      </div>
+      <p id="seller-help" class="fine">Each photographer has a separate collection and proposed payment account. More photographers can be added to this model.</p>
+      <p id="load-status" role="status">Loading public photographs…</p>
+      <div id="collection" class="collection"></div>
+    </section>
+    <section id="study" class="study" aria-labelledby="photo-title" hidden>
+      <div class="photograph">
+        <div class="photo-stage"><img id="selected-photo" alt=""></div>
+        <p class="fine">The complete published photograph. No extra crop, stretch or alteration.</p>
+        <p id="pixel-size" class="fine"></p>
+        <p id="provenance" class="fine"></p>
+      </div>
+      <div class="configuration">
+        <p class="eyebrow">Print study · demonstration only</p>
+        <h2 id="photo-title" tabindex="-1"></h2>
+        <p id="photo-seller"></p>
+        <label class="control">Image long edge <select id="size"><option value="20">20 cm · small study</option><option value="30" selected>30 cm · medium study</option><option value="40">40 cm · large study</option></select></label>
+        <label class="control">Presentation <select id="finish"><option value="paper">Paper only · 2 cm white border</option><option value="mat">Matted · 5 cm surround beyond paper</option><option value="frame" selected>Framed · mat + 2 cm frame face</option></select></label>
+        <p class="fine">Illustrative matte paper and black frame. No production material, availability or print quality is promised.</p>
+        <p id="example-price" class="price"></p>
+        <p class="fine">Example price in CAD, for layout only. Tax, shipping and fulfilment are undecided.</p>
+        <dl id="dimensions" class="dimensions" aria-live="polite"></dl>
+        <p class="fine">Dimensions are width × height, in centimetres, rounded to two decimals. The image area follows the source pixel dimensions, not a preset paper ratio. Mat openings, overlap and fabrication tolerances still need a print supplier.</p>
+        <button id="checkout-demo" class="primary" type="button">See order concept · demo only</button>
+        <p id="order-status" class="feedback" role="status"></p>
+      </div>
+      <div class="presentation">
+        <h3>proportions, made visible</h3>
+        <div class="frame-stage"><div id="frame"><div id="mat"><div id="paper"><img id="print-photo" alt=""></div></div></div></div>
+        <p class="fine">Scaled diagram of image, paper, mat and frame. No room scale or frame texture is implied.</p>
+      </div>
+    </section>
+    <section class="seller-concept" aria-labelledby="payment-title">
+      <div><p class="eyebrow">Separate seller concept · no live account</p><h2 id="payment-title">the photographer owns the sale.</h2>
+        <p>A proposed payment setup for <strong id="payment-seller">the selected photographer</strong>. Every photographer would connect their own seller account, with their own products and payment dashboard.</p></div>
+      <div class="payment-state"><p><span class="state-dot"></span>Illustrative state: not connected</p>
+        <p>Proposed flow: Stripe-hosted onboarding → photographer’s full Stripe dashboard → direct charges for that photographer.</p>
+        <button id="onboarding-demo" type="button">Preview connection concept · demo only</button>
+        <p id="payment-status" class="feedback" role="status"></p>
+        <p class="fine">No account is created or connected. No API keys or personal details are requested. One photographer per proposed order; purchases spanning photographers remain undecided. Payment independence does not guarantee hosting or succession continuity.</p></div>
+    </section>
+  </main>
+  <footer>Work in progress. Thanks for looking.<br><a id="gallery-link" href="https://adrian.hensler.photography/">Return to Adrian’s real gallery ↗</a></footer>
+</body>
+</html>
