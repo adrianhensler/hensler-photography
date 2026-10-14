@@ -372,7 +372,7 @@
             return;
           }
 
-          galleryLightbox = window.GLightbox({
+          const instance = window.GLightbox({
             selector: '.glightbox',
             touchNavigation: true,
             loop: true,
@@ -388,6 +388,10 @@
             },
             onClose: () => {
               exitLightboxFullscreen();
+              // Close is animated, so a lightbox destroyed by a re-render
+              // reports closing after its replacement exists; only the
+              // current one may touch the URL
+              if (galleryLightbox !== instance) return;
               activePhotoId = null;
               updateURL({ mode: 'replace' });
             },
@@ -398,6 +402,7 @@
               syncPhotoURL();
             }
           });
+          galleryLightbox = instance;
           resolve(galleryLightbox);
         }, 100);
       }).finally(() => {
@@ -503,11 +508,10 @@
 
   // A shared link opens straight to its photo. Unknown or unpublished ids
   // are dropped from the URL and the visitor just sees the gallery.
-  function openPhotoFromURL() {
-    const requested = Number(new URLSearchParams(window.location.search).get('photo'));
-    const imageData = Number.isInteger(requested)
-      ? galleryData.find(img => img.id === requested)
-      : null;
+  function openPhotoFromURL(requested = new URLSearchParams(window.location.search).get('photo')) {
+    if (requested === null) return;
+    const id = Number(requested);
+    const imageData = Number.isInteger(id) ? galleryData.find(img => img.id === id) : null;
     if (!imageData) {
       updateURL({ mode: 'replace' });
       return;
@@ -927,7 +931,14 @@
     loadFiltersFromURL();   // renders grid + category nav from URL state
     openPhotoFromURL();
 
-    window.addEventListener('popstate', () => loadFiltersFromURL());
+    // Back/Forward restores both the filter and any open photo. The photo
+    // is read first: re-rendering closes the lightbox, which rewrites the URL.
+    window.addEventListener('popstate', () => {
+      const requestedPhoto = new URLSearchParams(window.location.search).get('photo');
+      activePhotoId = null;
+      loadFiltersFromURL();
+      openPhotoFromURL(requestedPhoto);
+    });
 
     trackPageView();
     addGalleryTracking();

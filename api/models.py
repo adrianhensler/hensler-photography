@@ -405,10 +405,13 @@ class TrackingEvent(BaseModel):
         False, description="Whether this event is from the photographer (vs visitor)"
     )
 
-    @validator("image_id")
+    @validator("image_id", always=True)
     def validate_image_id_for_type(cls, v, values):
         """Require image_id for image-specific events"""
         event_type = values.get("event_type")
-        if event_type in ["gallery_click", "lightbox_open", "image_impression"] and v is None:
+        if (
+            event_type in ["gallery_click", "lightbox_open", "image_impression", "share_click"]
+            and v is None
+        ):
             raise ValueError(f"{event_type} events require an image_id")
         return v

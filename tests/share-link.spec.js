@@ -57,7 +57,25 @@ test.describe('Share links', () => {
     await expect(page).toHaveURL(`${BASE_URL}/?photo=${target.id}`);
   });
 
-  test('an unknown photo id falls back to the gallery', async ({ page }) => {
+  test('Back and Forward reopen and close the photo', async ({ page }) => {
+    const target = images[0];
+    await page.goto(`${BASE_URL}/`);
+    await page.waitForSelector('.gallery-item');
+    await page.evaluate((id) => {
+      history.pushState({}, '', `?photo=${id}`);
+      history.pushState({}, '', '/');
+    }, target.id);
+
+    await page.goBack();
+    await page.waitForSelector('.glightbox-container .gslide.current');
+    await expect(page).toHaveURL(`${BASE_URL}/?photo=${target.id}`);
+
+    await page.goForward();
+    await expect(page.locator('.glightbox-container')).toHaveCount(0);
+    await expect(page).toHaveURL(`${BASE_URL}/`);
+  });
+
+    test('an unknown photo id falls back to the gallery', async ({ page }) => {
     await page.goto(`${BASE_URL}/?photo=999999`);
     await page.waitForSelector('.gallery-item');
 
