@@ -317,6 +317,35 @@
   color: #e8d5b5;
 }
 
+/* Share: same chrome as the fullscreen toggle, with a visible label so it
+ * reads as an action, not an icon puzzle. See gallery.js addShareButton(). */
+.glightbox-clean .gshare {
+  position: absolute;
+  top: 15px;
+  right: 95px;
+  height: 35px;
+  width: auto;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(0, 0, 0, .32);
+  border-radius: 4px;
+  color: #fff;
+  font: 500 0.8rem/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  z-index: 99999;
+}
+
+.glightbox-clean .gshare:hover {
+  background-color: rgba(0, 0, 0, .7);
+}
+
+.glightbox-clean .gshare svg {
+  flex: none;
+}
+
 /* Shown while the full-quality image is being preloaded, before the
  * fullscreen resize/swap happens in one step -- see enterFullscreen() */
 .gfullscreen-toggle.is-loading svg {
