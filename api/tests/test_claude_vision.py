@@ -23,7 +23,9 @@ METADATA = {
 }
 
 
-def _reply(text=None, stop_reason="end_turn", model="claude-sonnet-5-5", category=None):
+def _reply(
+    text=None, stop_reason="end_turn", model="claude-sonnet-5-5", category=None, iterations=None
+):
     content = [SimpleNamespace(type="thinking", thinking="")]
     if text is not None:
         content.append(SimpleNamespace(type="text", text=text))
@@ -32,7 +34,7 @@ def _reply(text=None, stop_reason="end_turn", model="claude-sonnet-5-5", categor
         stop_reason=stop_reason,
         stop_details=SimpleNamespace(category=category) if category else None,
         model=model,
-        usage=SimpleNamespace(input_tokens=2000, output_tokens=500),
+        usage=SimpleNamespace(input_tokens=2000, output_tokens=500, iterations=iterations),
     )
 
 
@@ -102,3 +104,29 @@ async def test_cost_uses_the_model_that_answered(test_db, photo):
         ).fetchone()
     assert row[0] == "claude-sonnet-5"
     assert row[1] == pytest.approx(2000 / 1e6 * 2.00 + 500 / 1e6 * 10.00)
+
+
+@pytest.mark.asyncio
+async def test_cost_counts_every_attempt_of_a_fallback(test_db, photo):
+    from api.database import get_db_connection
+
+    attempts = [
+        SimpleNamespace(
+            type="message", model="claude-sonnet-5-5", input_tokens=2000, output_tokens=40
+        ),
+        SimpleNamespace(
+            type="fallback_message", model="claude-sonnet-5", input_tokens=2000, output_tokens=500
+        ),
+    ]
+    await _analyze(
+        photo, _reply(json.dumps(METADATA), model="claude-sonnet-5", iterations=attempts)
+    )
+
+    async with get_db_connection() as db:
+        row = await (
+            await db.execute(
+                "SELECT input_tokens, output_tokens, cost_usd FROM ai_costs ORDER BY id DESC LIMIT 1"
+            )
+        ).fetchone()
+    assert (row[0], row[1]) == (4000, 540)
+    assert row[2] == pytest.approx(4000 / 1e6 * 2.00 + 540 / 1e6 * 10.00)

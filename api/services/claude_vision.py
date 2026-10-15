@@ -325,15 +325,7 @@ async def analyze_image(
 
         # Calculate API cost (output tokens include thinking)
         model_name = message.model
-        input_tokens = message.usage.input_tokens
-        output_tokens = message.usage.output_tokens
-        input_cost_per_mtok, output_cost_per_mtok = PRICING_PER_MTOK.get(
-            model_name, PRICING_PER_MTOK[MODEL]
-        )
-
-        cost_usd = (input_tokens / 1_000_000) * input_cost_per_mtok + (
-            output_tokens / 1_000_000
-        ) * output_cost_per_mtok
+        input_tokens, output_tokens, cost_usd = _usage_cost(message)
 
         logger.info(
             f"Claude API call completed: {input_tokens} input tokens, {output_tokens} output tokens, ${cost_usd:.4f}",
@@ -515,6 +507,32 @@ async def analyze_image(
         # Clean up temporary AI analysis file if one was created
         if needs_cleanup:
             cleanup_temp_file(ai_image_path, context=context)
+
+
+def _usage_cost(message) -> Tuple[int, int, float]:
+    """
+    Total (input tokens, output tokens, USD) across every attempt of a call.
+
+    Top-level usage covers only the attempt that produced the reply. When a
+    decline falls back to another model, usage.iterations lists each attempt
+    with its own model, priced here at that model's rates. An attempt that
+    declined before any output may not be billed (it depends on the decline
+    category), so this can slightly over-report; it never under-reports.
+    """
+    attempts = [
+        (getattr(it, "model", None) or message.model, it.input_tokens or 0, it.output_tokens or 0)
+        for it in (getattr(message.usage, "iterations", None) or [])
+    ] or [(message.model, message.usage.input_tokens, message.usage.output_tokens)]
+
+    cost = 0.0
+    for model, input_tokens, output_tokens in attempts:
+        input_rate, output_rate = PRICING_PER_MTOK.get(model, PRICING_PER_MTOK[MODEL])
+        cost += input_tokens / 1_000_000 * input_rate + output_tokens / 1_000_000 * output_rate
+    return (
+        sum(a[1] for a in attempts),
+        sum(a[2] for a in attempts),
+        cost,
+    )
 
 
 def _get_fallback_metadata(image_path: str) -> Dict[str, Any]:
