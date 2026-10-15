@@ -332,9 +332,10 @@ async def ingest_image(
                                 ai_metadata.get("title", ""),
                                 ai_metadata.get("caption", ""),
                                 ai_metadata.get("description", ""),
-                                # The model writes a dedicated alt text; fall back to
-                                # the caption only if it didn't provide one.
-                                ai_metadata.get("alt_text") or ai_metadata.get("caption", ""),
+                                # Never the caption: alt text describes the frame for
+                                # screen readers, and a copy of the caption is read
+                                # twice. Empty falls back to the title on the page.
+                                ai_metadata.get("alt_text") or "",
                                 (
                                     ",".join(ai_metadata.get("tags", []))
                                     if isinstance(ai_metadata.get("tags"), list)
@@ -448,7 +449,7 @@ async def ingest_image(
             "title": ai_metadata.get("title", ""),
             "caption": ai_metadata.get("caption", ""),
             "description": ai_metadata.get("description", ""),
-            "alt_text": ai_metadata.get("alt_text") or ai_metadata.get("caption", ""),
+            "alt_text": ai_metadata.get("alt_text") or "",
             "tags": ai_metadata.get("tags", ""),
             "category": ai_metadata.get("category", ""),
             # Every text field starts as an unreviewed AI draft when analysis succeeded
@@ -1180,7 +1181,7 @@ async def regenerate_ai_metadata(
         user_id: The user ID (for authorization)
         style: AI style - 'minimal', 'technical', 'balanced', 'documentary', or 'artistic'
 
-    Cost: ~$0.02 per image
+    Cost: ~$0.01 per image (Claude Sonnet 5.5)
     """
     from api.database import get_db_connection
     from api.services.claude_vision import analyze_image
@@ -1247,7 +1248,7 @@ async def regenerate_ai_metadata(
                     ai_metadata.get("title"),
                     ai_metadata.get("caption"),
                     ai_metadata.get("description"),
-                    ai_metadata.get("alt_text") or ai_metadata.get("caption"),
+                    ai_metadata.get("alt_text") or "",
                     (
                         ",".join(ai_metadata.get("tags", []))
                         if isinstance(ai_metadata.get("tags"), list)
@@ -1266,7 +1267,7 @@ async def regenerate_ai_metadata(
                 "image_id": image_id,
                 "title": ai_metadata.get("title"),
                 "caption": ai_metadata.get("caption"),
-                "alt_text": ai_metadata.get("alt_text") or ai_metadata.get("caption"),
+                "alt_text": ai_metadata.get("alt_text") or "",
                 "description": ai_metadata.get("description"),
                 "tags": ai_metadata.get("tags"),
                 "category": ai_metadata.get("category"),

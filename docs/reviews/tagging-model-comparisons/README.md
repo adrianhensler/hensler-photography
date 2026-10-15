@@ -13,7 +13,7 @@ These are records, not specs. The model in use is whatever
 | Date | Compared | Outcome | Record |
 |---|---|---|---|
 | 2026-09-28 | Sonnet 4.6 (in use) vs Sonnet 5 | Stayed on Sonnet 4.6: cost equal, Sonnet 5 faster but made two confident errors. Found the alt-text save bug (fixed in #80). | [2026-09-28.md](2026-09-28.md) |
-| 2026-10-12 | Haiku 5.5, Sonnet 5.5, Opus 5.5 | Decision pending. Sonnet 5.5 the steadiest; Opus 5.5 saw the most; Haiku 5.5 cheapest with more unconfirmed claims. | [2026-10-12.md](2026-10-12.md) |
+| 2026-10-12 | Haiku 5.5, Sonnet 5.5, Opus 5.5 | Switched to Sonnet 5.5 (chosen 2026-10-15). Sonnet 5.5 the steadiest; Opus 5.5 saw the most; Haiku 5.5 cheapest with more unconfirmed claims. | [2026-10-12.md](2026-10-12.md) |
 
 ## Model in use over time
 
@@ -21,6 +21,7 @@ These are records, not specs. The model in use is whatever
 |---|---|---|
 | 2025-11-02 | `claude-3-opus-20240229` | $0.0395 over 144 calls |
 | 2026-04-08 | `claude-sonnet-4-6` | $0.0104 over 82 calls |
+| 2026-10-15 | `claude-sonnet-5-5`, medium effort | about $0.008 measured in the 2026-10-12 run |
 
 ## How to add a run
 

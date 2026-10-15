@@ -147,7 +147,7 @@ Python/FastAPI backend for image management on the same port as the static sites
 
 **Upload** (`/manage/upload`): Drag-and-drop, batch upload (max 3 concurrent), auto AI metadata, EXIF extraction, editable technical fields.
 
-**Gallery Management** (`/manage/gallery`): View/filter/search images, edit all metadata, re-extract EXIF (free), regenerate AI metadata (~$0.02), publish/unpublish, mark featured, delete.
+**Gallery Management** (`/manage/gallery`): View/filter/search images, edit all metadata, re-extract EXIF (free), regenerate AI metadata (~$0.01), publish/unpublish, mark featured, delete.
 
 **Analytics Dashboard** (`/manage/analytics`): Engagement metrics (views, visitors, clicks, CTR), 7/30/90-day timeline chart, top images by impressions/clicks/views, category breakdown, scroll depth analysis (25/50/75/100%), average viewing duration.
 

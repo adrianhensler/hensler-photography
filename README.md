@@ -171,7 +171,7 @@ docker compose logs -f
 **Image Upload** (`/manage/upload`):
 - Drag-and-drop or file picker
 - Batch upload (max 3 concurrent)
-- Automatic AI metadata generation (~$0.02 per image)
+- Automatic AI metadata generation (~$0.01 per image)
 - Full EXIF extraction (camera, lens, exposure settings)
 - WebP variant generation (400px/800px/1200px, 90-99% size reduction)
 
@@ -451,7 +451,7 @@ gh release list
 1. **Login**: https://adrian.hensler.photography/admin/login
 2. **Navigate**: Click "Upload Images"
 3. **Select**: Drag-and-drop or click to browse
-4. **Process**: AI generates metadata (~$0.02 per image)
+4. **Process**: AI generates metadata (~$0.01 per image)
 5. **Edit**: Review and adjust title/caption/tags
 6. **Publish**: Toggle "Published" to make visible on public site
 
@@ -461,7 +461,7 @@ gh release list
 2. **Find Image**: Use search or filter by category/status
 3. **Edit**: Click pencil icon to modify metadata
 4. **Re-extract EXIF**: Free operation if metadata is wrong
-5. **Regenerate AI**: ~$0.02 if you want new AI suggestions
+5. **Regenerate AI**: ~$0.01 if you want new AI suggestions
 6. **Save**: Changes appear immediately on public site
 
 ### View Analytics
