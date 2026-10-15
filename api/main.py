@@ -16,11 +16,13 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from contextlib import asynccontextmanager
 import os
 import time
 from pathlib import Path
 
 # Import error handling and logging
+from api.database import run_migrations
 from api.errors import internal_error
 from api.logging_config import get_logger
 from api.rate_limit import limiter
@@ -32,6 +34,17 @@ from api.routes.auth import get_current_user, get_current_user_for_subdomain, Us
 # Initialize logger
 logger = get_logger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Bring the mounted database up to the current schema on every start.
+    # The image build also runs init_database(), but against the image's own
+    # /data, before the volume is mounted over it, so a deploy alone never
+    # migrated the live database. run_migrations() is idempotent.
+    run_migrations()
+    yield
+
+
 # Create FastAPI app
 app = FastAPI(
     title="Hensler Photography API",
@@ -39,6 +52,7 @@ app = FastAPI(
     version="2.0.0",
     docs_url=None,
     redoc_url=None,
+    lifespan=lifespan,
 )
 
 # Add rate limiter to app state

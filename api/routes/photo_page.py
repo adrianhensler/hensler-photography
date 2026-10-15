@@ -7,18 +7,21 @@ running JavaScript. The photographer is found from the site's hostname
 (adrian.hensler.photography -> users.subdomain = 'adrian'), so one route
 serves every portfolio site.
 
-Pages are addressed by image id for now. Ids never change, so these
-links stay valid when a photographer-approved address is added later.
+A photo is reachable at /photo/<id> always, and at /photo/<address> once
+the photographer approves an address (api/services/photo_address.py).
+After approval the id link (301) and any former addresses (302) redirect
+to the current address, so every link that was ever shared keeps working.
 """
 
 import re
 from datetime import datetime
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from api.database import get_db_connection
+from api.services.photo_address import photo_path
 
 router = APIRouter(tags=["photo-page"])
 templates = Jinja2Templates(directory="api/templates", autoescape=True)
@@ -50,7 +53,8 @@ async def _load_photo(user_id: int, image_id: int):
                 i.id, i.title, i.caption, i.alt_text, i.width, i.height, i.share_exif,
                 i.camera_make, i.camera_model, i.lens, i.focal_length,
                 i.aperture, i.shutter_speed, i.iso, i.location,
-                i.ai_generated_title, i.ai_generated_caption
+                i.ai_generated_title, i.ai_generated_caption,
+                i.slug, i.slug_approved
             FROM images i
             WHERE i.id = ? AND i.user_id = ? AND i.published = 1 AND i.deleted_at IS NULL
             """,
@@ -87,6 +91,7 @@ async def _load_photo(user_id: int, image_id: int):
 
     return {
         "id": row[0],
+        "path": photo_path(row[0], row[17], row[18]),
         "ai_note": _ai_note(title_unreviewed, bool(row[2]) and caption_unreviewed),
         "title": row[1] or "Untitled",
         "caption": row[2],
@@ -124,20 +129,52 @@ def _render(request: Request, context: dict, status_code: int = 200):
     return response
 
 
+async def _image_id_for_address(user_id: int, address: str):
+    """(image id, is_current) for an approved or former address, else (None, False)."""
+    async with get_db_connection() as db:
+        cursor = await db.execute(
+            "SELECT id FROM images WHERE user_id = ? AND slug = ? AND slug_approved = 1",
+            (user_id, address),
+        )
+        row = await cursor.fetchone()
+        if row:
+            return row[0], True
+        # Unapproved slugs never resolve: they came from AI drafts and were never public
+        cursor = await db.execute(
+            "SELECT image_id FROM image_address_redirects WHERE user_id = ? AND slug = ?",
+            (user_id, address),
+        )
+        row = await cursor.fetchone()
+    return (row[0], False) if row else (None, False)
+
+
 @router.get("/photo/{key}", response_class=HTMLResponse)
 async def photo_page(request: Request, key: str):
     host = (request.headers.get("host") or "").lower()
     match = PORTFOLIO_HOST.match(host)
     photographer = await _load_photographer(match.group(1)) if match else None
     photo = None
-    if photographer and key.isdigit():
-        photo = await _load_photo(photographer["id"], int(key))
+    is_current = False
+    if photographer:
+        if key.isdigit():
+            image_id = int(key)
+        else:
+            image_id, is_current = await _image_id_for_address(photographer["id"], key)
+        if image_id:
+            photo = await _load_photo(photographer["id"], image_id)
 
     if not photo:
         return _render(request, {"photo": None, "photographer": photographer}, 404)
 
+    # Id links move to the current address for good: an id never becomes an
+    # address. Former addresses redirect temporarily, since one can become
+    # current again, and a cached permanent redirect would then loop.
+    if photo["path"] != f"/photo/{key}" and not is_current:
+        status = 301 if key.isdigit() else 302
+        return RedirectResponse(photo["path"], status_code=status)
+
     base_url = f"https://{host}"
-    page_url = f"{base_url}/photo/{photo['id']}"
+    page_url = f"{base_url}{photo['path']}"
     # Previews only quote text a person has reviewed, and say so when the
     # title they show is still an AI draft (ADR 0004)
     description = (

@@ -93,7 +93,7 @@ test.describe('Share links', () => {
 
     await expect(share).toContainText('Link copied');
     const copied = await page.evaluate(() => navigator.clipboard.readText());
-    expect(copied).toBe(`${BASE_URL}/photo/${images[0].id}`);
+    expect(copied).toBe(`${BASE_URL}${images[0].page_path}`);
   });
 });
 
@@ -109,21 +109,23 @@ test.describe('Share fallback', () => {
 
     const field = page.locator('.glightbox-container .gshare-link');
     await expect(field).toBeVisible();
-    await expect(field).toHaveValue(`${BASE_URL}/photo/${images[0].id}`);
+    await expect(field).toHaveValue(`${BASE_URL}${images[0].page_path}`);
   });
 });
 
 test.describe('Photo pages', () => {
   test('serve the photo with link-preview tags', async ({ page }) => {
     const target = images[0];
+    // An id link lands on the approved address when there is one
     const response = await page.goto(`${BASE_URL}/photo/${target.id}`);
     expect(response.status()).toBe(200);
+    await expect(page).toHaveURL(`${BASE_URL}${target.page_path}`);
 
     await expect(page.locator('h1')).toHaveText(target.title);
     const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
     expect(ogImage).toMatch(new RegExp(`^${BASE_URL}/assets/gallery/.+\\.webp$`));
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toBe(`${BASE_URL}/photo/${target.id}`);
+    expect(canonical).toBe(`${BASE_URL}${target.page_path}`);
     await expect(page.locator('a.to-gallery')).toHaveAttribute('href', `/?photo=${target.id}`);
   });
 
@@ -138,11 +140,11 @@ test.describe('Photo pages', () => {
   test('Share copies the page link', async ({ page, context, browserName }) => {
     test.skip(browserName !== 'chromium', 'clipboard permissions are Chromium-only in Playwright');
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto(`${BASE_URL}/photo/${images[0].id}`);
+    await page.goto(`${BASE_URL}${images[0].page_path}`);
     await page.locator('#share').click();
 
     await expect(page.locator('#share')).toContainText('Link copied');
     const copied = await page.evaluate(() => navigator.clipboard.readText());
-    expect(copied).toBe(`${BASE_URL}/photo/${images[0].id}`);
+    expect(copied).toBe(`${BASE_URL}${images[0].page_path}`);
   });
 });

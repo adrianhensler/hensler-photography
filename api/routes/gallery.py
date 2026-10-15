@@ -6,6 +6,8 @@ These endpoints serve published images to the public static sites.
 
 from fastapi import APIRouter, HTTPException, Response
 
+from api.services.photo_address import photo_path
+
 router = APIRouter(prefix="/api/gallery", tags=["gallery"])
 
 
@@ -60,7 +62,8 @@ async def get_published_gallery(user_id: int, response: Response):
                 large.filename as large_filename,
                 i.ai_generated_title, i.ai_generated_caption, i.ai_generated_description,
                 i.ai_generated_alt_text, i.ai_generated_tags, i.ai_generated_category,
-                fullres.filename as full_filename
+                fullres.filename as full_filename,
+                i.slug_approved
             FROM images i
             LEFT JOIN image_variants thumb ON i.id = thumb.image_id
                 AND thumb.format = 'webp' AND thumb.size = 'thumbnail'
@@ -140,13 +143,15 @@ async def get_published_gallery(user_id: int, response: Response):
                     "aspect_ratio": row[11],
                     "share_exif": bool(row[12]),
                     "exif": exif_data,
-                    # Full-resolution, EXIF-stripped image (never the raw upload -- see comment above)
+                    # Full-resolution, EXIF-stripped (never the raw upload; see comment above)
                     "image_url": full_url,
                     # Optimized WebP variants (400px, 800px, 1200px)
                     "thumbnail_url": thumbnail_url,  # 400px for grid
                     "medium_url": medium_url,  # 800px for tablets
                     "large_url": large_url,  # 1200px for lightbox
                     "created_at": row[22],
+                    # The photo's own page: approved address, else its id
+                    "page_path": photo_path(row[0], row[2], row[33]),
                     # AI disclosure for public transparency
                     "ai_disclosure": ai_disclosure,
                 }
@@ -207,8 +212,11 @@ async def get_published_image(user_id: int, slug: str):
         variants = {v_row[0]: v_row[1] for v_row in await variant_cursor.fetchall()}
         thumbnail_filename = variants.get("thumbnail") or row[1]
         full_filename = (
-            variants.get("full") or variants.get("large") or variants.get("medium")
-            or variants.get("thumbnail") or row[1]
+            variants.get("full")
+            or variants.get("large")
+            or variants.get("medium")
+            or variants.get("thumbnail")
+            or row[1]
         )
         base_url = f"/assets/gallery/{full_filename}"
         thumbnail_url = f"/assets/gallery/{thumbnail_filename}"
