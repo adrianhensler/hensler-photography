@@ -75,6 +75,10 @@ CREATE TABLE IF NOT EXISTS images (
     available_for_sale BOOLEAN DEFAULT 0,
     share_exif BOOLEAN DEFAULT 0,
 
+    -- 1 once the photographer approves the slug as the photo's public
+    -- address (/photo/<slug>); see api/services/photo_address.py
+    slug_approved BOOLEAN DEFAULT 0,
+
     -- Display order
     sort_order INTEGER DEFAULT 0,
 
@@ -90,6 +94,17 @@ CREATE TABLE IF NOT EXISTS images (
 
     FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE(user_id, slug)
+);
+
+-- Former approved addresses, kept so shared links keep working (301 to
+-- the current address). See api/services/photo_address.py
+CREATE TABLE IF NOT EXISTS image_address_redirects (
+    user_id INTEGER NOT NULL,
+    slug TEXT NOT NULL,
+    image_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, slug),
+    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
 );
 
 -- Image variants (WebP, AVIF, multiple sizes)
@@ -312,17 +327,13 @@ def run_migrations():
         # JWT revocation support (see api/migrations/005_add_token_version.py)
         if "token_version" not in user_columns:
             print("Running migration: Adding token_version column to users table")
-            cursor.execute(
-                "ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"
-            )
+            cursor.execute("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
             print("✓ Migration complete: token_version column added")
 
         # Photographer tracking preference (see api/migrations/003_add_photographer_tracking.py)
         if "track_own_activity" not in user_columns:
             print("Running migration: Adding track_own_activity column to users table")
-            cursor.execute(
-                "ALTER TABLE users ADD COLUMN track_own_activity BOOLEAN DEFAULT 1"
-            )
+            cursor.execute("ALTER TABLE users ADD COLUMN track_own_activity BOOLEAN DEFAULT 1")
             print("✓ Migration complete: track_own_activity column added")
 
         # AI-generated content tracking (per-field)
@@ -342,6 +353,25 @@ def run_migrations():
                 cursor.execute(f"ALTER TABLE images ADD COLUMN {col} BOOLEAN DEFAULT 1")
                 print(f"✓ Migration complete: {col} column added")
 
+        # Approved public addresses (see api/services/photo_address.py). Existing
+        # slugs came from AI-drafted titles and were never public: start unapproved.
+        if "slug_approved" not in image_columns:
+            print("Running migration: Adding slug_approved column to images table")
+            cursor.execute("ALTER TABLE images ADD COLUMN slug_approved BOOLEAN DEFAULT 0")
+            print("✓ Migration complete: slug_approved column added")
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS image_address_redirects (
+                user_id INTEGER NOT NULL,
+                slug TEXT NOT NULL,
+                image_id INTEGER NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, slug),
+                FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
+            )
+            """
+        )
+
         # Soft delete support (see api/migrations/004_add_soft_delete.py)
         if "deleted_at" not in image_columns:
             print("Running migration: Adding deleted_at column to images table")
@@ -360,9 +390,7 @@ def run_migrations():
 
         if "is_photographer" not in event_columns:
             print("Running migration: Adding is_photographer column to image_events table")
-            cursor.execute(
-                "ALTER TABLE image_events ADD COLUMN is_photographer BOOLEAN DEFAULT 0"
-            )
+            cursor.execute("ALTER TABLE image_events ADD COLUMN is_photographer BOOLEAN DEFAULT 0")
             print("✓ Migration complete: is_photographer column added")
 
 

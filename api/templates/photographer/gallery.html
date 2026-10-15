@@ -376,6 +376,22 @@
             accent-color: var(--accent);
         }
 
+        /* Web address: the photo page link, approved explicitly (design.html) */
+        .address-line {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            overflow-wrap: anywhere;
+        }
+
+        .address-line strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .address-btn {
+            margin-top: 0.5rem;
+        }
+
         .readonly-input {
             background: var(--bg-primary);
             color: var(--text-secondary);
@@ -681,6 +697,13 @@
             <div class="form-group">
                 <label>Title <span id="aiIndicatorTitle" class="suggested-dot" hidden title="Suggested; edit anything"></span></label>
                 <input type="text" id="editTitle" required>
+            </div>
+
+            <div class="form-group">
+                <label>Web address <span id="addressDot" class="suggested-dot" hidden title="Not approved yet"></span></label>
+                <div class="address-line"><span id="addressHost"></span><strong id="addressValue"></strong></div>
+                <div class="form-hint" id="addressHint"></div>
+                <button type="button" id="addressBtn" class="btn btn-secondary address-btn" hidden>Approve address</button>
             </div>
 
             <div class="form-group">
@@ -1191,9 +1214,10 @@
             }
         }
 
-        // Set by the "Approve text" button so the one submit handler saves, then approves.
-        let approveOnSave = false;
-        document.getElementById('approveEditBtn').addEventListener('click', () => {
+        // Set by "Approve text" / "Approve address" so the one submit handler
+        // saves first, then approves: 'text', 'address', or null for a plain save.
+        let approveOnSave = null;
+        function saveThenApprove(what) {
             const form = document.getElementById('editForm');
             // Blocked native validation dispatches no submit event, which would
             // leave the flag armed for a later plain Save; check first.
@@ -1201,10 +1225,47 @@
                 form.reportValidity();
                 return;
             }
-            approveOnSave = true;
+            approveOnSave = what;
             form.requestSubmit();
-            approveOnSave = false; // the handler reads it synchronously before any await
-        });
+            approveOnSave = null; // the handler reads it synchronously before any await
+        }
+        document.getElementById('approveEditBtn').addEventListener('click', () => saveThenApprove('text'));
+        document.getElementById('addressBtn').addEventListener('click', () => saveThenApprove('address'));
+
+        // The address comes from the saved title, so approving saves first and
+        // the server makes the address from what was just saved
+        function renderAddress(address) {
+            const host = `${window.location.host}/photo/`;
+            const value = document.getElementById('addressValue');
+            const hint = document.getElementById('addressHint');
+            const button = document.getElementById('addressBtn');
+            document.getElementById('addressHost').textContent = host;
+            document.getElementById('addressDot').hidden = !address || address.approved;
+
+            if (!address) {
+                value.textContent = '';
+                hint.textContent = '';
+                button.hidden = true;
+            } else if (!address.approved) {
+                value.textContent = address.from_title;
+                hint.textContent = 'The link people use to find and share this photo, made from the title. '
+                    + 'Check the title, then approve: this approves the title too, '
+                    + 'and once approved the address stays the same. '
+                    + 'Until then, links use the photo\'s number.';
+                button.textContent = 'Approve address';
+                button.hidden = false;
+            } else if (address.from_title !== address.address) {
+                value.textContent = address.address;
+                hint.textContent = `The title has changed. Updating gives ${host}${address.from_title}; `
+                    + 'links to the current address keep working.';
+                button.textContent = 'Update address to match title';
+                button.hidden = false;
+            } else {
+                value.textContent = address.address;
+                hint.textContent = 'Approved. It stays the same even if you change the title later.';
+                button.hidden = true;
+            }
+        }
 
         function syncApproveEditButton() {
             const anyDrafted = ['Title', 'Caption', 'AltText', 'Tags', 'Category']
@@ -1349,6 +1410,7 @@
                 document.getElementById('aiIndicatorTags').hidden = !aiDisclosure.tags;
                 document.getElementById('aiIndicatorCategory').hidden = !aiDisclosure.category;
                 syncApproveEditButton();
+                renderAddress(fullImage.address);
 
                 // Technical metadata (from nested exif object)
                 const exif = fullImage.exif || {};
@@ -1383,6 +1445,7 @@
                 document.getElementById('editTags').value = image.tags || '';
                 document.getElementById('editCategory').value = image.category || '';
                 document.getElementById('editFeatured').checked = image.featured || false;
+                renderAddress(null);
                 document.getElementById('editModal').classList.add('show');
             }
         }
@@ -1397,7 +1460,7 @@
             e.preventDefault();
             // Consume the flag up front so a failed save can't leave it armed.
             const approving = approveOnSave;
-            approveOnSave = false;
+            approveOnSave = null;
 
             const imageId = document.getElementById('editImageId').value;
             const metadata = {
@@ -1451,13 +1514,23 @@
                 if (!exifResponse.ok) throw new Error('Failed to save EXIF sharing setting');
 
                 // "Approve text" saves first, then marks every drafted field reviewed
-                if (approving) {
+                if (approving === 'text') {
                     const approveResponse = await fetch(`/api/images/${imageId}/approve`, {
                         method: 'POST',
                         headers: csrfHeaders(),
                         credentials: 'include'
                     });
                     if (!approveResponse.ok) throw new Error('Failed to approve the text');
+                }
+
+                // "Approve address" saves first, then sets the address from that title
+                if (approving === 'address') {
+                    const addressResponse = await fetch(`/api/images/${imageId}/address`, {
+                        method: 'POST',
+                        headers: csrfHeaders(),
+                        credentials: 'include'
+                    });
+                    if (!addressResponse.ok) throw new Error('Failed to approve the address');
                 }
 
                 // Update local data
@@ -1472,7 +1545,8 @@
                 closeEditModal();
                 populateTagFilter();
                 applyFilters();
-                showToast('success', approving ? 'Saved and approved' : 'Changes saved');
+                const savedMessages = { text: 'Saved and approved', address: 'Saved; title and address approved' };
+                showToast('success', savedMessages[approving] || 'Changes saved');
 
             } catch (error) {
                 console.error('Save error:', error);

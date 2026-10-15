@@ -447,10 +447,10 @@
   }
 
   // Shared links go to the photo's own page, which link previews can read
-  // (the gallery page can't show a per-photo preview). They name the photo
-  // by id, not title, so they keep working when a title is corrected.
-  function photoShareURL(imageId) {
-    return `${window.location.origin}/photo/${imageId}`;
+  // (the gallery page can't show a per-photo preview): its approved address,
+  // else its id. Both keep working if the address changes later.
+  function photoShareURL(imageData) {
+    return `${window.location.origin}${imageData.page_path || `/photo/${imageData.id}`}`;
   }
 
   // Same chrome as the fullscreen toggle; injected once per lightbox open
@@ -478,7 +478,7 @@
   async function sharePhoto(btn) {
     const imageData = galleryLightbox ? renderedData[galleryLightbox.index] : null;
     if (!imageData) return;
-    const url = photoShareURL(imageData.id);
+    const url = photoShareURL(imageData);
 
     if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
       try {

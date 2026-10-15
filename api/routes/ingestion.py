@@ -24,6 +24,7 @@ from api.errors import (
 from api.logging_config import get_logger
 from api.models import ImageMetadataUpdate
 from api.routes.auth import get_current_user, User
+from api.services.photo_address import address_info, approve_address
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -820,6 +821,34 @@ async def toggle_featured(
     return {"success": True, "image_id": image_id, "featured": featured}
 
 
+@router.post("/{image_id}/address")
+async def approve_photo_address(
+    image_id: int,
+    current_user: User = Depends(get_current_user),
+    _csrf: str = Depends(verify_csrf_token),
+):
+    """
+    Approve the photo's public address, made from its saved title.
+
+    Also used to update an approved address to match a changed title; the
+    old address keeps working as a redirect. Idempotent.
+    """
+    await verify_image_ownership(image_id, current_user)
+
+    from api.database import get_db_connection
+
+    async with get_db_connection() as db:
+        change = await approve_address(db, image_id)
+        await db.commit()
+        address = await address_info(db, image_id)
+
+    logger.info(
+        f"Photo address approved: {image_id}",
+        extra={"context": {"image_id": image_id, **change, "user_id": current_user.id}},
+    )
+    return {"success": True, "image_id": image_id, "address": address}
+
+
 # Generic path parameter routes come AFTER specific literal paths
 @router.get("/{image_id}")
 async def get_image(image_id: int, current_user: User = Depends(get_current_user)):
@@ -847,6 +876,8 @@ async def get_image(image_id: int, current_user: User = Depends(get_current_user
 
         if not row:
             raise HTTPException(404, "Image not found")
+
+        address = await address_info(db, image_id)
 
         # Get variants
         cursor = await db.execute(
@@ -886,6 +917,8 @@ async def get_image(image_id: int, current_user: User = Depends(get_current_user
             "location": row[22],
         },
         "dimensions": {"width": row[23], "height": row[24], "aspect_ratio": row[25]},
+        # Public page address: approved by the photographer, or /photo/<id> until then
+        "address": address,
         "created_at": row[26],
         "updated_at": row[27],
         # AI disclosure: indicates which fields are AI-generated vs human-reviewed
