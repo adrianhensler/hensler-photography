@@ -4,6 +4,8 @@ photographer approves an address made from the title; after that the id
 link and any former addresses redirect (301) to the current address.
 """
 
+from unittest.mock import patch
+
 import pytest
 
 from api.database import get_db_connection
@@ -92,6 +94,17 @@ async def test_approving_the_address_approves_the_title(client, photos, auth_hea
     assert disclosure["caption"] is True
 
 
+def test_app_startup_runs_migrations():
+    # A deploy rebuilds the image but the live database is a mounted volume;
+    # migrations must run when the app starts, not only at image build
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+
+    with patch("api.main.run_migrations") as migrate, TestClient(app):
+        migrate.assert_called_once()
+
+
 @pytest.mark.asyncio
 async def test_approved_address_is_fixed_until_updated(client, photos, auth_headers_adrian):
     await client.post("/api/images/1/address", headers=auth_headers_adrian)
@@ -105,8 +118,9 @@ async def test_approved_address_is_fixed_until_updated(client, photos, auth_head
     # Updating moves it; the old address keeps working as a redirect
     await client.post("/api/images/1/address", headers=auth_headers_adrian)
     assert await _redirects() == [("adrian-test-image", 1)]
+    # Temporary: a former address can become current again (no cached loops)
     old = await client.get("/photo/adrian-test-image", headers=ADRIAN_SITE)
-    assert old.status_code == 301
+    assert old.status_code == 302
     assert old.headers["location"] == "/photo/heron-at-dawn"
     assert (await client.get("/photo/heron-at-dawn", headers=ADRIAN_SITE)).status_code == 200
 

@@ -8,7 +8,7 @@ manager (images.slug_approved = 1). Until then pages use /photo/<id>.
 
 An approved address is fixed: editing the title later does not change it.
 The photographer can choose to update it to match the title; the old
-address is kept in image_address_redirects and keeps working (301).
+address is kept in image_address_redirects and keeps working (302).
 """
 
 from slugify import slugify

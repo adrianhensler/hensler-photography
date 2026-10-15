@@ -9,8 +9,8 @@ serves every portfolio site.
 
 A photo is reachable at /photo/<id> always, and at /photo/<address> once
 the photographer approves an address (api/services/photo_address.py).
-After approval the id link and any former addresses 301 to the current
-address, so every link that was ever shared keeps working.
+After approval the id link (301) and any former addresses (302) redirect
+to the current address, so every link that was ever shared keeps working.
 """
 
 import re
@@ -166,9 +166,12 @@ async def photo_page(request: Request, key: str):
     if not photo:
         return _render(request, {"photo": None, "photographer": photographer}, 404)
 
-    # Id links and former addresses move to the current address for good
+    # Id links move to the current address for good: an id never becomes an
+    # address. Former addresses redirect temporarily, since one can become
+    # current again, and a cached permanent redirect would then loop.
     if photo["path"] != f"/photo/{key}" and not is_current:
-        return RedirectResponse(photo["path"], status_code=301)
+        status = 301 if key.isdigit() else 302
+        return RedirectResponse(photo["path"], status_code=status)
 
     base_url = f"https://{host}"
     page_url = f"{base_url}{photo['path']}"
