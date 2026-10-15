@@ -377,19 +377,42 @@
         }
 
         /* Web address: the photo page link, approved explicitly (design.html) */
-        .address-line {
+        .address-field {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+
+        .address-host {
             font-size: 0.9rem;
             color: var(--text-secondary);
             overflow-wrap: anywhere;
         }
 
-        .address-line strong {
-            color: var(--text-primary);
-            font-weight: 500;
+        .form-group .address-field input {
+            flex: 1 1 14rem;
+            width: auto;
+            min-width: 0;
         }
 
-        .address-btn {
+        .address-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
             margin-top: 0.5rem;
+        }
+
+        .address-actions .link-button {
+            background: none;
+            border: none;
+            padding: 0;
+            font: inherit;
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-decoration: underline;
+            cursor: pointer;
         }
 
         .readonly-input {
@@ -700,10 +723,16 @@
             </div>
 
             <div class="form-group">
-                <label>Web address <span id="addressDot" class="suggested-dot" hidden title="Not approved yet"></span></label>
-                <div class="address-line"><span id="addressHost"></span><strong id="addressValue"></strong></div>
+                <label for="editAddress">Web address <span id="addressDot" class="suggested-dot" hidden title="Not approved yet"></span></label>
+                <div class="address-field">
+                    <span id="addressHost" class="address-host"></span>
+                    <input type="text" id="editAddress" spellcheck="false" autocomplete="off" maxlength="200" aria-describedby="addressHint">
+                </div>
                 <div class="form-hint" id="addressHint"></div>
-                <button type="button" id="addressBtn" class="btn btn-secondary address-btn" hidden>Approve address</button>
+                <div class="address-actions">
+                    <button type="button" id="addressBtn" class="btn btn-secondary" hidden>Approve address</button>
+                    <button type="button" id="addressFromTitleBtn" class="link-button" hidden>Use the title</button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -1232,40 +1261,77 @@
         document.getElementById('approveEditBtn').addEventListener('click', () => saveThenApprove('text'));
         document.getElementById('addressBtn').addEventListener('click', () => saveThenApprove('address'));
 
-        // The address comes from the saved title, so approving saves first and
-        // the server makes the address from what was just saved
-        function renderAddress(address) {
-            const host = `${window.location.host}/photo/`;
-            const value = document.getElementById('addressValue');
+        // Web address. It starts from the title and follows title edits until
+        // the photographer types in it; then the typed text is used as is.
+        // The server normalizes and has the final say (a taken typed address
+        // is refused, not renumbered); toAddress() only previews that form.
+        let addressInfo = null;    // from GET /api/images/{id}
+        let addressTyped = false;  // the photographer has typed their own
+
+        function toAddress(text) {
+            return (text || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+                .slice(0, 80).replace(/-+$/, '');
+        }
+
+        function renderAddress(info) {
+            addressInfo = info;
+            addressTyped = false;
+            document.getElementById('addressHost').textContent = `${window.location.host}/photo/`;
+            document.getElementById('editAddress').value =
+                !info ? '' : (info.approved ? info.address : info.from_title);
+            syncAddressControls();
+        }
+
+        function syncAddressControls() {
+            const info = addressInfo;
+            const input = document.getElementById('editAddress');
             const hint = document.getElementById('addressHint');
             const button = document.getElementById('addressBtn');
-            document.getElementById('addressHost').textContent = host;
-            document.getElementById('addressDot').hidden = !address || address.approved;
+            const fromTitle = document.getElementById('addressFromTitleBtn');
+            const typed = toAddress(input.value);
+            const titleAddress = toAddress(document.getElementById('editTitle').value);
 
-            if (!address) {
-                value.textContent = '';
+            input.disabled = !info;
+            document.getElementById('addressDot').hidden = !info || info.approved;
+            fromTitle.hidden = !info || typed === titleAddress;
+            button.hidden = !info || (info.approved && typed === info.address);
+            if (!info) {
                 hint.textContent = '';
-                button.hidden = true;
-            } else if (!address.approved) {
-                value.textContent = address.from_title;
-                hint.textContent = 'The link people use to find and share this photo, made from the title. '
-                    + 'Check the title, then approve: this approves the title too, '
-                    + 'and once approved the address stays the same. '
-                    + 'Until then, links use the photo\'s number.';
+            } else if (!info.approved) {
                 button.textContent = 'Approve address';
-                button.hidden = false;
-            } else if (address.from_title !== address.address) {
-                value.textContent = address.address;
-                hint.textContent = `The title has changed. Updating gives ${host}${address.from_title}; `
-                    + 'links to the current address keep working.';
-                button.textContent = 'Update address to match title';
-                button.hidden = false;
+                hint.textContent = 'The link people use to find and share this photo. '
+                    + 'It starts from the title; you can change it. '
+                    + 'Approving also approves the title, and once approved the address stays the same. '
+                    + 'Until then, links use the photo\'s number.';
+            } else if (typed !== info.address) {
+                button.textContent = 'Change address';
+                hint.textContent = `Links to ${window.location.host}/photo/${info.address} will keep working.`;
             } else {
-                value.textContent = address.address;
-                hint.textContent = 'Approved. It stays the same even if you change the title later.';
-                button.hidden = true;
+                hint.textContent = 'Approved. It stays the same even if you change the title. '
+                    + 'Type a new address to change it.';
             }
         }
+
+        document.getElementById('editAddress').addEventListener('input', () => {
+            addressTyped = true;
+            syncAddressControls();
+        });
+        document.getElementById('editAddress').addEventListener('blur', (e) => {
+            if (addressTyped) e.target.value = toAddress(e.target.value);
+            syncAddressControls();
+        });
+        document.getElementById('editTitle').addEventListener('input', (e) => {
+            if (addressInfo && !addressInfo.approved && !addressTyped) {
+                document.getElementById('editAddress').value = toAddress(e.target.value);
+            }
+            syncAddressControls();
+        });
+        document.getElementById('addressFromTitleBtn').addEventListener('click', () => {
+            document.getElementById('editAddress').value = toAddress(document.getElementById('editTitle').value);
+            addressTyped = false;  // let the server make it from the saved title
+            syncAddressControls();
+        });
 
         function syncApproveEditButton() {
             const anyDrafted = ['Title', 'Caption', 'AltText', 'Tags', 'Category']
@@ -1523,14 +1589,23 @@
                     if (!approveResponse.ok) throw new Error('Failed to approve the text');
                 }
 
-                // "Approve address" saves first, then sets the address from that title
+                // "Approve address" saves first, then sets the typed address,
+                // or one made from the just-saved title. If the address is
+                // refused (taken), the edits are still saved: say so and keep
+                // the editor open to try another.
+                let addressRefusal = null;
                 if (approving === 'address') {
+                    const typedAddress = addressTyped ? document.getElementById('editAddress').value : null;
                     const addressResponse = await fetch(`/api/images/${imageId}/address`, {
                         method: 'POST',
-                        headers: csrfHeaders(),
-                        credentials: 'include'
+                        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+                        credentials: 'include',
+                        body: JSON.stringify(typedAddress ? { address: typedAddress } : {})
                     });
-                    if (!addressResponse.ok) throw new Error('Failed to approve the address');
+                    if (!addressResponse.ok) {
+                        const body = await addressResponse.json().catch(() => ({}));
+                        addressRefusal = (body.error && body.error.user_message) || 'it could not be approved';
+                    }
                 }
 
                 // Update local data
@@ -1540,11 +1615,17 @@
                     image.share_exif = shareEXIF;
                 }
                 await refreshReviewState(imageId);
+                populateTagFilter();
+                applyFilters();
+
+                if (addressRefusal) {
+                    showToast('error', `Saved, but the address was not approved: ${addressRefusal}`);
+                    document.getElementById('editAddress').focus();
+                    return;
+                }
 
                 // Success! Close modal and show confirmation
                 closeEditModal();
-                populateTagFilter();
-                applyFilters();
                 const savedMessages = { text: 'Saved and approved', address: 'Saved; title and address approved' };
                 showToast('success', savedMessages[approving] || 'Changes saved');
 

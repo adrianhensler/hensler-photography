@@ -170,3 +170,60 @@ async def test_address_on_the_wrong_site_is_not_found(client, photos, auth_heade
         "/photo/adrian-test-image", headers={"Host": "liam.hensler.photography"}
     )
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_typed_address_is_normalized_and_used(client, photos, auth_headers_adrian):
+    response = await client.post(
+        "/api/images/1/address",
+        headers=auth_headers_adrian,
+        json={"address": "  Dingle Tower, Winter Fog "},
+    )
+    assert response.status_code == 200
+    assert response.json()["address"]["address"] == "dingle-tower-winter-fog"
+    assert (
+        await client.get("/photo/dingle-tower-winter-fog", headers=ADRIAN_SITE)
+    ).status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_typed_address_taken_by_another_photo_is_refused(client, photos, auth_headers_adrian):
+    async with get_db_connection() as db:
+        await db.execute(
+            "INSERT INTO images (id, user_id, filename, slug, title, published, slug_approved) "
+            "VALUES (3, 1, 'other.jpg', 'heron-at-dawn', 'Heron at Dawn', 1, 1)"
+        )
+        await db.commit()
+
+    response = await client.post(
+        "/api/images/1/address", headers=auth_headers_adrian, json={"address": "Heron at Dawn"}
+    )
+    assert response.status_code == 409
+    info = (await client.get("/api/images/1", headers=auth_headers_adrian)).json()["address"]
+    assert info["approved"] is False
+
+
+@pytest.mark.asyncio
+async def test_changing_an_approved_address_by_typing(client, photos, auth_headers_adrian):
+    await client.post("/api/images/1/address", headers=auth_headers_adrian)
+    await client.post(
+        "/api/images/1/address", headers=auth_headers_adrian, json={"address": "boardwalk"}
+    )
+
+    assert await _redirects() == [("adrian-test-image", 1)]
+    old = await client.get("/photo/adrian-test-image", headers=ADRIAN_SITE)
+    assert old.headers["location"] == "/photo/boardwalk"
+
+
+@pytest.mark.asyncio
+async def test_typed_address_rejects_bad_input(client, photos, auth_headers_adrian):
+    for body in ({"address": 42}, {"address": "x" * 201}):
+        response = await client.post(
+            "/api/images/1/address", headers=auth_headers_adrian, json=body
+        )
+        assert response.status_code == 400
+    # Nothing usable typed: falls back to the title, and digits never pass as an id
+    response = await client.post(
+        "/api/images/1/address", headers=auth_headers_adrian, json={"address": "2026"}
+    )
+    assert response.json()["address"]["address"] == "photo-2026"

@@ -6,9 +6,11 @@ Those were never public and are often wrong, so a photo page is reachable
 by its address only once the photographer approves it in the gallery
 manager (images.slug_approved = 1). Until then pages use /photo/<id>.
 
-An approved address is fixed: editing the title later does not change it.
-The photographer can choose to update it to match the title; the old
-address is kept in image_address_redirects and keeps working (302).
+The address starts as the URL form of the title, but the photographer can
+type their own; either way it is normalized to URL form (lowercase words
+joined by hyphens). An approved address is fixed: editing the title later
+does not change it. The photographer can change it; the old address is kept
+in image_address_redirects and keeps working (302).
 """
 
 from slugify import slugify
@@ -16,8 +18,12 @@ from slugify import slugify
 MAX_LENGTH = 80
 
 
+class AddressTaken(ValueError):
+    """A typed address already belongs to another of the photographer's photos."""
+
+
 def address_from_title(title: str, image_id: int) -> str:
-    """URL form of a title, e.g. 'Dingle Tower in Fog' -> 'dingle-tower-in-fog'."""
+    """URL form of a title or typed address: 'Dingle Tower in Fog' -> 'dingle-tower-in-fog'."""
     base = slugify(title or "", max_length=MAX_LENGTH, word_boundary=True)
     if not base:
         return f"photo-{image_id}"
@@ -69,20 +75,29 @@ async def address_info(db, image_id: int) -> dict:
     }
 
 
-async def approve_address(db, image_id: int) -> dict:
+async def approve_address(db, image_id: int, requested: str = None) -> dict:
     """
-    Set the address from the saved title and mark it approved.
+    Set the address and mark it approved: the typed `requested` address, or
+    the saved title's URL form when none is given.
 
-    Approving the address confirms the title it is made from, so the title
-    counts as reviewed too (ADR 0004). Idempotent: approving again with the
-    same title changes nothing. When an approved address changes, the old
-    one becomes a redirect. Caller commits.
+    A typed address is used exactly (after normalizing), so if another photo
+    holds it, AddressTaken is raised rather than quietly numbering it. One
+    made from the title is numbered if taken.
+
+    Approving happens in the editor beside the title, so the title counts as
+    reviewed too (ADR 0004). Idempotent. When an approved address changes,
+    the old one becomes a redirect. Caller commits.
     """
     cursor = await db.execute(
         "SELECT user_id, title, slug, slug_approved FROM images WHERE id = ?", (image_id,)
     )
     user_id, title, old_slug, was_approved = await cursor.fetchone()
-    new_slug = await available_address(db, user_id, image_id, title)
+    if requested and requested.strip():
+        new_slug = address_from_title(requested, image_id)
+        if await _taken(db, user_id, image_id, new_slug):
+            raise AddressTaken(new_slug)
+    else:
+        new_slug = await available_address(db, user_id, image_id, title)
 
     if was_approved and old_slug != new_slug:
         await db.execute(
