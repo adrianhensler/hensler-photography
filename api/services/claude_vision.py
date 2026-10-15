@@ -26,6 +26,21 @@ from api.services.image_processor import generate_ai_analysis_image, cleanup_tem
 # Initialize logger
 logger = get_logger(__name__)
 
+# Model and settings chosen in the 2026-10-12 comparison
+# (docs/reviews/tagging-model-comparisons/2026-10-12.md): steadiest of the
+# three, at medium effort. Thinking is always on for this model and counts
+# toward max_tokens, so the cap leaves room for it as well as the JSON.
+MODEL = "claude-sonnet-5-5"
+EFFORT = "medium"
+MAX_TOKENS = 16000
+
+# USD per 1M tokens, by the model that actually answered (a refusal fallback
+# can serve the request on another model)
+PRICING_PER_MTOK = {
+    "claude-sonnet-5-5": (2.00, 10.00),
+    "claude-sonnet-5": (2.00, 10.00),
+}
+
 
 def get_analysis_prompt(style: str = "balanced") -> str:
     """
@@ -272,19 +287,24 @@ async def analyze_image(
             },
         )
 
-        # Initialize Claude client
-        client = anthropic.Anthropic(api_key=api_key)
+        # Async client: this runs inside the request handler's event loop
+        client = anthropic.AsyncAnthropic(api_key=api_key)
 
         # Get analysis prompt based on photographer's style preference
         prompt = get_analysis_prompt(style)
 
         logger.info(f"Using AI style: {style}", extra={"context": {**context, "ai_style": style}})
 
-        # Call Claude Vision API
-        model_name = "claude-sonnet-4-6"
-        message = client.messages.create(
-            model=model_name,
-            max_tokens=1024,
+        # Call Claude Vision API. "fallbacks: default" lets the API retry a
+        # safety decline on another model inside the same call; it only applies
+        # to categories photo captions are unlikely to hit, and costs nothing
+        # otherwise.
+        message = await client.beta.messages.create(
+            model=MODEL,
+            max_tokens=MAX_TOKENS,
+            output_config={"effort": EFFORT},
+            betas=["server-side-fallback-2026-07-01"],
+            fallbacks="default",
             messages=[
                 {
                     "role": "user",
@@ -303,13 +323,13 @@ async def analyze_image(
             ],
         )
 
-        # Calculate API cost
+        # Calculate API cost (output tokens include thinking)
+        model_name = message.model
         input_tokens = message.usage.input_tokens
         output_tokens = message.usage.output_tokens
-
-        # Claude Sonnet 4.6 pricing
-        input_cost_per_mtok = 3.00   # $3 per 1M input tokens
-        output_cost_per_mtok = 15.00  # $15 per 1M output tokens
+        input_cost_per_mtok, output_cost_per_mtok = PRICING_PER_MTOK.get(
+            model_name, PRICING_PER_MTOK[MODEL]
+        )
 
         cost_usd = (input_tokens / 1_000_000) * input_cost_per_mtok + (
             output_tokens / 1_000_000
@@ -352,14 +372,33 @@ async def analyze_image(
         except Exception as e:
             logger.warning(f"Failed to log AI cost: {e}", extra={"context": context})
 
-        # Parse response
-        response_text = message.content[0].text.strip()
+        # A decline or a cut-off reply is HTTP 200 with no usable JSON: stop
+        # before parsing (the fallback chain already ran for a decline)
+        if message.stop_reason in ("refusal", "max_tokens"):
+            category = getattr(message.stop_details, "category", None)
+            logger.error(
+                f"Claude did not finish the analysis: stop_reason={message.stop_reason}",
+                extra={
+                    "context": {
+                        **context,
+                        "stop_reason": message.stop_reason,
+                        "category": category,
+                    },
+                    "error_code": "PROCESSING_AI_FAILED",
+                },
+            )
+            fallback = _get_fallback_metadata(image_path)
+            error = claude_api_error(
+                error_message=f"AI analysis stopped early ({message.stop_reason})",
+                context={**context, "stop_reason": message.stop_reason},
+            )
+            return fallback, error
 
-        # DEBUG: Log raw response to investigate alt_text issue
-        logger.info(
-            f"Raw Claude response (first 800 chars): {response_text[:800]}",
-            extra={"context": context},
-        )
+        # Parse response. Read text blocks by type: the reply can begin with a
+        # thinking block (empty text by default)
+        response_text = "".join(
+            block.text for block in message.content if block.type == "text"
+        ).strip()
 
         # Extract JSON from response (Claude sometimes adds markdown formatting)
         if response_text.startswith("```json"):
@@ -484,6 +523,7 @@ def _get_fallback_metadata(image_path: str) -> Dict[str, Any]:
         "title": Path(image_path).stem.replace("_", " ").replace("-", " ").title(),
         "caption": "AI analysis unavailable",
         "description": "",
+        "alt_text": "",
         "tags": [],
         "category": "uncategorized",
     }

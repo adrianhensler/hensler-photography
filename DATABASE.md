@@ -172,7 +172,7 @@ CREATE TABLE ai_costs (
 **Cost Calculation:**
 - Input tokens: $15 per 1M tokens
 - Output tokens: $75 per 1M tokens
-- Typical image analysis: ~$0.02-0.04 per image
+- Typical image analysis: ~$0.01 per image (Claude Sonnet 5.5, since 2026-10-15)
 
 **Usage Example:**
 ```sql
