@@ -97,6 +97,22 @@ test.describe('Share links', () => {
   });
 });
 
+test.describe('Share fallback', () => {
+  test('shows the photo page link when copying is refused', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: () => Promise.reject(new Error('denied')) },
+      });
+    });
+    await page.goto(`${BASE_URL}/?photo=${images[0].id}`);
+    await page.locator('.glightbox-container .gshare').click();
+
+    const field = page.locator('.glightbox-container .gshare-link');
+    await expect(field).toBeVisible();
+    await expect(field).toHaveValue(`${BASE_URL}/photo/${images[0].id}`);
+  });
+});
+
 test.describe('Photo pages', () => {
   test('serve the photo with link-preview tags', async ({ page }) => {
     const target = images[0];

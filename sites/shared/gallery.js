@@ -474,7 +474,7 @@
   }
 
   // Phones get their own share sheet; everywhere else the link is copied.
-  // If copying is refused, the address bar already holds the same link.
+  // If copying is refused, the link is shown for the visitor to copy.
   async function sharePhoto(btn) {
     const imageData = galleryLightbox ? renderedData[galleryLightbox.index] : null;
     if (!imageData) return;
@@ -495,8 +495,29 @@
       trackEvent('share_click', imageData.id, { method: 'copy' });
       showShareFeedback(btn, 'Link copied');
     } catch (error) {
-      showShareFeedback(btn, 'Copy the link from the address bar');
+      showManualShareLink(btn, url);
     }
+  }
+
+  // Selected, read-only copy of the photo page link under the Share button.
+  // The address bar can't stand in: it holds the gallery link, whose
+  // previews don't show the photo.
+  function showManualShareLink(btn, url) {
+    const container = btn.parentNode;
+    let field = container.querySelector('.gshare-link');
+    if (!field) {
+      field = document.createElement('input');
+      field.className = 'gshare-link';
+      field.type = 'text';
+      field.readOnly = true;
+      field.setAttribute('aria-label', 'Link to this photo');
+      field.addEventListener('click', (e) => e.stopPropagation());
+      container.appendChild(field);
+    }
+    field.value = url;
+    field.focus();
+    field.select();
+    showShareFeedback(btn, 'Copy this link');
   }
 
   function showShareFeedback(btn, message) {

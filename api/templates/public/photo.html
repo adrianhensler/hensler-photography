@@ -203,9 +203,9 @@
       <h1>{{ photo.title }}</h1>
 {% if photo.caption %}
       <p class="caption">{{ photo.caption }}</p>
-{% if photo.caption_unreviewed %}
-      <p class="ai-note">Description drafted by AI, not yet reviewed.</p>
 {% endif %}
+{% if photo.ai_note %}
+      <p class="ai-note">{{ photo.ai_note }}</p>
 {% endif %}
 {% if photo.exif %}
       <p class="exif">{{ photo.exif }}</p>
