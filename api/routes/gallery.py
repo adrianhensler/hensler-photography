@@ -10,6 +10,32 @@ from api.services.photo_address import photo_path
 
 router = APIRouter(prefix="/api/gallery", tags=["gallery"])
 
+# For each display size, the generated variants to use, best first. A size is
+# missing only when the original is smaller than it (the processor never
+# upscales), so the original-size `full` variant is the right stand-in for
+# the larger sizes.
+VARIANT_FALLBACKS = {
+    "thumbnail": ("thumbnail", "medium", "large", "full"),
+    "medium": ("medium", "full", "large", "thumbnail"),
+    "large": ("large", "full", "medium", "thumbnail"),
+    "full": ("full", "large", "medium", "thumbnail"),
+}
+
+
+def pick_variants(variants: dict, original_filename: str) -> dict:
+    """
+    Filename to serve for each display size, from {size: filename}.
+
+    Generated WebP variants are EXIF-stripped; the raw upload still carries
+    whatever EXIF/GPS the camera embedded, regardless of share_exif. So the
+    raw upload is used only for a legacy row with no variants at all.
+    """
+    picked = {}
+    for size, preferences in VARIANT_FALLBACKS.items():
+        available = (variants.get(p) for p in preferences)
+        picked[size] = next((name for name in available if name), original_filename)
+    return picked
+
 
 @router.get("/published")
 async def get_published_gallery(user_id: int, response: Response):
@@ -83,17 +109,16 @@ async def get_published_gallery(user_id: int, response: Response):
 
         images = []
         for row in rows:
-            # Get variant filenames. thumbnail/medium/large fall back to the
-            # original only for legacy pre-variant rows (rare, harmless --
-            # low-res anyway). `full` NEVER falls back to the raw original:
-            # that file still carries whatever EXIF/GPS the camera embedded,
-            # regardless of share_exif, so falling back through generated
-            # (EXIF-stripped) variants instead is a hard privacy requirement.
+            # Generated variants only; see pick_variants
             original_filename = row[1]
-            thumbnail_filename = row[23] or original_filename
-            medium_filename = row[24] or original_filename
-            large_filename = row[25] or original_filename
-            full_filename = row[32] or large_filename or medium_filename or thumbnail_filename
+            picked = pick_variants(
+                {"thumbnail": row[23], "medium": row[24], "large": row[25], "full": row[32]},
+                original_filename,
+            )
+            thumbnail_filename = picked["thumbnail"]
+            medium_filename = picked["medium"]
+            large_filename = picked["large"]
+            full_filename = picked["full"]
 
             # Construct URLs
             thumbnail_url = f"/assets/gallery/{thumbnail_filename}"
@@ -202,22 +227,15 @@ async def get_published_image(user_id: int, slug: str):
                 detail=f"Published image with slug '{slug}' not found for user {user_id}",
             )
 
-        # Never serve the raw upload -- it carries whatever EXIF/GPS the
-        # camera embedded regardless of share_exif. Fall back through
-        # generated (EXIF-stripped) variants instead; see get_published_gallery.
+        # Never serve the raw upload while a variant exists; see pick_variants
         variant_cursor = await db.execute(
             "SELECT size, filename FROM image_variants WHERE image_id = ? AND format = 'webp'",
             (row[0],),
         )
         variants = {v_row[0]: v_row[1] for v_row in await variant_cursor.fetchall()}
-        thumbnail_filename = variants.get("thumbnail") or row[1]
-        full_filename = (
-            variants.get("full")
-            or variants.get("large")
-            or variants.get("medium")
-            or variants.get("thumbnail")
-            or row[1]
-        )
+        picked = pick_variants(variants, row[1])
+        thumbnail_filename = picked["thumbnail"]
+        full_filename = picked["full"]
         base_url = f"/assets/gallery/{full_filename}"
         thumbnail_url = f"/assets/gallery/{thumbnail_filename}"
 
