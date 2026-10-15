@@ -13,7 +13,7 @@ Last reviewed: 2026-09-28.
 | Piece | State |
 |---|---|
 | Print inquiries | A mailto link on the About page (`sites/adrian/about.html`, `#print-inquiry`). Clicks are already tracked as `inquiry_click` events (`surface: about_prints`) through `/api/track`; 2 recorded so far. No inquiry form, and nothing ties an inquiry to a specific photo. |
-| Per-image pages | Not built. `GET /api/gallery/published/{slug}` already returns one published image by slug, and every image has a unique slug per photographer. |
+| Per-image pages | Built at `/photo/{id}` (server-rendered, with link-preview tags) and used by the Share button. Addresses from photographer-approved titles are next; until then pages use the image id, which never changes. |
 | Sale flag | `images.available_for_sale` exists, defaults to 0, and nothing sets or reads it yet. |
 | Products and orders | `products` (image, type, size, `price_cents`) and `orders` (Stripe payment id, email, shipping address, status) tables exist in `api/database.py` with no routes using them. |
 | Print quality | Upload computes recommended print sizes from resolution (300 and 200 DPI). Not stored or shown publicly. |

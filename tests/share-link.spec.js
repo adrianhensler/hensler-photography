@@ -93,6 +93,56 @@ test.describe('Share links', () => {
 
     await expect(share).toContainText('Link copied');
     const copied = await page.evaluate(() => navigator.clipboard.readText());
-    expect(copied).toBe(`${BASE_URL}/?photo=${images[0].id}`);
+    expect(copied).toBe(`${BASE_URL}/photo/${images[0].id}`);
+  });
+});
+
+test.describe('Share fallback', () => {
+  test('shows the photo page link when copying is refused', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: () => Promise.reject(new Error('denied')) },
+      });
+    });
+    await page.goto(`${BASE_URL}/?photo=${images[0].id}`);
+    await page.locator('.glightbox-container .gshare').click();
+
+    const field = page.locator('.glightbox-container .gshare-link');
+    await expect(field).toBeVisible();
+    await expect(field).toHaveValue(`${BASE_URL}/photo/${images[0].id}`);
+  });
+});
+
+test.describe('Photo pages', () => {
+  test('serve the photo with link-preview tags', async ({ page }) => {
+    const target = images[0];
+    const response = await page.goto(`${BASE_URL}/photo/${target.id}`);
+    expect(response.status()).toBe(200);
+
+    await expect(page.locator('h1')).toHaveText(target.title);
+    const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
+    expect(ogImage).toMatch(new RegExp(`^${BASE_URL}/assets/gallery/.+\\.webp$`));
+    const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+    expect(canonical).toBe(`${BASE_URL}/photo/${target.id}`);
+    await expect(page.locator('a.to-gallery')).toHaveAttribute('href', `/?photo=${target.id}`);
+  });
+
+  test('return 404 for unknown or non-numeric ids', async ({ page }) => {
+    for (const key of ['999999', 'not-a-photo']) {
+      const response = await page.goto(`${BASE_URL}/photo/${key}`);
+      expect(response.status()).toBe(404);
+      await expect(page.locator('.not-found')).toBeVisible();
+    }
+  });
+
+  test('Share copies the page link', async ({ page, context, browserName }) => {
+    test.skip(browserName !== 'chromium', 'clipboard permissions are Chromium-only in Playwright');
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto(`${BASE_URL}/photo/${images[0].id}`);
+    await page.locator('#share').click();
+
+    await expect(page.locator('#share')).toContainText('Link copied');
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied).toBe(`${BASE_URL}/photo/${images[0].id}`);
   });
 });
