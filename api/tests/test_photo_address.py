@@ -45,6 +45,9 @@ def test_address_from_title():
     assert address_from_title("", 5) == "photo-5"
     # An all-digit address would be read as an image id
     assert address_from_title("1984", 5) == "photo-1984"
+    # Non-ASCII is transliterated, not dropped (the console sends typed text raw)
+    assert address_from_title("Straße am Hafen", 5) == "strasse-am-hafen"
+    assert address_from_title("Москва", 5) == "moskva"
 
 
 @pytest.mark.asyncio

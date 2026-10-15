@@ -1264,7 +1264,9 @@
         // Web address. It starts from the title and follows title edits until
         // the photographer types in it; then the typed text is used as is.
         // The server normalizes and has the final say (a taken typed address
-        // is refused, not renumbered); toAddress() only previews that form.
+        // is refused, not renumbered). toAddress() is an ASCII-only preview
+        // used for comparisons and title-following; typed text is sent raw,
+        // since the server transliterates (Straße -> strasse) where it can't.
         let addressInfo = null;    // from GET /api/images/{id}
         let addressTyped = false;  // the photographer has typed their own
 
@@ -1315,10 +1317,6 @@
 
         document.getElementById('editAddress').addEventListener('input', () => {
             addressTyped = true;
-            syncAddressControls();
-        });
-        document.getElementById('editAddress').addEventListener('blur', (e) => {
-            if (addressTyped) e.target.value = toAddress(e.target.value);
             syncAddressControls();
         });
         document.getElementById('editTitle').addEventListener('input', (e) => {
@@ -1594,6 +1592,7 @@
                 // refused (taken), the edits are still saved: say so and keep
                 // the editor open to try another.
                 let addressRefusal = null;
+                let approvedAddress = null;
                 if (approving === 'address') {
                     const typedAddress = addressTyped ? document.getElementById('editAddress').value : null;
                     const addressResponse = await fetch(`/api/images/${imageId}/address`, {
@@ -1602,8 +1601,10 @@
                         credentials: 'include',
                         body: JSON.stringify(typedAddress ? { address: typedAddress } : {})
                     });
-                    if (!addressResponse.ok) {
-                        const body = await addressResponse.json().catch(() => ({}));
+                    const body = await addressResponse.json().catch(() => ({}));
+                    if (addressResponse.ok) {
+                        approvedAddress = body.address && body.address.address;
+                    } else {
                         addressRefusal = (body.error && body.error.user_message) || 'it could not be approved';
                     }
                 }
@@ -1626,7 +1627,11 @@
 
                 // Success! Close modal and show confirmation
                 closeEditModal();
-                const savedMessages = { text: 'Saved and approved', address: 'Saved; title and address approved' };
+                // Name the address as saved: the server's normalization is final
+                const savedMessages = {
+                    text: 'Saved and approved',
+                    address: `Saved; title and address approved: ${window.location.host}/photo/${approvedAddress}`
+                };
                 showToast('success', savedMessages[approving] || 'Changes saved');
 
             } catch (error) {
