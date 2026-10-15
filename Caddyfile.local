@@ -74,6 +74,11 @@ liam.hensler.photography:8080 {
     reverse_proxy api:8000
   }
 
+  # Per-photo pages, server-built so link previews show the photo
+  handle /photo/* {
+    reverse_proxy api:8000
+  }
+
   # Proxy API requests to backend (for analytics tracking)
   handle /api/* {
     reverse_proxy api:8000
@@ -122,6 +127,11 @@ adrian.hensler.photography:8080 {
 
   # Static files for management UI
   handle /static/* {
+    reverse_proxy api:8000
+  }
+
+  # Per-photo pages, server-built so link previews show the photo
+  handle /photo/* {
     reverse_proxy api:8000
   }
 

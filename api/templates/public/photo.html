@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+{% if photo %}
+  <title>{{ photo.title }} · {{ photographer.name }} Photography</title>
+  <meta name="description" content="{{ description }}">
+  <link rel="canonical" href="{{ page_url }}">
+  <!-- Link previews (iMessage, WhatsApp, Facebook, Slack) read these
+       without running JavaScript; that is why this page is server-built -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="{{ photographer.name }} Photography">
+  <meta property="og:title" content="{{ photo.title }}">
+  <meta property="og:description" content="{{ description }}">
+  <meta property="og:url" content="{{ page_url }}">
+  <meta property="og:image" content="{{ og_image }}">
+  <meta property="og:image:type" content="image/webp">
+{% if photo.og_size %}
+  <meta property="og:image:width" content="{{ photo.og_size[0] }}">
+  <meta property="og:image:height" content="{{ photo.og_size[1] }}">
+{% endif %}
+  <meta property="og:image:alt" content="{{ photo.alt_text }}">
+  <meta name="twitter:card" content="summary_large_image">
+{% else %}
+  <title>Photo not found{% if photographer %} · {{ photographer.name }} Photography{% endif %}</title>
+  <meta name="robots" content="noindex">
+{% endif %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:wght@300&display=swap" rel="stylesheet">
+  <style>
+    /* Matches the portfolio sites (sites/adrian/index.html): near-black
+       ground, Playfair ghost type, sand accent. The photograph leads. */
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #f5f5f5;
+      line-height: 1.6;
+    }
+
+    .site-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      padding: 20px 24px;
+    }
+
+    .site-bar a {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      text-decoration: none;
+      color: rgba(245, 245, 245, 0.7);
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .site-bar .site-name {
+      font-size: clamp(18px, 2.6vw, 22px);
+    }
+
+    .site-bar .to-gallery {
+      font-size: clamp(14px, 2vw, 16px);
+    }
+
+    .site-bar a:hover {
+      color: rgba(232, 213, 181, 0.85);
+      border-bottom-color: rgba(232, 213, 181, 0.3);
+    }
+
+    .photo {
+      margin: 0;
+      padding: 0 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .photo img {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 84vh;
+    }
+
+    .details {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 28px 24px 8px;
+    }
+
+    .details h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(24px, 3.4vw, 32px);
+      line-height: 1.25;
+      letter-spacing: 0.01em;
+      margin: 0 0 12px;
+      text-wrap: balance;
+    }
+
+    .caption {
+      margin: 0 0 10px;
+      font-size: clamp(16px, 2vw, 17px);
+      color: rgba(245, 245, 245, 0.85);
+    }
+
+    /* Honest, quiet provenance (ADR 0004) */
+    .ai-note {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      font-style: italic;
+      color: #9a9a9a;
+    }
+
+    .exif, .location {
+      margin: 0 0 6px;
+      font-size: 0.85rem;
+      color: #9a9a9a;
+    }
+
+    .exif {
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      letter-spacing: 0.02em;
+    }
+
+    .share {
+      margin-top: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      background: transparent;
+      color: #e8d5b5;
+      border: 1px solid rgba(232, 213, 181, 0.45);
+      border-radius: 4px;
+      font: 500 0.875rem/1 'Inter', system-ui, sans-serif;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .share:hover {
+      border-color: #e8d5b5;
+      background: rgba(232, 213, 181, 0.08);
+    }
+
+    .share:focus-visible, .site-bar a:focus-visible {
+      outline: 2px solid #e8d5b5;
+      outline-offset: 3px;
+    }
+
+    .not-found {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: clamp(48px, 12vh, 120px) 24px;
+      text-align: center;
+    }
+
+    .not-found a {
+      color: #e8d5b5;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(232, 213, 181, 0.3);
+    }
+
+    footer {
+      padding: 40px 24px;
+      font-size: 0.875rem;
+      color: #888;
+      letter-spacing: 0.03em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <nav class="site-bar" aria-label="Site">
+    <a href="/" class="site-name">{{ photographer.name if photographer else "hensler photography" }}</a>
+{% if photo %}
+    <a href="/?photo={{ photo.id }}" class="to-gallery">view in gallery</a>
+{% endif %}
+  </nav>
+
+{% if photo %}
+  <main>
+    <figure class="photo">
+      <img src="{{ photo.image_url }}"
+{% if photo.medium_url and photo.image_width and photo.image_url != photo.medium_url %}
+           srcset="{{ photo.medium_url }} 800w, {{ photo.image_url }} {{ photo.image_width }}w"
+           sizes="(max-width: 1232px) 100vw, 1200px"
+{% endif %}
+{% if photo.width and photo.height %}
+           width="{{ photo.width }}" height="{{ photo.height }}"
+{% endif %}
+           alt="{{ photo.alt_text }}"
+           fetchpriority="high">
+    </figure>
+
+    <section class="details">
+      <h1>{{ photo.title }}</h1>
+{% if photo.caption %}
+      <p class="caption">{{ photo.caption }}</p>
+{% if photo.caption_unreviewed %}
+      <p class="ai-note">Description drafted by AI, not yet reviewed.</p>
+{% endif %}
+{% endif %}
+{% if photo.exif %}
+      <p class="exif">{{ photo.exif }}</p>
+{% endif %}
+{% if photo.location %}
+      <p class="location">{{ photo.location }}</p>
+{% endif %}
+      <button type="button" class="share" id="share" data-url="{{ page_url }}" data-title="{{ photo.title }}" data-image-id="{{ photo.id }}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
+        <span id="share-label" aria-live="polite">Share this photo</span>
+      </button>
+    </section>
+  </main>
+{% else %}
+  <main class="not-found">
+    <p>This photo isn't available.</p>
+    <p><a href="/">See the gallery</a></p>
+  </main>
+{% endif %}
+
+  <footer>© {{ year }}{% if photographer %} {{ photographer.name }}{% endif %}</footer>
+
+{% if photo %}
+  <script>
+    (function() {
+      'use strict';
+      var button = document.getElementById('share');
+      var label = document.getElementById('share-label');
+      var imageId = Number(button.dataset.imageId);
+      var resetTimer = null;
+
+      function sessionId() {
+        try {
+          var id = sessionStorage.getItem('analytics_session');
+          if (!id) {
+            id = 'session_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+            sessionStorage.setItem('analytics_session', id);
+          }
+          return id;
+        } catch (e) {
+          return 'session_unavailable';
+        }
+      }
+
+      function track(eventType, metadata) {
+        var payload = { event_type: eventType, image_id: imageId, session_id: sessionId() };
+        if (document.referrer) payload.referrer = document.referrer;
+        if (metadata) payload.metadata = JSON.stringify(metadata);
+        fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(function() {});
+      }
+
+      function feedback(message) {
+        label.textContent = message;
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(function() { label.textContent = 'Share this photo'; }, 2500);
+      }
+
+      // Phones get their own share sheet; everywhere else the link is
+      // copied. If copying is refused, the address bar holds the same link.
+      button.addEventListener('click', async function() {
+        var url = button.dataset.url;
+        if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+          try {
+            await navigator.share({ title: button.dataset.title, url: url });
+            track('share_click', { method: 'native', surface: 'photo_page' });
+            return;
+          } catch (error) {
+            if (error.name === 'AbortError') return;
+          }
+        }
+        try {
+          await navigator.clipboard.writeText(url);
+          track('share_click', { method: 'copy', surface: 'photo_page' });
+          feedback('Link copied');
+        } catch (error) {
+          feedback('Copy the link from the address bar');
+        }
+      });
+
+      track('page_view', { surface: 'photo_page' });
+    })();
+  </script>
+{% endif %}
+</body>
+</html>

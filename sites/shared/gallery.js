@@ -446,10 +446,11 @@
     updateURL({ mode: 'replace' });
   }
 
-  // Links name the photo by id, not by title, so they keep working when a
-  // title is corrected later
+  // Shared links go to the photo's own page, which link previews can read
+  // (the gallery page can't show a per-photo preview). They name the photo
+  // by id, not title, so they keep working when a title is corrected.
   function photoShareURL(imageId) {
-    return `${window.location.origin}${window.location.pathname}?photo=${imageId}`;
+    return `${window.location.origin}/photo/${imageId}`;
   }
 
   // Same chrome as the fullscreen toggle; injected once per lightbox open
