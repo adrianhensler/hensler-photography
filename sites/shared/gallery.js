@@ -6,7 +6,8 @@
  * and a justified grid that preserves aspect ratios. All curation
  * (featured flags, publishing) happens in the management console; the
  * only public control is the category filter, synced to ?category= in
- * the URL.
+ * the URL. The photo open in the lightbox is mirrored to ?photo=<id>, so
+ * every photo has a link a visitor can share (see sharePhoto()).
  *
  * DEPENDENCIES:
  * - GLightbox (self-hosted at /shared/vendor/glightbox/)
@@ -31,6 +32,7 @@
   let galleryLightbox = null;
   let lightboxInitPromise = null;
   let lightboxOpenTime = null;
+  let activePhotoId = null;    // photo open in the lightbox, mirrored to ?photo=
 
   // Slideshow state
   let slideshowData = [];
@@ -370,7 +372,7 @@
             return;
           }
 
-          galleryLightbox = window.GLightbox({
+          const instance = window.GLightbox({
             selector: '.glightbox',
             touchNavigation: true,
             loop: true,
@@ -379,14 +381,28 @@
             draggable: true,
             closeButton: true,
             closeOnOutsideClick: true,
-            onOpen: addFullscreenToggle,
-            onClose: exitLightboxFullscreen,
+            onOpen: () => {
+              addFullscreenToggle();
+              addShareButton();
+              syncPhotoURL();
+            },
+            onClose: () => {
+              exitLightboxFullscreen();
+              // Close is animated, so a lightbox destroyed by a re-render
+              // reports closing after its replacement exists; only the
+              // current one may touch the URL
+              if (galleryLightbox !== instance) return;
+              activePhotoId = null;
+              updateURL({ mode: 'replace' });
+            },
             afterSlideChange: () => {
               if (document.querySelector('.glightbox-container.is-fullscreen')) {
                 applyFullQualityImage();
               }
+              syncPhotoURL();
             }
           });
+          galleryLightbox = instance;
           resolve(galleryLightbox);
         }, 100);
       }).finally(() => {
@@ -397,7 +413,7 @@
     return lightboxInitPromise;
   }
 
-  function openLightboxForImage(imageData) {
+  function openLightboxForImage(imageData, trackMetadata = null) {
     // The lightbox holds the currently rendered items; if the image is
     // filtered out, clear the filter first so it can be shown
     let position = renderedData.indexOf(imageData);
@@ -411,12 +427,96 @@
     ensureLightboxReady()
       .then(() => {
         lightboxOpenTime = Date.now();
-        trackEvent('lightbox_open', imageId);
+        trackEvent('lightbox_open', imageId, trackMetadata);
         galleryLightbox.openAt(position);
       })
       .catch((error) => {
         console.error('Lightbox init failed:', error);
       });
+  }
+
+  // ===== SHARING =====
+
+  // While the lightbox is open the address bar names the photo, so it can
+  // be copied straight from there. replaceState, not pushState: opening a
+  // photo doesn't add a history entry, so Back still leaves the page.
+  function syncPhotoURL() {
+    const imageData = galleryLightbox ? renderedData[galleryLightbox.index] : null;
+    activePhotoId = imageData ? imageData.id : null;
+    updateURL({ mode: 'replace' });
+  }
+
+  // Links name the photo by id, not by title, so they keep working when a
+  // title is corrected later
+  function photoShareURL(imageId) {
+    return `${window.location.origin}${window.location.pathname}?photo=${imageId}`;
+  }
+
+  // Same chrome as the fullscreen toggle; injected once per lightbox open
+  function addShareButton() {
+    const container = document.querySelector('.glightbox-container');
+    if (!container || container.querySelector('.gshare')) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'gbtn gshare';
+    btn.type = 'button';
+    btn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/>' +
+      '</svg><span class="gshare-label" aria-live="polite">Share</span>';
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sharePhoto(btn);
+    });
+    container.appendChild(btn);
+  }
+
+  // Phones get their own share sheet; everywhere else the link is copied.
+  // If copying is refused, the address bar already holds the same link.
+  async function sharePhoto(btn) {
+    const imageData = galleryLightbox ? renderedData[galleryLightbox.index] : null;
+    if (!imageData) return;
+    const url = photoShareURL(imageData.id);
+
+    if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+      try {
+        await navigator.share({ title: imageData.title || config.siteName, url });
+        trackEvent('share_click', imageData.id, { method: 'native' });
+        return;
+      } catch (error) {
+        if (error.name === 'AbortError') return;  // visitor closed the sheet
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      trackEvent('share_click', imageData.id, { method: 'copy' });
+      showShareFeedback(btn, 'Link copied');
+    } catch (error) {
+      showShareFeedback(btn, 'Copy the link from the address bar');
+    }
+  }
+
+  function showShareFeedback(btn, message) {
+    const label = btn.querySelector('.gshare-label');
+    if (!label) return;
+    label.textContent = message;
+    clearTimeout(btn.feedbackTimer);
+    btn.feedbackTimer = setTimeout(() => { label.textContent = 'Share'; }, 2500);
+  }
+
+  // A shared link opens straight to its photo. Unknown or unpublished ids
+  // are dropped from the URL and the visitor just sees the gallery.
+  function openPhotoFromURL(requested = new URLSearchParams(window.location.search).get('photo')) {
+    if (requested === null) return;
+    const id = Number(requested);
+    const imageData = Number.isInteger(id) ? galleryData.find(img => img.id === id) : null;
+    if (!imageData) {
+      updateURL({ mode: 'replace' });
+      return;
+    }
+    openLightboxForImage(imageData, { surface: 'shared_link' });
   }
 
   // ===== SLIDESHOW =====
@@ -580,6 +680,9 @@
     const params = new URLSearchParams();
     if (activeCategory) {
       params.set('category', activeCategory);
+    }
+    if (activePhotoId) {
+      params.set('photo', activePhotoId);
     }
     const queryString = params.toString();
     const basePath = window.location.pathname;
@@ -826,8 +929,16 @@
 
     initSlideshow();
     loadFiltersFromURL();   // renders grid + category nav from URL state
+    openPhotoFromURL();
 
-    window.addEventListener('popstate', () => loadFiltersFromURL());
+    // Back/Forward restores both the filter and any open photo. The photo
+    // is read first: re-rendering closes the lightbox, which rewrites the URL.
+    window.addEventListener('popstate', () => {
+      const requestedPhoto = new URLSearchParams(window.location.search).get('photo');
+      activePhotoId = null;
+      loadFiltersFromURL();
+      openPhotoFromURL(requestedPhoto);
+    });
 
     trackPageView();
     addGalleryTracking();
