@@ -24,7 +24,7 @@ from api.errors import (
 from api.logging_config import get_logger
 from api.models import ImageMetadataUpdate
 from api.routes.auth import get_current_user, User
-from api.services.photo_address import address_info, approve_address
+from api.services.photo_address import AddressTaken, address_info, approve_address
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -824,21 +824,37 @@ async def toggle_featured(
 @router.post("/{image_id}/address")
 async def approve_photo_address(
     image_id: int,
+    request: Request,
     current_user: User = Depends(get_current_user),
     _csrf: str = Depends(verify_csrf_token),
 ):
     """
-    Approve the photo's public address, made from its saved title.
+    Approve the photo's public address.
 
-    Also used to update an approved address to match a changed title; the
-    old address keeps working as a redirect. Idempotent.
+    Optional JSON body {"address": "..."}: the photographer's typed address,
+    normalized to URL form; 409 if another photo holds it. With no address,
+    it is made from the saved title. Also used to change an approved
+    address; the old one keeps working as a redirect. Idempotent.
     """
     await verify_image_ownership(image_id, current_user)
+
+    requested = None
+    if await request.body():
+        try:
+            payload = await request.json()
+        except ValueError:
+            raise HTTPException(400, "Body must be JSON")
+        requested = payload.get("address") if isinstance(payload, dict) else None
+        if requested is not None and (not isinstance(requested, str) or len(requested) > 200):
+            raise HTTPException(400, "address must be text of at most 200 characters")
 
     from api.database import get_db_connection
 
     async with get_db_connection() as db:
-        change = await approve_address(db, image_id)
+        try:
+            change = await approve_address(db, image_id, requested)
+        except AddressTaken as taken:
+            raise HTTPException(409, f"Another photo already uses the address {taken}")
         await db.commit()
         address = await address_info(db, image_id)
 
