@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hensler • Local browser</title><link rel="stylesheet" href="/style.css"><script defer src="/app.js"></script></head>
+<body>
+<header><div><span class="eyebrow">HENSLER / LOCAL</span><h1>Photo browser</h1></div><span class="badge">Read-only originals</span></header>
+<div class="workspace">
+<aside><h2>Library</h2><form id="filters">
+<label>Search metadata<input name="q" type="search" placeholder="Filename, caption, location…"></label>
+<label>Folder<select name="folder"><option value="">All folders</option></select></label>
+<label>Camera<select name="camera"><option value="">All cameras</option></select></label>
+<label>Lens<select name="lens"><option value="">All lenses</option></select></label>
+<label>Category<select name="category"><option value="">All categories</option></select></label>
+<label>Tag<select name="tag"><option value="">All tags</option></select></label>
+<div class="pair"><label>From<input type="date" name="from"></label><label>Through<input type="date" name="to"></label></div>
+<div class="pair"><label>Min ISO<input type="number" min="0" name="iso_min" placeholder="Any"></label><label>Max ISO<input type="number" min="0" name="iso_max" placeholder="Any"></label></div>
+<button type="reset">Clear filters</button>
+</form><p class="hint">Dates use capture time when available; otherwise file modification time (UTC). Restart to rescan.</p><details><summary>Scan report</summary><pre id="scan"></pre></details></aside>
+<main><div class="toolbar"><p id="count" role="status" aria-live="polite">Loading library…</p><div class="sort"><label>Sort<select id="sort"><option value="date">Date</option><option value="name">Filename</option><option value="camera">Camera</option><option value="iso">ISO</option><option value="size">File size</option></select></label><label>Order<select id="direction"><option value="desc">Descending</option><option value="asc">Ascending</option></select></label></div></div>
+<p id="error" role="alert" hidden></p><div id="grid" class="grid" aria-label="Photos"></div><div class="paging"><button id="previous">Previous</button><span id="page"></span><button id="next">Next</button></div></main>
+<section id="inspector" aria-label="Selected image"><div class="empty"><span>◩</span><h2>A closer look</h2><p>Select a photo to inspect its metadata.<br>Double-click for a larger preview.</p></div></section>
+</div>
+<dialog id="viewer" aria-label="Image preview"><div class="viewerbar"><button id="back" aria-label="Previous photo">←</button><span id="viewername"></span><button id="forward" aria-label="Next photo">→</button><button id="close">Close ×</button></div><img id="large" alt=""><p class="hint">Arrow keys browse this page · Escape closes · Preview up to 1600 px</p></dialog>
+</body></html>
