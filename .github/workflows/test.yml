@@ -9,7 +9,8 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Keep the runner compatible with the Playwright version in package-lock.json.
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -80,3 +81,4 @@ jobs:
         run: |
           echo "❌ Tests failed! Please review the test results and screenshots."
           exit 1
+

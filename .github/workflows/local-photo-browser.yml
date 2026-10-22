@@ -9,7 +9,8 @@ permissions:
   contents: read
 jobs:
   prototype:
-    runs-on: ubuntu-latest
+    # Match the OS supported by the repository-locked Playwright version.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
