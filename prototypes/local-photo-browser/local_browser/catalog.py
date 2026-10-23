@@ -92,7 +92,14 @@ class SQLiteCatalog:
             where.append("EXISTS (SELECT 1 FROM json_each(metadata, '$.tags') WHERE value=?)")
             args.append(filters['tag'])
         if filters.get('q'):
-            where.append("instr(lower(metadata), lower(?)) > 0")
+            # Search decoded leaf values (including individual tags), never JSON
+            # keys, container syntax, nulls, or the internal derivative cache key.
+            where.append("""EXISTS (
+                SELECT 1 FROM json_tree(photos.metadata) AS field
+                WHERE field.type IN ('text', 'integer', 'real')
+                  AND field.key != 'cache_key'
+                  AND instr(lower(CAST(field.atom AS TEXT)), lower(?)) > 0
+            )""")
             args.append(filters['q'])
         for key, operator in [('from', '>='), ('to', '<=')]:
             if filters.get(key):
