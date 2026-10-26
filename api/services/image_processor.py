@@ -17,6 +17,12 @@ import os
 # Initialize logger
 logger = get_logger(__name__)
 
+# The only decoders Pillow may run on uploaded files. Pillow otherwise sniffs
+# the real format from the bytes, so a file labelled image/jpeg could reach the
+# TIFF, FPX or BMP decoders. Multi-picture JPEGs (MPO, written by some cameras)
+# still open, because the JPEG plugin promotes them itself.
+ACCEPTED_FORMATS = ["JPEG", "PNG"]
+
 
 def generate_variants(
     original_path: str, original_filename: str, context: Dict[str, Any] = None
@@ -45,7 +51,7 @@ def generate_variants(
             f"Generating image variants for {original_filename}", extra={"context": context}
         )
 
-        img = Image.open(original_path)
+        img = Image.open(original_path, formats=ACCEPTED_FORMATS)
 
         # Convert RGBA to RGB if needed (for JPEG compatibility)
         if img.mode in ("RGBA", "LA", "P"):
@@ -255,7 +261,7 @@ def generate_ai_analysis_image(
     MAX_DIMENSION = 1568  # Anthropic's recommendation for Claude Vision
 
     try:
-        img = Image.open(original_path)
+        img = Image.open(original_path, formats=ACCEPTED_FORMATS)
         original_width, original_height = img.size
 
         # Check if resize is needed

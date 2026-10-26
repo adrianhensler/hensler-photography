@@ -176,49 +176,42 @@ async def ingest_image(
         with open(file_path, "wb") as f:
             f.write(contents)
 
-        # Detect actual image format (don't trust browser's content-type)
+        # Detect actual image format (don't trust browser's content-type).
+        # Only the accepted decoders run; anything else fails to open and is
+        # rejected, so unknown formats never reach EXIF or variant generation.
         from PIL import Image
+        from api.services.image_processor import ACCEPTED_FORMATS
 
-        actual_media_type = file.content_type  # fallback
+        # Map PIL format to MIME type. MPO is a camera multi-picture JPEG.
+        format_to_mime = {"jpeg": "image/jpeg", "mpo": "image/jpeg", "png": "image/png"}
         try:
-            with Image.open(file_path) as img:
-                actual_format = img.format.lower()  # 'jpeg', 'png', 'gif', 'webp'
-
-                # Map PIL format to MIME type
-                format_to_mime = {
-                    "jpeg": "image/jpeg",
-                    "png": "image/png",
-                    "gif": "image/gif",
-                    "webp": "image/webp",
-                }
-                actual_media_type = format_to_mime.get(actual_format, "image/jpeg")
-
-                # Update context with detected format
-                context["actual_format"] = actual_format
-                context["actual_media_type"] = actual_media_type
-
-                # Enforce allowlist against the actual detected format, not the
-                # browser-supplied Content-Type header (which is client-controlled).
-                if actual_media_type not in allowed_types:
-                    logger.warning(
-                        f"Actual format {actual_media_type!r} not in allowlist",
-                        extra={"context": context},
-                    )
-                    if file_path and file_path.exists():
-                        file_path.unlink()
-                        file_path = None
-                    error = invalid_file_type_error(
-                        filename=file.filename,
-                        file_type=actual_media_type,
-                        allowed_types=allowed_types,
-                        context=context,
-                    )
-                    return JSONResponse(status_code=error.http_status, content=error.to_dict())
+            with Image.open(file_path, formats=ACCEPTED_FORMATS) as img:
+                actual_format = img.format.lower()
+            actual_media_type = format_to_mime.get(actual_format)
         except Exception as e:
+            actual_format, actual_media_type = None, None
+            logger.warning(f"Could not detect image format: {e}", extra={"context": context})
+
+        context["actual_format"] = actual_format
+        context["actual_media_type"] = actual_media_type
+
+        # Enforce allowlist against the actual detected format, not the
+        # browser-supplied Content-Type header (which is client-controlled).
+        if actual_media_type not in allowed_types:
             logger.warning(
-                f"Could not detect image format, using content-type: {e}",
+                f"Actual format {actual_format!r} not in allowlist",
                 extra={"context": context},
             )
+            if file_path and file_path.exists():
+                file_path.unlink()
+                file_path = None
+            error = invalid_file_type_error(
+                filename=file.filename,
+                file_type=actual_format or "unrecognized",
+                allowed_types=allowed_types,
+                context=context,
+            )
+            return JSONResponse(status_code=error.http_status, content=error.to_dict())
 
         # Import services dynamically
         from api.services.exif import extract_exif
