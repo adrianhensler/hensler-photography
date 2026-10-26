@@ -1,7 +1,8 @@
 """
 The tagging call on Claude Sonnet 5.5, with the API client mocked: request
 settings, reading the reply by block type (thinking comes first), stopping
-on a refusal or a cut-off reply, and cost from the model that answered.
+on a refusal or a cut-off reply, falling back to the original image when the
+resize step fails, and cost from the model that answered.
 """
 
 import json
@@ -90,6 +91,23 @@ async def test_stopped_reply_is_an_error_not_parsed(test_db, photo, stop_reason)
     assert error is not None
     assert metadata["caption"] == "AI analysis unavailable"
     assert metadata["alt_text"] == ""  # never the fallback caption
+
+
+@pytest.mark.asyncio
+async def test_failed_resize_falls_back_to_original(test_db, photo):
+    from api.errors import image_processing_error
+
+    resize_error = image_processing_error(
+        filename="heron.jpg", step="ai_resize", error_message="decoder broke"
+    )
+    with patch.object(
+        claude_vision, "generate_ai_analysis_image", return_value=(photo, resize_error)
+    ):
+        (metadata, error), create = await _analyze(photo, _reply(json.dumps(METADATA)))
+
+    assert error is None
+    assert metadata["title"] == METADATA["title"]
+    create.assert_awaited_once()
 
 
 @pytest.mark.asyncio
