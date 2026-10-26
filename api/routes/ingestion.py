@@ -10,6 +10,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 import hashlib
+import io
 import secrets
 import sqlite3
 
@@ -153,39 +154,19 @@ async def ingest_image(
     warnings = []  # Collect non-fatal warnings
 
     try:
-        # Generate unique filename. A random component (not just
-        # timestamp+content-hash) guarantees two concurrent uploads never
-        # share a path on disk, even when the same file is uploaded twice
-        # in the same second -- two DB rows sharing a file would mean
-        # deleting either one later deletes the other's image too.
-        file_hash = hashlib.sha256(contents).hexdigest()[:16]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_id = secrets.token_hex(4)
-        ext = Path(file.filename).suffix.lower()
-        original_filename = f"{timestamp}_{file_hash}_{unique_id}{ext}"
-
-        context["generated_filename"] = original_filename
-
-        # Save original file
-        upload_dir = Path("/app/assets/gallery")
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        file_path = upload_dir / original_filename
-
-        logger.info(f"Saving file to {file_path}", extra={"context": context})
-
-        with open(file_path, "wb") as f:
-            f.write(contents)
-
-        # Detect actual image format (don't trust browser's content-type).
-        # Only the accepted decoders run; anything else fails to open and is
-        # rejected, so unknown formats never reach EXIF or variant generation.
+        # Detect actual image format (don't trust browser's content-type),
+        # before anything is written to disk. Only the accepted decoders run;
+        # anything else fails to open and is rejected, so unknown formats
+        # never reach EXIF or variant generation.
         from PIL import Image
         from api.services.image_processor import ACCEPTED_FORMATS
 
-        # Map PIL format to MIME type. MPO is a camera multi-picture JPEG.
+        # Map PIL format to MIME type and saved extension. MPO is a camera
+        # multi-picture JPEG.
         format_to_mime = {"jpeg": "image/jpeg", "mpo": "image/jpeg", "png": "image/png"}
+        format_to_ext = {"jpeg": ".jpg", "mpo": ".jpg", "png": ".png"}
         try:
-            with Image.open(file_path, formats=ACCEPTED_FORMATS) as img:
+            with Image.open(io.BytesIO(contents), formats=ACCEPTED_FORMATS) as img:
                 actual_format = img.format.lower()
             actual_media_type = format_to_mime.get(actual_format)
         except Exception as e:
@@ -202,9 +183,6 @@ async def ingest_image(
                 f"Actual format {actual_format!r} not in allowlist",
                 extra={"context": context},
             )
-            if file_path and file_path.exists():
-                file_path.unlink()
-                file_path = None
             error = invalid_file_type_error(
                 filename=file.filename,
                 file_type=actual_format or "unrecognized",
@@ -212,6 +190,33 @@ async def ingest_image(
                 context=context,
             )
             return JSONResponse(status_code=error.http_status, content=error.to_dict())
+
+        # Generate unique filename. A random component (not just
+        # timestamp+content-hash) guarantees two concurrent uploads never
+        # share a path on disk, even when the same file is uploaded twice
+        # in the same second -- two DB rows sharing a file would mean
+        # deleting either one later deletes the other's image too.
+        # The extension comes from the detected format, never the uploaded
+        # filename: originals are served from /assets/gallery/, and Caddy
+        # picks the Content-Type from the extension (an image named .html
+        # would be served as a page on the portfolio origin).
+        file_hash = hashlib.sha256(contents).hexdigest()[:16]
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_id = secrets.token_hex(4)
+        ext = format_to_ext[actual_format]
+        original_filename = f"{timestamp}_{file_hash}_{unique_id}{ext}"
+
+        context["generated_filename"] = original_filename
+
+        # Save original file
+        upload_dir = Path("/app/assets/gallery")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        file_path = upload_dir / original_filename
+
+        logger.info(f"Saving file to {file_path}", extra={"context": context})
+
+        with open(file_path, "wb") as f:
+            f.write(contents)
 
         # Import services dynamically
         from api.services.exif import extract_exif
