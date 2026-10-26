@@ -253,7 +253,7 @@ async def analyze_image(
         # Log if resize had issues but continue with original
         if resize_error:
             logger.warning(
-                f"AI image resize failed, using original: {resize_error.error.message}",
+                f"AI image resize failed, using original: {resize_error.message}",
                 extra={"context": context},
             )
 
