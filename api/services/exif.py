@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 from api.logging_config import get_logger
+from api.services.image_processor import ACCEPTED_FORMATS
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -30,7 +31,7 @@ def extract_exif(image_path: str) -> dict:
     logger.info(f"Extracting EXIF data from {Path(image_path).name}", extra={"context": context})
 
     try:
-        img = Image.open(image_path)
+        img = Image.open(image_path, formats=ACCEPTED_FORMATS)
         width, height = img.size
         aspect_ratio = round(width / height, 2)
 
@@ -168,7 +169,7 @@ def extract_exif(image_path: str) -> dict:
 
         # Fallback: at least return dimensions
         try:
-            img = Image.open(image_path)
+            img = Image.open(image_path, formats=ACCEPTED_FORMATS)
             width, height = img.size
             logger.info("Returning fallback EXIF (dimensions only)", extra={"context": context})
             return {
