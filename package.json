@@ -21,6 +21,6 @@
     "deploy": "echo 'Run: npm test && git push && docker compose restart'"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0"
+    "@playwright/test": "^1.64.1"
   }
 }
